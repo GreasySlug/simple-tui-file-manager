@@ -13,7 +13,7 @@ use tui::{
     layout::{Constraint, Corner, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, List, ListItem, ListState},
+    widgets::{Block, Borders, List, ListItem, ListState, Tabs},
     Frame, Terminal,
 };
 
@@ -70,6 +70,8 @@ impl<T> StatefulList<T> {
 /// Check the event handling at the bottom to see how to change the state on incoming events.
 /// Check the drawing logic for items on how to specify the highlighting style for selected items.
 struct App<'a> {
+    titles: Vec<&'a str>,
+    index: usize,
     items: StatefulList<(&'a str, usize)>,
     events: Vec<(&'a str, &'a str)>,
 }
@@ -77,6 +79,8 @@ struct App<'a> {
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
+            titles: vec!["Tab01", "Tab02", "Tab03"],
+            index: 0,
             items: StatefulList::with_items(vec![
                 ("Item0", 1),
                 ("Item1", 2),
@@ -132,6 +136,18 @@ impl<'a> App<'a> {
                 ("Event25", "INFO"),
                 ("Event26", "INFO"),
             ],
+        }
+    }
+
+    pub fn next_tab(&mut self) {
+        self.index = (self.index + 1) % self.titles.len();
+    }
+
+    pub fn prev_tab(&mut self) {
+        if self.index > 0 {
+            self.index -= 1;
+        } else {
+            self.index = self.titles.len() - 1;
         }
     }
 
@@ -191,6 +207,8 @@ fn run_app<B: Backend>(
                     KeyCode::Left => app.items.unselect(),
                     KeyCode::Down => app.items.next(),
                     KeyCode::Up => app.items.previous(),
+                    KeyCode::Tab => app.next_tab(),
+                    KeyCode::BackTab => app.prev_tab(),
                     _ => {}
                 }
             }
@@ -203,11 +221,40 @@ fn run_app<B: Backend>(
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    let size = f.size();
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+        .split(size);
+
+    let background_block =
+        Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
+    f.render_widget(background_block, size);
+
+    let titles = app
+        .titles
+        .iter()
+        .map(|t| {
+            let (first, rest) = t.split_at(1);
+            Spans::from(vec![
+                Span::styled(first, Style::default().fg(Color::Yellow)),
+                Span::styled(rest, Style::default().fg(Color::Green)),
+            ])
+        })
+        .collect();
+    let tabs = Tabs::new(titles)
+        .block(Block::default().borders(Borders::ALL).title("Tabs"))
+        .select(app.index)
+        .style(Style::default().fg(Color::Cyan));
+
+    f.render_widget(tabs, chunks[0]);
+
     // Create two chunks with equal horizontal screen space
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(f.size());
+        .split(chunks[1]);
 
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app
@@ -235,9 +282,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 .add_modifier(Modifier::BOLD),
         )
         .highlight_symbol(">> ");
-
-    // We can now render the item list
-    f.render_stateful_widget(items, chunks[0], &mut app.items.state);
 
     // Let's do the same for the events.
     // The event list doesn't have any state and only displays the current state of the list.
@@ -282,5 +326,14 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let events_list = List::new(events)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .start_corner(Corner::BottomLeft);
-    f.render_widget(events_list, chunks[1]);
+
+    match app.index {
+        0 => f.render_stateful_widget(items, chunks[0], &mut app.items.state),
+        1 => f.render_widget(events_list, chunks[1]),
+        2 => {
+            let inner = Block::default().title("Innter02").borders(Borders::ALL);
+            f.render_widget(inner, chunks[1]);
+        }
+        _ => unreachable!(),
+    }
 }
