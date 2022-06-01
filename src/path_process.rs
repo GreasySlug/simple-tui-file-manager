@@ -34,3 +34,23 @@ pub fn get_current_dir_path() -> PathBuf {
         Err(e) => panic!("Permission denide: {}", e),
     }
 }
+
+//  C:\Users\UserNmae
+#[cfg(target_os = "windows")]
+pub fn get_home_directory_path() -> Option<PathBuf> {
+    let home_dir_name = "PROFILE";
+    match std::env::var(home_dir_name) {
+        Ok(path) => Some(PathBuf::from(path)),
+        Err(e) => None,
+    }
+}
+
+//  /home/userName
+#[cfg(target_os = "linux")]
+pub fn get_home_directory_path() -> Option<PathBuf> {
+    let home_dir = "HOME";
+    match std::env::var(home_dir) {
+        Ok(path) => Some(PathBuf::from(path)),
+        Err(e) => None,
+    }
+}

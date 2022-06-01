@@ -6,7 +6,7 @@ use crossterm::{
 use file_item_list::{directory_item::Directory, file_item::FileItem};
 use path_process::{get_current_dir_path, make_dirpath_info_files_vec, pathbuf_to_string_name};
 use std::{
-    collections::HashMap,
+    collections::{hash_map::Entry, HashMap},
     error::Error,
     io,
     path::PathBuf,
@@ -81,15 +81,26 @@ struct App {
 }
 
 impl App {
-    pub fn new(dir_path: PathBuf) -> Self {
-        let dir_name = pathbuf_to_string_name(&dir_path);
-        let directory_tabs = vec![dir_name];
-        let mut item_map = HashMap::new();
-        item_map.insert(dir_name, StatefulDirectory::new(dir_path));
+    pub fn new() -> Self {
         App {
-            directory_tabs,
+            directory_tabs: Vec::new(),
             tab_index: 0,
-            item_map,
+            item_map: HashMap::new(),
+        }
+    }
+
+    pub fn insert_new_item(&mut self, dir_path: PathBuf) {
+        let dir_name = pathbuf_to_string_name(&dir_path);
+        let new_dir = StatefulDirectory::new(dir_path);
+        if let Entry::Vacant(item) = self.item_map.entry(dir_name) {
+            item.insert(new_dir);
+            self.push_new_dir_name(dir_name);
+        }
+    }
+
+    pub fn push_new_dir_name(&mut self, dir_name: String) {
+        if !self.directory_tabs.contains(&dir_name) {
+            self.directory_tabs.push(dir_name)
         }
     }
 
@@ -117,7 +128,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     // create app and run it
     let tick_rate = Duration::from_millis(250);
     let crr_dir_path = get_current_dir_path();
-    let app = App::new(crr_dir_path);
+    let mut app = App::new();
+    app.insert_new_item(crr_dir_path);
     let res = run_app(&mut terminal, app, tick_rate);
 
     // restore terminal
