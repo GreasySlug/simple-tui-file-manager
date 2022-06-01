@@ -4,7 +4,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use file_item_list::{directory_item::Directory, file_item::FileItem, Kinds};
-use path_process::{get_current_dir_path, make_dirpath_info_files_vec, pathbuf_to_string_name};
+use path_process::{
+    get_current_dir_path, get_home_directory_path, make_dirpath_info_files_vec,
+    pathbuf_to_string_name,
+};
 use std::{
     collections::{hash_map::Entry, HashMap},
     error::Error,
@@ -145,8 +148,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     // create app and run it
     let tick_rate = Duration::from_millis(250);
     let crr_dir_path = get_current_dir_path();
+    let home_dir_path = get_home_directory_path();
     let mut app = App::new();
     app.insert_new_item(crr_dir_path);
+    if let Some(path) = home_dir_path {
+        app.insert_new_item(path);
+    }
     let res = run_app(&mut terminal, app, tick_rate);
 
     // restore terminal
