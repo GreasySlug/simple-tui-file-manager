@@ -91,6 +91,11 @@ impl StatefulDirectory {
     fn unselect(&mut self) {
         self.state.select(None);
     }
+
+    fn sort_by_kinds(&mut self) {
+        self.file_items
+            .sort_by(|a, b| b.kinds().partial_cmp(&a.kinds()).unwrap());
+    }
 }
 
 #[derive(Debug)]
@@ -132,7 +137,6 @@ impl App {
         if let Entry::Vacant(item) = self.item_map.entry(dir_name.clone()) {
             item.insert(new_dir);
             self.push_new_dir_name(dir_name);
-            self.get_selected_item();
         }
     }
 
