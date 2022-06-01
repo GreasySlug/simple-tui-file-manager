@@ -1,7 +1,7 @@
 use std::env::current_dir;
 use std::path::PathBuf;
 
-use crate::file_item_list::{FileItem, Kinds};
+use crate::file_item_list::{file_item::FileItem, Kinds};
 
 pub fn pathbuf_to_string_name(path: &PathBuf) -> String {
     path.file_name().unwrap().to_str().unwrap().to_string()
