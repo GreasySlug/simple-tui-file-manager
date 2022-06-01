@@ -31,19 +31,33 @@ mod path_process;
 struct StatefulDirectory {
     directory: Directory,
     file_items: Vec<FileItem>,
+    length: usize,
     state: ListState,
 }
 
 impl StatefulDirectory {
     fn new(dir_path: PathBuf) -> StatefulDirectory {
+        let file_item = make_dirpath_info_files_vec(&dir_path);
+        let length = file_item.len();
         StatefulDirectory {
-            file_items: make_dirpath_info_files_vec(&dir_path),
             directory: Directory::new(dir_path),
+            file_items: file_item,
+            length,
             state: ListState::default(),
         }
     }
 
+    fn top(&mut self) {
+        if self.length < 1 {
+            return;
+        }
+        self.state.select(Some(0));
+    }
+
     fn next(&mut self) {
+        if self.length < 1 {
+            return;
+        }
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.file_items.len() - 1 {
@@ -58,6 +72,9 @@ impl StatefulDirectory {
     }
 
     fn previous(&mut self) {
+        if self.length < 1 {
+            return;
+        }
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -115,6 +132,7 @@ impl App {
         if let Entry::Vacant(item) = self.item_map.entry(dir_name.clone()) {
             item.insert(new_dir);
             self.push_new_dir_name(dir_name);
+            self.get_selected_item();
         }
     }
 
