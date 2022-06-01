@@ -38,7 +38,7 @@ pub fn get_current_dir_path() -> PathBuf {
 //  C:\Users\UserNmae
 #[cfg(target_os = "windows")]
 pub fn get_home_directory_path() -> Option<PathBuf> {
-    let home_dir_name = "PROFILE";
+    let home_dir_name = "USERPROFILE";
     match std::env::var(home_dir_name) {
         Ok(path) => Some(PathBuf::from(path)),
         Err(e) => None,
