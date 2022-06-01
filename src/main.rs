@@ -3,37 +3,47 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use file_item_list::{directory_item::Directory, file_item::FileItem};
+use path_process::{get_current_dir_path, make_dirpath_info_files_vec, pathbuf_to_string_name};
 use std::{
+    collections::HashMap,
     error::Error,
     io,
+    path::PathBuf,
     time::{Duration, Instant},
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Corner, Direction, Layout},
+    layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, List, ListItem, ListState, Tabs},
     Frame, Terminal,
 };
 
-struct StatefulList<T> {
+mod file_item_list;
+mod path_process;
+
+#[derive(Debug, Clone)]
+struct StatefulDirectory {
+    directory: Directory,
+    file_items: Vec<FileItem>,
     state: ListState,
-    items: Vec<T>,
 }
 
-impl<T> StatefulList<T> {
-    fn with_items(items: Vec<T>) -> StatefulList<T> {
-        StatefulList {
+impl StatefulDirectory {
+    fn new(dir_path: PathBuf) -> StatefulDirectory {
+        StatefulDirectory {
+            directory: Directory::new(dir_path),
+            file_items: make_dirpath_info_files_vec(dir_path.clone()),
             state: ListState::default(),
-            items,
         }
     }
 
     fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= self.items.len() - 1 {
+                if i >= self.file_items.len() - 1 {
                     0
                 } else {
                     i + 1
@@ -48,7 +58,7 @@ impl<T> StatefulList<T> {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    self.file_items.len() - 1
                 } else {
                     i - 1
                 }
@@ -63,99 +73,36 @@ impl<T> StatefulList<T> {
     }
 }
 
-/// This struct holds the current state of the app. In particular, it has the `items` field which is a wrapper
-/// around `ListState`. Keeping track of the items state let us render the associated widget with its state
-/// and have access to features such as natural scrolling.
-///
-/// Check the event handling at the bottom to see how to change the state on incoming events.
-/// Check the drawing logic for items on how to specify the highlighting style for selected items.
-struct App<'a> {
-    titles: Vec<&'a str>,
-    index: usize,
-    items: StatefulList<(&'a str, usize)>,
-    events: Vec<(&'a str, &'a str)>,
+#[derive(Debug)]
+struct App {
+    directory_tabs: Vec<String>,
+    tab_index: usize,
+    item_map: HashMap<String, StatefulDirectory>,
 }
 
-impl<'a> App<'a> {
-    fn new() -> App<'a> {
+impl App {
+    pub fn new(dir_path: PathBuf) -> Self {
+        let dir_name = pathbuf_to_string_name(&dir_path);
+        let directory_tabs = vec![dir_name];
+        let mut item_map = HashMap::new();
+        item_map.insert(dir_name, StatefulDirectory::new(dir_path));
         App {
-            titles: vec!["Tab01", "Tab02", "Tab03"],
-            index: 0,
-            items: StatefulList::with_items(vec![
-                ("Item0", 1),
-                ("Item1", 2),
-                ("Item2", 1),
-                ("Item3", 3),
-                ("Item4", 1),
-                ("Item5", 4),
-                ("Item6", 1),
-                ("Item7", 3),
-                ("Item8", 1),
-                ("Item9", 6),
-                ("Item10", 1),
-                ("Item11", 3),
-                ("Item12", 1),
-                ("Item13", 2),
-                ("Item14", 1),
-                ("Item15", 1),
-                ("Item16", 4),
-                ("Item17", 1),
-                ("Item18", 5),
-                ("Item19", 4),
-                ("Item20", 1),
-                ("Item21", 2),
-                ("Item22", 1),
-                ("Item23", 3),
-                ("Item24", 1),
-            ]),
-            events: vec![
-                ("Event1", "INFO"),
-                ("Event2", "INFO"),
-                ("Event3", "CRITICAL"),
-                ("Event4", "ERROR"),
-                ("Event5", "INFO"),
-                ("Event6", "INFO"),
-                ("Event7", "WARNING"),
-                ("Event8", "INFO"),
-                ("Event9", "INFO"),
-                ("Event10", "INFO"),
-                ("Event11", "CRITICAL"),
-                ("Event12", "INFO"),
-                ("Event13", "INFO"),
-                ("Event14", "INFO"),
-                ("Event15", "INFO"),
-                ("Event16", "INFO"),
-                ("Event17", "ERROR"),
-                ("Event18", "ERROR"),
-                ("Event19", "INFO"),
-                ("Event20", "INFO"),
-                ("Event21", "WARNING"),
-                ("Event22", "INFO"),
-                ("Event23", "INFO"),
-                ("Event24", "WARNING"),
-                ("Event25", "INFO"),
-                ("Event26", "INFO"),
-            ],
+            directory_tabs,
+            tab_index: 0,
+            item_map,
         }
     }
 
     pub fn next_tab(&mut self) {
-        self.index = (self.index + 1) % self.titles.len();
+        self.tab_index = (self.tab_index + 1) % self.directory_tabs.len();
     }
 
     pub fn prev_tab(&mut self) {
-        if self.index > 0 {
-            self.index -= 1;
+        if self.tab_index > 0 {
+            self.tab_index -= 1;
         } else {
-            self.index = self.titles.len() - 1;
+            self.tab_index = self.directory_tabs.len() - 1;
         }
-    }
-
-    /// Rotate through the event list.
-    /// This only exists to simulate some kind of "progress"
-    fn on_tick(&mut self) {
-        let event = self.events.remove(0);
-        self.events.push(event);
     }
 }
 
@@ -169,7 +116,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // create app and run it
     let tick_rate = Duration::from_millis(250);
-    let app = App::new();
+    let crr_dir_path = get_current_dir_path();
+    let app = App::new(crr_dir_path);
     let res = run_app(&mut terminal, app, tick_rate);
 
     // restore terminal
@@ -204,17 +152,11 @@ fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Left => app.items.unselect(),
-                    KeyCode::Down => app.items.next(),
-                    KeyCode::Up => app.items.previous(),
-                    KeyCode::Tab => app.next_tab(),
-                    KeyCode::BackTab => app.prev_tab(),
                     _ => {}
                 }
             }
         }
         if last_tick.elapsed() >= tick_rate {
-            app.on_tick();
             last_tick = Instant::now();
         }
     }
@@ -233,7 +175,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     f.render_widget(background_block, size);
 
     let titles = app
-        .titles
+        .directory_tabs
         .iter()
         .map(|t| {
             let (first, rest) = t.split_at(1);
@@ -245,7 +187,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .collect();
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
-        .select(app.index)
+        .select(app.tab_index)
         .style(Style::default().fg(Color::Cyan));
 
     f.render_widget(tabs, chunks[0]);
@@ -258,9 +200,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     // Iterate through all elements in the `items` app and append some debug text to it.
     let items: Vec<ListItem> = app
-        .items
-        .items
-        .iter()
         .map(|i| {
             let mut lines = vec![Spans::from(i.0)];
             for _ in 0..i.1 {
@@ -283,53 +222,8 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         )
         .highlight_symbol(">> ");
 
-    // Let's do the same for the events.
-    // The event list doesn't have any state and only displays the current state of the list.
-    let events: Vec<ListItem> = app
-        .events
-        .iter()
-        .rev()
-        .map(|&(event, level)| {
-            // Colorcode the level depending on its type
-            let s = match level {
-                "CRITICAL" => Style::default().fg(Color::Red),
-                "ERROR" => Style::default().fg(Color::Magenta),
-                "WARNING" => Style::default().fg(Color::Yellow),
-                "INFO" => Style::default().fg(Color::Blue),
-                _ => Style::default(),
-            };
-            // Add a example datetime and apply proper spacing between them
-            let header = Spans::from(vec![
-                Span::styled(format!("{:<9}", level), s),
-                Span::raw(" "),
-                Span::styled(
-                    "2020-01-01 10:00:00",
-                    Style::default().add_modifier(Modifier::ITALIC),
-                ),
-            ]);
-            // The event gets its own line
-            let log = Spans::from(vec![Span::raw(event)]);
-
-            // Here several things happen:
-            // 1. Add a `---` spacing line above the final list entry
-            // 2. Add the Level + datetime
-            // 3. Add a spacer line
-            // 4. Add the actual event
-            ListItem::new(vec![
-                Spans::from("-".repeat(chunks[1].width as usize)),
-                header,
-                Spans::from(""),
-                log,
-            ])
-        })
-        .collect();
-    let events_list = List::new(events)
-        .block(Block::default().borders(Borders::ALL).title("List"))
-        .start_corner(Corner::BottomLeft);
-
-    match app.index {
+    match app.tab_index {
         0 => f.render_stateful_widget(items, chunks[0], &mut app.items.state),
-        1 => f.render_widget(events_list, chunks[1]),
         2 => {
             let inner = Block::default().title("Innter02").borders(Borders::ALL);
             f.render_widget(inner, chunks[1]);
