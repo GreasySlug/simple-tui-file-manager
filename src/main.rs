@@ -3,7 +3,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use file_item_list::{directory_item::Directory, file_item::FileItem};
+use file_item_list::{directory_item::Directory, file_item::FileItem, Kinds};
 use path_process::{get_current_dir_path, make_dirpath_info_files_vec, pathbuf_to_string_name};
 use std::{
     collections::{hash_map::Entry, HashMap},
@@ -34,8 +34,8 @@ struct StatefulDirectory {
 impl StatefulDirectory {
     fn new(dir_path: PathBuf) -> StatefulDirectory {
         StatefulDirectory {
+            file_items: make_dirpath_info_files_vec(&dir_path),
             directory: Directory::new(dir_path),
-            file_items: make_dirpath_info_files_vec(dir_path.clone()),
             state: ListState::default(),
         }
     }
@@ -89,10 +89,27 @@ impl App {
         }
     }
 
+    pub fn get_selected_item(&mut self) -> Option<&mut StatefulDirectory> {
+        let selected_tab = self.directory_tabs.get(self.tab_index);
+        if let Some(dir) = selected_tab {
+            self.item_map.get_mut(dir)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_index(&self) -> usize {
+        self.tab_index
+    }
+
+    pub fn get_tabs(&self) -> Vec<String> {
+        self.directory_tabs.clone()
+    }
+
     pub fn insert_new_item(&mut self, dir_path: PathBuf) {
         let dir_name = pathbuf_to_string_name(&dir_path);
         let new_dir = StatefulDirectory::new(dir_path);
-        if let Entry::Vacant(item) = self.item_map.entry(dir_name) {
+        if let Entry::Vacant(item) = self.item_map.entry(dir_name.clone()) {
             item.insert(new_dir);
             self.push_new_dir_name(dir_name);
         }
@@ -155,7 +172,12 @@ fn run_app<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     loop {
-        terminal.draw(|f| ui(f, &mut app))?;
+        let index = app.get_index();
+        let tabs = app.get_tabs();
+        let selected_item = app
+            .get_selected_item()
+            .expect("Missing to add dir name or stateful item");
+        terminal.draw(|f| ui(f, selected_item, tabs, index))?;
 
         let timeout = tick_rate
             .checked_sub(last_tick.elapsed())
@@ -174,7 +196,7 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+fn ui<B: Backend>(f: &mut Frame<B>, app: &mut StatefulDirectory, tabs: Vec<String>, index: usize) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -186,8 +208,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
     f.render_widget(background_block, size);
 
-    let titles = app
-        .directory_tabs
+    let titles = tabs
         .iter()
         .map(|t| {
             let (first, rest) = t.split_at(1);
@@ -199,7 +220,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .collect();
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
-        .select(app.tab_index)
+        .select(index)
         .style(Style::default().fg(Color::Cyan));
 
     f.render_widget(tabs, chunks[0]);
@@ -211,20 +232,35 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .split(chunks[1]);
 
     // Iterate through all elements in the `items` app and append some debug text to it.
+    let dir_style = Style::default().fg(Color::Blue);
+    let dir_symbol = "▸";
+    let file_style = Style::default().fg(Color::Black);
+    let file_symbol = " ";
     let items: Vec<ListItem> = app
-        .map(|i| {
-            let mut lines = vec![Spans::from(i.0)];
-            for _ in 0..i.1 {
-                lines.push(Spans::from(Span::styled(
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-                    Style::default().add_modifier(Modifier::ITALIC),
-                )));
-            }
-            ListItem::new(lines).style(Style::default().fg(Color::Black).bg(Color::White))
+        .file_items
+        .iter()
+        .map(|file_item| {
+            let dir_name = file_item.name();
+            let lines = if file_item.kinds() == Kinds::Directory {
+                vec![
+                    Span::raw(dir_symbol),
+                    Span::raw(" "),
+                    Span::styled(dir_name, dir_style),
+                ]
+            } else {
+                vec![
+                    Span::raw(file_symbol),
+                    Span::raw(" "),
+                    Span::styled(dir_name, file_style),
+                ]
+            };
+            ListItem::new(Spans::from(lines))
+                .style(Style::default().fg(Color::Black).bg(Color::White))
         })
         .collect();
 
     // Create a List from all list items and highlight the currently selected one
+    let selecting_symbol = ">> ";
     let items = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("List"))
         .highlight_style(
@@ -232,10 +268,10 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 .bg(Color::LightGreen)
                 .add_modifier(Modifier::BOLD),
         )
-        .highlight_symbol(">> ");
+        .highlight_symbol(selecting_symbol);
 
-    match app.tab_index {
-        0 => f.render_stateful_widget(items, chunks[0], &mut app.items.state),
+    match index {
+        0 => f.render_stateful_widget(items, chunks[0], &mut app.state),
         2 => {
             let inner = Block::default().title("Innter02").borders(Borders::ALL);
             f.render_widget(inner, chunks[1]);

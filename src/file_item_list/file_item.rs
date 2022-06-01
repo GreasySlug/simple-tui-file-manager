@@ -19,4 +19,12 @@ impl FileItem {
             kinds,
         }
     }
+
+    pub fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    pub fn kinds(&self) -> Kinds {
+        self.kinds.clone()
+    }
 }

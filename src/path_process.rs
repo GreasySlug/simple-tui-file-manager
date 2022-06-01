@@ -7,8 +7,8 @@ pub fn pathbuf_to_string_name(path: &PathBuf) -> String {
     path.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-pub fn make_dirpath_info_files_vec(path: PathBuf) -> Vec<FileItem> {
-    let files_item: Vec<FileItem> = Vec::new();
+pub fn make_dirpath_info_files_vec(path: &PathBuf) -> Vec<FileItem> {
+    let mut files_item: Vec<FileItem> = Vec::new();
 
     if let Ok(dir) = path.read_dir() {
         for entry in dir {
