@@ -186,6 +186,8 @@ fn run_app<B: Backend>(
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Char('j') | KeyCode::Down => selected_item.next(),
+                    KeyCode::Char('k') | KeyCode::Up => selected_item.previous(),
                     _ => {}
                 }
             }

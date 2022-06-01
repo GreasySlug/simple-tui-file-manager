@@ -1,13 +1,13 @@
-use std::env::current_dir;
 use std::path::PathBuf;
+use std::{env::current_dir, path::Path};
 
 use crate::file_item_list::{file_item::FileItem, Kinds};
 
-pub fn pathbuf_to_string_name(path: &PathBuf) -> String {
+pub fn pathbuf_to_string_name(path: &Path) -> String {
     path.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-pub fn make_dirpath_info_files_vec(path: &PathBuf) -> Vec<FileItem> {
+pub fn make_dirpath_info_files_vec(path: &Path) -> Vec<FileItem> {
     let mut files_item: Vec<FileItem> = Vec::new();
 
     if let Ok(dir) = path.read_dir() {
