@@ -195,6 +195,8 @@ fn run_app<B: Backend>(
                     KeyCode::Char('q') => return Ok(()),
                     KeyCode::Char('j') | KeyCode::Down => selected_item.next(),
                     KeyCode::Char('k') | KeyCode::Up => selected_item.previous(),
+                    KeyCode::Tab => app.next_tab(),
+                    KeyCode::BackTab => app.prev_tab(),
                     _ => {}
                 }
             }
@@ -279,12 +281,5 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut StatefulDirectory, tabs: Vec<Strin
         )
         .highlight_symbol(selecting_symbol);
 
-    match index {
-        0 => f.render_stateful_widget(items, chunks[0], &mut app.state),
-        2 => {
-            let inner = Block::default().title("Innter02").borders(Borders::ALL);
-            f.render_widget(inner, chunks[1]);
-        }
-        _ => unreachable!(),
-    }
+    f.render_stateful_widget(items, chunks[0], &mut app.state);
 }
