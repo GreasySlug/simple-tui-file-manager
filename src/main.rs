@@ -3,7 +3,11 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use file_item_list::{directory_item::Directory, file_item::FileItem, Kinds};
+use file_item_list::{
+    directory_item::{self, Directory},
+    file_item::FileItem,
+    Kinds,
+};
 use path_process::{
     get_current_dir_path, get_home_directory_path, make_dirpath_info_files_vec,
     pathbuf_to_string_name,
@@ -13,14 +17,13 @@ use std::{
     error::Error,
     io,
     path::PathBuf,
-    time::{Duration, Instant},
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, List, ListItem, ListState, Tabs},
+    widgets::{Block, Borders, Cell, Row, Table, TableState, Tabs},
     Frame, Terminal,
 };
 
@@ -32,7 +35,7 @@ struct StatefulDirectory {
     directory: Directory,
     file_items: Vec<FileItem>,
     length: usize,
-    state: ListState,
+    state: TableState,
 }
 
 impl StatefulDirectory {
@@ -42,18 +45,18 @@ impl StatefulDirectory {
             directory: Directory::new(dir_path),
             length: file_item.len(),
             file_items: file_item,
-            state: ListState::default(),
+            state: TableState::default(),
         }
     }
 
-    fn top(&mut self) {
+    fn select_top(&mut self) {
         if self.length < 1 {
             return;
         }
         self.state.select(Some(0));
     }
 
-    fn next(&mut self) {
+    fn select_next(&mut self) {
         if self.length < 1 {
             return;
         }
@@ -70,7 +73,7 @@ impl StatefulDirectory {
         self.state.select(Some(i));
     }
 
-    fn previous(&mut self) {
+    fn select_previous(&mut self) {
         if self.length < 1 {
             return;
         }
@@ -194,13 +197,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     loop {
         let index = app.get_index();
         let tabs = app.get_tabs();
-        let selected_item = app.get_selected_state_dir();
-        terminal.draw(|f| ui(f, selected_item, tabs, index))?;
+        let selected_dir = app.get_selected_state_dir();
+        terminal.draw(|f| ui(f, selected_dir, tabs, index))?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
-                KeyCode::Char('j') | KeyCode::Down => selected_item.next(),
-                KeyCode::Char('k') | KeyCode::Up => selected_item.previous(),
+                KeyCode::Char('j') | KeyCode::Down => selected_dir.select_next(),
+                KeyCode::Char('k') | KeyCode::Up => selected_dir.select_previous(),
                 KeyCode::Tab => app.next_tab(),
                 KeyCode::BackTab => app.prev_tab(),
                 _ => {}
@@ -209,7 +212,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &mut StatefulDirectory, tabs: Vec<String>, index: usize) {
+fn ui<B: Backend>(f: &mut Frame<B>, dir: &mut StatefulDirectory, tabs: Vec<String>, index: usize) {
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -217,9 +220,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut StatefulDirectory, tabs: Vec<Strin
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(size);
 
-    let background_block =
+    let background_style =
         Block::default().style(Style::default().bg(Color::White).fg(Color::Black));
-    f.render_widget(background_block, size);
+    f.render_widget(background_style, size);
 
     let titles = tabs
         .iter()
@@ -239,49 +242,81 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut StatefulDirectory, tabs: Vec<Strin
     f.render_widget(tabs, chunks[0]);
 
     // Create two chunks with equal horizontal screen space
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
-        .split(chunks[1]);
+    // let chunks = Layout::default()
+    //    .direction(Direction::Horizontal)
+    //    .constraints([Constraint::Percentage(50), Constraint::Percentage(50)].as_ref())
+    //    .split(chunks[1]);
 
-    // Iterate through all elements in the `items` app and append some debug text to it.
-    let dir_style = Style::default().fg(Color::Blue);
+    // TODO: use config file
     let dir_symbol = "▸";
-    let file_style = Style::default().fg(Color::Black);
     let file_symbol = " ";
-    let items: Vec<ListItem> = app
-        .file_items
-        .iter()
-        .map(|file_item| {
-            let dir_name = file_item.name();
-            let lines = if file_item.kinds() == Kinds::Directory {
-                vec![
-                    Span::raw(dir_symbol),
-                    Span::raw(" "),
-                    Span::styled(dir_name, dir_style),
-                ]
-            } else {
-                vec![
-                    Span::raw(file_symbol),
-                    Span::raw(" "),
-                    Span::styled(dir_name, file_style),
-                ]
-            };
-            ListItem::new(Spans::from(lines))
-                .style(Style::default().fg(Color::Black).bg(Color::White))
-        })
-        .collect();
-
-    // Create a List from all list items and highlight the currently selected one
     let selecting_symbol = ">> ";
-    let items = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title("List"))
+    let current_dir_path = dir.directory.get_path().to_str().unwrap().to_string();
+
+    let file_style = Style::default().fg(Color::Black);
+    let dir_style = Style::default().fg(Color::Blue);
+    let selecting_style = Style::default().fg(Color::Cyan);
+    let header_style = Style::default().fg(Color::Blue);
+    let header_modifier = Modifier::BOLD;
+
+    // TODO: Display and hide the header and each element with bool
+    let header = ["", "name", "permission", "size", "date"]
+        .iter()
+        .map(|h| Cell::from(*h).style(header_style.add_modifier(header_modifier)));
+    let header = Row::new(header)
+        .style(file_style)
+        .height(1)
+        .bottom_margin(1);
+
+    let file_items_list = dir.file_items.iter().map(|file_item| {
+        let name = file_item.name();
+        let perm = if file_item.get_permission() {
+            "r"
+        } else {
+            "wr"
+        };
+        let size = file_item.get_file_size();
+        let date = file_item.get_created_date_and_time();
+        let lines = if file_item.kinds() == Kinds::Directory {
+            vec![
+                Span::raw(dir_symbol),
+                Span::styled(name, dir_style),
+                Span::raw(perm),
+                Span::raw(size),
+                Span::raw(date),
+            ]
+        } else {
+            vec![
+                Span::raw(file_symbol),
+                Span::styled(name, file_style),
+                Span::raw(perm),
+                Span::raw(size),
+                Span::raw(date),
+            ]
+        };
+        Row::new(lines)
+    });
+
+    let items = Table::new(file_items_list)
+        .header(header)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(current_dir_path),
+        )
         .highlight_style(
             Style::default()
-                .bg(Color::LightGreen)
+                .patch(selecting_style)
                 .add_modifier(Modifier::BOLD),
         )
-        .highlight_symbol(selecting_symbol);
+        .highlight_symbol(selecting_symbol)
+        .widths(&[
+            Constraint::Percentage(5),
+            Constraint::Percentage(30),
+            Constraint::Length(5),
+            Constraint::Percentage(30),
+            Constraint::Percentage(30),
+        ]);
 
-    f.render_stateful_widget(items, chunks[0], &mut app.state);
+    f.render_stateful_widget(items, chunks[1], &mut dir.state);
 }
