@@ -1,6 +1,6 @@
-use std::{fs::Metadata, path::PathBuf};
-
 use super::Kinds;
+use chrono::{DateTime, Utc};
+use std::{fs::Metadata, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct FileItem {
@@ -26,5 +26,50 @@ impl FileItem {
 
     pub fn kinds(&self) -> Kinds {
         self.kinds.clone()
+    }
+
+    pub fn get_file_size(&self) -> String {
+        let size = self.meta.len();
+        calc_item_size(size)
+    }
+
+    // true: write and read, false: only read
+    pub fn get_permission(&self) -> bool {
+        let perm = self.meta.permissions();
+        perm.readonly()
+    }
+
+    pub fn fortmatting_file_item(&mut self) -> Vec<String> {
+        vec![self.name()]
+    }
+
+    pub fn get_created_date_and_time(&self) -> String {
+        let time = self.meta.created();
+        if time.is_err() {
+            return "-".to_string();
+        }
+
+        let created_time: DateTime<Utc> = time.unwrap().into();
+        created_time.format("%F-%R").to_string()
+    }
+}
+
+const UNITS: [&str; 6] = ["B", "KB", "MB", "GB", "TB", "PB"];
+const DECIMAL_PLACE: f64 = 100.0;
+fn calc_item_size(size: u64) -> String {
+    if size < 1 {
+        return format!("{:>5}", "-");
+    }
+    let size = size as f64;
+    let i = size.log(1024.0).round();
+    let size = size / 1024.0f64.powf(i) * DECIMAL_PLACE;
+    return format!("{:>5} {}", size.round() / DECIMAL_PLACE, UNITS[i as usize]);
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn time_date() {
+        todo!();
     }
 }
