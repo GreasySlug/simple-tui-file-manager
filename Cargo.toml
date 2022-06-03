@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 crossterm = "0.23.2"
 tui = "0.18.0"
+chrono = "0.4"
