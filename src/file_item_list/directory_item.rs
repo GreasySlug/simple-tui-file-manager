@@ -13,4 +13,8 @@ impl Directory {
         let name = pathbuf_to_string_name(&path);
         Self { name, path }
     }
+
+    pub fn get_path(&self) -> PathBuf {
+        self.path.clone()
+    }
 }
