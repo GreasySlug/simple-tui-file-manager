@@ -39,6 +39,10 @@ impl FileItem {
         perm.readonly()
     }
 
+    pub fn fortmatting_file_item(&mut self) -> Vec<String> {
+        vec![self.name()]
+    }
+
     pub fn get_created_date_and_time(&self) -> String {
         let time = self.meta.created();
         if time.is_err() {
