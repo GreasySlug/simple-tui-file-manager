@@ -28,9 +28,9 @@ impl FileItem {
         self.kinds.clone()
     }
 
-    pub fn get_file_size(&self) -> String {
+    pub fn get_file_item_size(&self) -> String {
         let size = self.meta.len();
-        calc_item_size(size)
+        calc_file_item_size(size)
     }
 
     // true: write and read, false: only read
@@ -56,14 +56,14 @@ impl FileItem {
 
 const UNITS: [&str; 6] = ["B", "KB", "MB", "GB", "TB", "PB"];
 const DECIMAL_PLACE: f64 = 100.0;
-fn calc_item_size(size: u64) -> String {
-    if size < 1 {
+fn calc_file_item_size(byte: u64) -> String {
+    if byte < 1 {
         return format!("{:>5}", "-");
     }
-    let size = size as f64;
-    let i = size.log(1024.0).round();
-    let size = size / 1024.0f64.powf(i) * DECIMAL_PLACE;
-    return format!("{:>5} {}", size.round() / DECIMAL_PLACE, UNITS[i as usize]);
+    let byte = byte as f64;
+    let i = byte.log(1024.0).round();
+    let size = byte / 1024.0f64.powf(i) * DECIMAL_PLACE;
+    format!("{:>5}{}", size.round() / DECIMAL_PLACE, UNITS[i as usize])
 }
 
 #[cfg(test)]
