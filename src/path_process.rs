@@ -7,7 +7,7 @@ pub fn pathbuf_to_string_name(path: &Path) -> String {
     path.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-pub fn make_dirpath_info_files_vec(path: &Path) -> Vec<FileItem> {
+pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
     let mut files_item: Vec<FileItem> = Vec::new();
 
     if let Ok(dir) = path.read_dir() {
@@ -28,9 +28,21 @@ pub fn make_dirpath_info_files_vec(path: &Path) -> Vec<FileItem> {
     files_item
 }
 
+pub fn make_a_info_files_from_dirpath(path: &Path) -> FileItem {
+    let file_name = pathbuf_to_string_name(path);
+    let file_meta = path.metadata().expect("Failed to get metadata");
+    let file_kinds = if path.is_dir() {
+        Kinds::Directory
+    } else {
+        Kinds::File
+    };
+    let path = path.to_path_buf();
+    FileItem::new(file_name, path, file_meta, file_kinds)
+}
+
 pub fn get_current_dir_path() -> PathBuf {
     match current_dir() {
-        Ok(path) => return path,
+        Ok(path) => path,
         Err(e) => panic!("Permission denide: {}", e),
     }
 }
