@@ -8,15 +8,17 @@ pub struct FileItem {
     path: PathBuf,
     meta: Metadata,
     kinds: Kinds,
+    hidden: bool,
 }
 
 impl FileItem {
-    pub fn new(name: String, path: PathBuf, meta: Metadata, kinds: Kinds) -> Self {
+    pub fn new(name: String, path: PathBuf, meta: Metadata, kinds: Kinds, hidden: bool) -> Self {
         Self {
             name,
             path,
             meta,
             kinds,
+            hidden,
         }
     }
 
