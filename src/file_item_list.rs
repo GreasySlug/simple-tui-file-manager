@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::path_process::pathbuf_to_string_name;
 
@@ -12,7 +12,7 @@ pub enum Kinds {
 }
 
 impl Kinds {
-    fn classifiy_kinds(path: &std::path::Path) -> Self {
+    pub fn classifiy_kinds(path: &Path) -> Self {
         if path.is_dir() {
             Self::Directory
         } else {
@@ -20,7 +20,7 @@ impl Kinds {
         }
     }
 
-    fn is_hidden(path: &PathBuf) -> bool {
+    pub fn is_hidden(path: &Path) -> bool {
         let file_item_name = pathbuf_to_string_name(path);
         file_item_name.as_bytes()[0] == b'.'
     }
