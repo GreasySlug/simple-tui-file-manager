@@ -7,7 +7,7 @@ pub fn pathbuf_to_string_name(path: &Path) -> String {
     path.file_name().unwrap().to_str().unwrap().to_string()
 }
 
-pub fn make_dirpath_info_files_vec(path: &Path) -> Vec<FileItem> {
+pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
     let mut files_item: Vec<FileItem> = Vec::new();
 
     if let Ok(dir) = path.read_dir() {
@@ -16,21 +16,26 @@ pub fn make_dirpath_info_files_vec(path: &Path) -> Vec<FileItem> {
             let file_path = entry.path();
             let file_name = pathbuf_to_string_name(&file_path);
             let meta = entry.metadata().unwrap();
-            let kinds = if file_path.is_dir() {
-                Kinds::Directory
-            } else {
-                Kinds::File
-            };
-            files_item.push(FileItem::new(file_name, file_path, meta, kinds));
+            let kinds = Kinds::classifiy_kinds(path);
+            let hidden = Kinds::is_hidden(&path.to_path_buf());
+            files_item.push(FileItem::new(file_name, file_path, meta, kinds, hidden));
         }
     }
 
     files_item
 }
 
+pub fn make_a_info_files_from_dirpath(path: &Path) -> FileItem {
+    let name = pathbuf_to_string_name(path);
+    let meta = path.metadata().expect("Failed to get metadata");
+    let kinds = Kinds::classifiy_kinds(path);
+    let hidden = Kinds::is_hidden(&path.to_path_buf());
+    FileItem::new(name, path.to_path_buf(), meta, kinds, hidden)
+}
+
 pub fn get_current_dir_path() -> PathBuf {
     match current_dir() {
-        Ok(path) => return path,
+        Ok(path) => path,
         Err(e) => panic!("Permission denide: {}", e),
     }
 }
