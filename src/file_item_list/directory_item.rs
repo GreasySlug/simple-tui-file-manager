@@ -6,12 +6,17 @@ use crate::path_process::pathbuf_to_string_name;
 pub struct Directory {
     name: String,
     path: PathBuf,
+    parent: PathBuf,
 }
 
 impl Directory {
     pub fn new(path: PathBuf) -> Self {
         let name = pathbuf_to_string_name(&path);
-        Self { name, path }
+        let mut parent = path.clone();
+        if !parent.pop() {
+            parent = PathBuf::from("root");
+        }
+        Self { name, path, parent }
     }
 
     pub fn get_path(&self) -> PathBuf {
