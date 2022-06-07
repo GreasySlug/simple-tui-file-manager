@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::{env::current_dir, path::Path};
 
+use crate::file_item_list::file_item::Extension;
 use crate::file_item_list::{file_item::FileItem, Kinds};
 
 pub fn pathbuf_to_string_name(path: &Path) -> String {
@@ -17,20 +18,39 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
             let file_name = pathbuf_to_string_name(&file_path);
             let meta = entry.metadata().unwrap();
             let kinds = Kinds::classifiy_kinds(path);
-            let hidden = Kinds::is_hidden(&path.to_path_buf());
-            files_item.push(FileItem::new(file_name, file_path, meta, kinds, hidden));
+            let hidden = Kinds::is_hidden(path);
+            let extension = if kinds == Kinds::Directory || hidden {
+                None
+            } else {
+                Some(Extension::classify_extension(&file_path))
+            };
+            files_item.push(FileItem::new(
+                file_name, file_path, meta, kinds, hidden, extension,
+            ));
         }
     }
 
     files_item
 }
 
-pub fn make_a_info_files_from_dirpath(path: &Path) -> FileItem {
-    let name = pathbuf_to_string_name(path);
-    let meta = path.metadata().expect("Failed to get metadata");
-    let kinds = Kinds::classifiy_kinds(path);
-    let hidden = Kinds::is_hidden(&path.to_path_buf());
-    FileItem::new(name, path.to_path_buf(), meta, kinds, hidden)
+pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
+    let file_name = pathbuf_to_string_name(file_path);
+    let meta = file_path.metadata().expect("Failed to get metadata");
+    let kinds = Kinds::classifiy_kinds(file_path);
+    let hidden = Kinds::is_hidden(file_path);
+    let extension = if kinds == Kinds::Directory || hidden {
+        None
+    } else {
+        Some(Extension::classify_extension(file_path))
+    };
+    FileItem::new(
+        file_name,
+        file_path.to_path_buf(),
+        meta,
+        kinds,
+        hidden,
+        extension,
+    )
 }
 
 pub fn get_current_dir_path() -> PathBuf {

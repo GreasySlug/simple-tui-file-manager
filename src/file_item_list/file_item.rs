@@ -1,6 +1,55 @@
 use super::Kinds;
 use chrono::{DateTime, Utc};
-use std::{fs::Metadata, path::PathBuf};
+use std::{
+    fs::Metadata,
+    path::{Path, PathBuf},
+};
+
+#[derive(Debug, Clone)]
+pub enum Extension {
+    C,
+    CPlusPlus,
+    CSharp,
+    Go,
+    Java,
+    JavaScript,
+    Markdown,
+    Rust,
+    Ruby,
+    Python,
+    Perl,
+    Toml,
+    Unknwon,
+}
+
+impl Extension {
+    pub fn classify_extension(path: &Path) -> Self {
+        match path.extension() {
+            None => Self::Unknwon,
+            Some(extension) => {
+                let extension = extension.to_str();
+                match extension {
+                    Some("c") => Self::C,
+                    Some("cpp") => Self::CPlusPlus,
+                    Some("cs") => Self::CSharp,
+                    Some("go") => Self::Go,
+                    Some("java") => Self::Java,
+                    Some("js") => Self::JavaScript,
+                    Some("md") => Self::Markdown,
+                    Some("pl") => Self::Perl,
+                    Some("py") => Self::Python,
+                    Some("rb") => Self::Ruby,
+                    Some("rs") => Self::Rust,
+                    Some("toml") => Self::Toml,
+                    None => Self::Unknwon,
+                    _ => {
+                        panic!("Not implemented yet");
+                    }
+                }
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct FileItem {
@@ -9,16 +58,25 @@ pub struct FileItem {
     meta: Metadata,
     kinds: Kinds,
     hidden: bool,
+    extension: Option<Extension>,
 }
 
 impl FileItem {
-    pub fn new(name: String, path: PathBuf, meta: Metadata, kinds: Kinds, hidden: bool) -> Self {
+    pub fn new(
+        name: String,
+        path: PathBuf,
+        meta: Metadata,
+        kinds: Kinds,
+        hidden: bool,
+        extension: Option<Extension>,
+    ) -> Self {
         Self {
             name,
             path,
             meta,
             kinds,
             hidden,
+            extension,
         }
     }
 
@@ -39,10 +97,6 @@ impl FileItem {
     pub fn get_permission(&self) -> bool {
         let perm = self.meta.permissions();
         perm.readonly()
-    }
-
-    pub fn fortmatting_file_item(&mut self) -> Vec<String> {
-        vec![self.name()]
     }
 
     pub fn get_created_date_and_time(&self) -> String {

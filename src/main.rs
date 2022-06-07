@@ -113,40 +113,43 @@ impl App {
     }
 
     // The current directory should be selected, so that tab and hashmap must be existed.
-    pub fn get_selected_statefuldir(&mut self) -> &mut StatefulDirectory {
+    pub fn peek_selected_statefuldir(&mut self) -> &mut StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
         self.dir_map.get_mut(selected_tab).unwrap()
     }
 
-    pub fn get_tab_index(&self) -> usize {
+    pub fn get_dirtab_index(&self) -> usize {
         self.tab_index
     }
 
-    pub fn get_list_of_dir_tabs(&self) -> Vec<String> {
+    pub fn get_list_of_dirtab(&self) -> Vec<String> {
         self.directory_tabs.clone()
     }
 
     pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
         let dir_name = pathbuf_to_string_name(&dir_path);
         if let Entry::Vacant(item) = self.dir_map.entry(dir_name.clone()) {
-            let mut new_dir = StatefulDirectory::new(dir_path);
-            new_dir.sort_by_kinds();
-            item.insert(new_dir);
-            self.push_new_dir_name(dir_name);
+            let mut new_stateful_dir = StatefulDirectory::new(dir_path);
+            new_stateful_dir.sort_by_kinds();
+            if new_stateful_dir.is_selected() {
+                new_stateful_dir.select_top();
+            }
+            item.insert(new_stateful_dir);
+            self.push_new_dirname_to_dirtab(dir_name);
         }
     }
 
-    pub fn push_new_dir_name(&mut self, dir_name: String) {
+    pub fn push_new_dirname_to_dirtab(&mut self, dir_name: String) {
         if !self.directory_tabs.contains(&dir_name) {
             self.directory_tabs.push(dir_name)
         }
     }
 
-    pub fn next_tab(&mut self) {
+    pub fn next_dirtab(&mut self) {
         self.tab_index = (self.tab_index + 1) % self.directory_tabs.len();
     }
 
-    pub fn prev_tab(&mut self) {
+    pub fn prev_dirtab(&mut self) {
         if self.tab_index > 0 {
             self.tab_index -= 1;
         } else {
@@ -193,17 +196,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
-        let index = app.get_tab_index();
-        let tabs = app.get_list_of_dir_tabs();
-        let selected_dir = app.get_selected_statefuldir();
+        let index = app.get_dirtab_index();
+        let tabs = app.get_list_of_dirtab();
+        let selected_dir = app.peek_selected_statefuldir();
         terminal.draw(|f| ui(f, selected_dir, tabs, index))?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
                 KeyCode::Char('j') | KeyCode::Down => selected_dir.select_next(),
                 KeyCode::Char('k') | KeyCode::Up => selected_dir.select_previous(),
-                KeyCode::Tab => app.next_tab(),
-                KeyCode::BackTab => app.prev_tab(),
+                KeyCode::Tab => app.next_dirtab(),
+                KeyCode::BackTab => app.prev_dirtab(),
                 _ => {}
             }
         }
@@ -220,6 +223,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, dir: &mut StatefulDirectory, tabs: Vec<Strin
     let ayu_orange = Color::Rgb(255, 106, 0);
     let ayu_gray = Color::Rgb(217, 216, 216);
     let ayu_darkgray = Color::Rgb(92, 103, 115);
+
     let dir_symbol = "▸";
     let file_symbol = " ";
     let selecting_symbol = ">>";
@@ -227,6 +231,20 @@ fn ui<B: Backend>(f: &mut Frame<B>, dir: &mut StatefulDirectory, tabs: Vec<Strin
     let dir_style = Style::default().fg(ayu_cyan);
     let selecting_style = Style::default().fg(ayu_yellow);
     let header_style = Style::default().fg(ayu_perple).add_modifier(Modifier::BOLD);
+    let background_style = Style::default().bg(ayu_white).fg(ayu_darkgray);
+    let tab_style = Style::default().fg(ayu_cyan);
+    let tab_highlight_style = Style::default().fg(ayu_red).add_modifier(Modifier::BOLD);
+
+    let header_titles = ["", "name", "permission", "size", "date"]
+        .iter()
+        .map(|h| Cell::from(*h).style(header_style));
+    let header_constraints = [
+        Constraint::Length(2),
+        Constraint::Length(20),
+        Constraint::Length(5),
+        Constraint::Length(5),
+        Constraint::Length(10),
+    ];
 
     let size = f.size();
     let chunks = Layout::default()
@@ -235,31 +253,29 @@ fn ui<B: Backend>(f: &mut Frame<B>, dir: &mut StatefulDirectory, tabs: Vec<Strin
         .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
         .split(size);
 
-    let background_style = Block::default().style(Style::default().bg(ayu_white).fg(Color::Black));
-    f.render_widget(background_style, size);
+    let background_window = Block::default().style(background_style);
+    f.render_widget(background_window, size);
 
     let tab_titles = tabs
         .iter()
         .map(|t| {
             let (first, rest) = t.split_at(1);
             Spans::from(vec![
-                Span::styled(first, Style::default().fg(Color::Yellow)),
-                Span::styled(rest, Style::default().fg(Color::Green)),
+                Span::styled(first, Style::default().fg(ayu_yellow)),
+                Span::styled(rest, Style::default().fg(ayu_perple)),
             ])
         })
         .collect();
     let tabs = Tabs::new(tab_titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
         .select(index)
-        .style(Style::default().fg(Color::Cyan));
+        .highlight_style(tab_highlight_style)
+        .style(tab_style);
 
     f.render_widget(tabs, chunks[0]);
 
     // TODO: Display and hide the header and each element with bool
-    let header = ["", "name", "permission", "size", "date"]
-        .iter()
-        .map(|h| Cell::from(*h).style(header_style));
-    let header = Row::new(header)
+    let header_cells = Row::new(header_titles)
         .style(file_style)
         .height(1)
         .bottom_margin(1);
@@ -295,7 +311,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, dir: &mut StatefulDirectory, tabs: Vec<Strin
 
     let current_dir_path = dir.directory.get_path().to_str().unwrap().to_string();
     let items = Table::new(file_items_list)
-        .header(header)
+        .header(header_cells)
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -307,13 +323,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, dir: &mut StatefulDirectory, tabs: Vec<Strin
                 .add_modifier(Modifier::BOLD),
         )
         .highlight_symbol(selecting_symbol)
-        .widths(&[
-            Constraint::Length(5),
-            Constraint::Percentage(30),
-            Constraint::Length(5),
-            Constraint::Percentage(30),
-            Constraint::Percentage(30),
-        ]);
+        .widths(&header_constraints);
 
     f.render_stateful_widget(items, chunks[1], &mut dir.state);
 }
