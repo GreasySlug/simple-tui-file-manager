@@ -31,20 +31,24 @@ pub fn ui<B: Backend>(
     let file_style = Style::default().fg(ayu_darkgray);
     let dir_style = Style::default().fg(ayu_cyan);
     let selecting_style = Style::default().fg(ayu_yellow);
-    let header_style = Style::default().fg(ayu_perple).add_modifier(Modifier::BOLD);
+    let header_style = Style::default().fg(ayu_orange);
     let background_style = Style::default().bg(ayu_white).fg(ayu_darkgray);
-    let tab_style = Style::default().fg(ayu_cyan);
-    let tab_highlight_style = Style::default().fg(ayu_red).add_modifier(Modifier::BOLD);
+    let tab_style = Style::default().fg(ayu_darkgray);
+    let tab_highlight_style = Style::default()
+        .add_modifier(Modifier::BOLD)
+        .add_modifier(Modifier::ITALIC);
 
+    let current_dir_path = dir.directory.get_path().to_str().unwrap().to_string();
     let header_titles = ["", "name", "permission", "size", "date"]
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
+
     let header_constraints = [
-        Constraint::Length(2),
-        Constraint::Length(20),
-        Constraint::Length(5),
-        Constraint::Length(5),
-        Constraint::Length(10),
+        Constraint::Length(2),  // file item's icon
+        Constraint::Length(20), // file name
+        Constraint::Length(10), // permission
+        Constraint::Length(5),  // size
+        Constraint::Length(10), // date
     ];
 
     let size = f.size();
@@ -62,34 +66,31 @@ pub fn ui<B: Backend>(
             let (first, rest) = t.split_at(1);
             Spans::from(vec![
                 Span::styled(first, Style::default().fg(ayu_yellow)),
-                Span::styled(rest, Style::default().fg(ayu_perple)),
+                Span::styled(rest, Style::default().fg(ayu_darkgray)),
             ])
         })
         .collect();
     let tabs = Tabs::new(tab_titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
         .select(index)
-        .highlight_style(tab_highlight_style)
-        .style(tab_style);
+        .style(tab_style)
+        .highlight_style(tab_highlight_style);
 
     f.render_widget(tabs, chunks[0]);
 
     // TODO: Display and hide the header and each element with bool
-    let header_cells = Row::new(header_titles)
-        .style(file_style)
-        .height(1)
-        .bottom_margin(1);
+    let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
     let file_items_list = dir.file_items.iter().map(|file_item| {
         let name = file_item.name();
         let perm = if file_item.get_permission() {
-            "r"
+            format!("{:>4}", "r")
         } else {
-            "wr"
+            format!("{:>4}", "rx")
         };
         let size = file_item.get_file_item_size();
         let date = file_item.get_created_date_and_time();
-        let lines = if file_item.kinds() == Kinds::Directory {
+        let lines = if file_item.kinds() == Kinds::Directory(true) {
             vec![
                 Span::raw(dir_symbol),
                 Span::styled(name, dir_style),
@@ -109,7 +110,6 @@ pub fn ui<B: Backend>(
         Row::new(lines)
     });
 
-    let current_dir_path = dir.directory.get_path().to_str().unwrap().to_string();
     let items = Table::new(file_items_list)
         .header(header_cells)
         .block(
@@ -117,11 +117,7 @@ pub fn ui<B: Backend>(
                 .borders(Borders::ALL)
                 .title(current_dir_path),
         )
-        .highlight_style(
-            Style::default()
-                .patch(selecting_style)
-                .add_modifier(Modifier::BOLD),
-        )
+        .highlight_style(selecting_style)
         .highlight_symbol(selecting_symbol)
         .widths(&header_constraints);
 
