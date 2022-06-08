@@ -9,25 +9,31 @@ pub fn pathbuf_to_string_name(path: &Path) -> String {
 }
 
 pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
-    let mut file_items_vec: Vec<FileItem> = Vec::new();
+    let mut files_item: Vec<FileItem> = Vec::new();
 
     if let Ok(dir) = path.read_dir() {
         for entry in dir {
             let entry = entry.unwrap();
             let file_path = entry.path();
-            let file_item = make_a_info_files_from_dirpath(&file_path);
-
-            if let Some(item) = file_item {
-                file_items_vec.push(item);
-            }
+            let file_name = pathbuf_to_string_name(&file_path);
+            let meta = entry.metadata().unwrap();
+            let kinds = Kinds::classifiy_kinds(path);
+            let hidden = Kinds::is_hidden(path);
+            let extension = if kinds == Kinds::Directory(true) || hidden {
+                None
+            } else {
+                Some(Extension::classify_extension(&file_path))
+            };
+            files_item.push(FileItem::new(file_name, file_path, meta, kinds, extension));
         }
     }
-    file_items_vec
+
+    files_item
 }
 
-pub fn make_a_info_files_from_dirpath(file_path: &Path) -> Option<FileItem> {
+pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
     let file_name = pathbuf_to_string_name(file_path);
-    let meta = file_path.metadata();
+    let meta = file_path.metadata().expect("Failed to get metadata");
     let kinds = Kinds::classifiy_kinds(file_path);
     let hidden = Kinds::is_hidden(file_path);
     let extension = if kinds == Kinds::Directory(true) || hidden {
@@ -35,16 +41,7 @@ pub fn make_a_info_files_from_dirpath(file_path: &Path) -> Option<FileItem> {
     } else {
         Some(Extension::classify_extension(file_path))
     };
-    if let Ok(meta) = meta {
-        return Some(FileItem::new(
-            file_name,
-            file_path.to_path_buf(),
-            meta,
-            kinds,
-            extension,
-        ));
-    }
-    None
+    FileItem::new(file_name, file_path.to_path_buf(), meta, kinds, extension)
 }
 
 pub fn get_current_dir_path() -> PathBuf {
