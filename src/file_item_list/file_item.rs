@@ -41,10 +41,7 @@ impl Extension {
                     Some("rb") => Self::Ruby,
                     Some("rs") => Self::Rust,
                     Some("toml") => Self::Toml,
-                    None => Self::Unknwon,
-                    _ => {
-                        panic!("Not implemented yet");
-                    }
+                    _ => Self::Unknwon,
                 }
             }
         }
