@@ -19,14 +19,12 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
             let meta = entry.metadata().unwrap();
             let kinds = Kinds::classifiy_kinds(path);
             let hidden = Kinds::is_hidden(path);
-            let extension = if kinds == Kinds::Directory || hidden {
+            let extension = if kinds == Kinds::Directory(true) || hidden {
                 None
             } else {
                 Some(Extension::classify_extension(&file_path))
             };
-            files_item.push(FileItem::new(
-                file_name, file_path, meta, kinds, hidden, extension,
-            ));
+            files_item.push(FileItem::new(file_name, file_path, meta, kinds, extension));
         }
     }
 
@@ -38,19 +36,12 @@ pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
     let meta = file_path.metadata().expect("Failed to get metadata");
     let kinds = Kinds::classifiy_kinds(file_path);
     let hidden = Kinds::is_hidden(file_path);
-    let extension = if kinds == Kinds::Directory || hidden {
+    let extension = if kinds == Kinds::Directory(true) || hidden {
         None
     } else {
         Some(Extension::classify_extension(file_path))
     };
-    FileItem::new(
-        file_name,
-        file_path.to_path_buf(),
-        meta,
-        kinds,
-        hidden,
-        extension,
-    )
+    FileItem::new(file_name, file_path.to_path_buf(), meta, kinds, extension)
 }
 
 pub fn get_current_dir_path() -> PathBuf {

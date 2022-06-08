@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Extension {
     C,
     CPlusPlus,
@@ -41,10 +41,7 @@ impl Extension {
                     Some("rb") => Self::Ruby,
                     Some("rs") => Self::Rust,
                     Some("toml") => Self::Toml,
-                    None => Self::Unknwon,
-                    _ => {
-                        panic!("Not implemented yet");
-                    }
+                    _ => Self::Unknwon,
                 }
             }
         }
@@ -57,7 +54,6 @@ pub struct FileItem {
     path: PathBuf,
     meta: Metadata,
     kinds: Kinds,
-    hidden: bool,
     extension: Option<Extension>,
 }
 
@@ -67,7 +63,6 @@ impl FileItem {
         path: PathBuf,
         meta: Metadata,
         kinds: Kinds,
-        hidden: bool,
         extension: Option<Extension>,
     ) -> Self {
         Self {
@@ -75,7 +70,6 @@ impl FileItem {
             path,
             meta,
             kinds,
-            hidden,
             extension,
         }
     }
@@ -124,8 +118,31 @@ fn calc_file_item_size(byte: u64) -> String {
 
 #[cfg(test)]
 mod test {
+    use std::path::Path;
+
+    use super::Extension;
+
     #[test]
-    fn time_date() {
-        todo!();
+    fn test_type_extension() {
+        let files = [
+            ("sample.py", Extension::Python),
+            ("sample.rb", Extension::Ruby),
+            ("sample.c", Extension::C),
+            ("sample.cs", Extension::CSharp),
+            ("sample.cpp", Extension::CPlusPlus),
+            ("sample.go", Extension::Go),
+            ("sample.java", Extension::Java),
+            ("sample.js", Extension::JavaScript),
+            ("sample.md", Extension::Markdown),
+            ("sample.pl", Extension::Perl),
+            ("sample.rs", Extension::Rust),
+            ("sample.toml", Extension::Toml),
+            ("aaa", Extension::Unknwon),
+        ];
+        for (filename, types) in files.iter() {
+            let path = Path::new(filename);
+            let path_ex = Extension::classify_extension(path);
+            assert_eq!(path_ex, *types);
+        }
     }
 }
