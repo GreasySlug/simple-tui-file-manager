@@ -2,7 +2,8 @@ use std::path::PathBuf;
 use std::{env::current_dir, path::Path};
 
 use crate::file_item_list::file_item::Extension;
-use crate::file_item_list::{file_item::FileItem, Kinds};
+use crate::file_item_list::file_item::FileItem;
+use crate::file_item_list::Kinds;
 
 pub fn pathbuf_to_string_name(path: &Path) -> String {
     path.file_name().unwrap().to_str().unwrap().to_string()
