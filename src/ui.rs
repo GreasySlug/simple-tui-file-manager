@@ -38,7 +38,7 @@ pub fn ui<B: Backend>(
         .add_modifier(Modifier::BOLD)
         .add_modifier(Modifier::ITALIC);
 
-    let current_dir_path = dir.directory.get_path().to_str().unwrap().to_string();
+    let current_dir_path = dir.take_crr_dir_name();
     let header_titles = ["", "name", "permission", "size", "date"]
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
@@ -65,7 +65,7 @@ pub fn ui<B: Backend>(
         .map(|t| {
             let (first, rest) = t.split_at(1);
             Spans::from(vec![
-                Span::styled(first, Style::default().fg(ayu_yellow)),
+                Span::styled(first, Style::default().fg(ayu_orange)),
                 Span::styled(rest, Style::default().fg(ayu_darkgray)),
             ])
         })
@@ -81,7 +81,8 @@ pub fn ui<B: Backend>(
     // TODO: Display and hide the header and each element with bool
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
-    let file_items_list = dir.file_items.iter().map(|file_item| {
+    let file_item_iter = dir.take_file_items();
+    let file_items_list = file_item_iter.iter().map(|file_item| {
         let name = file_item.name();
         let perm = if file_item.get_permission() {
             format!("{:>4}", "r")
@@ -121,5 +122,5 @@ pub fn ui<B: Backend>(
         .highlight_symbol(selecting_symbol)
         .widths(&header_constraints);
 
-    f.render_stateful_widget(items, chunks[1], &mut dir.state);
+    f.render_stateful_widget(items, chunks[1], &mut dir.take_state_dir());
 }

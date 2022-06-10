@@ -3,11 +3,11 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use file_item_list::{directory_item::Directory, file_item::FileItem};
 use path_process::{
     get_current_dir_path, get_home_directory_path, make_info_files_from_dirpath,
     pathbuf_to_string_name,
 };
+use state::StatefulDirectory;
 use std::{
     collections::{hash_map::Entry, HashMap},
     error::Error,
@@ -16,84 +16,14 @@ use std::{
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
-    widgets::TableState,
     Terminal,
 };
 use ui::ui;
 
 mod file_item_list;
 mod path_process;
+mod state;
 mod ui;
-
-#[derive(Debug, Clone)]
-pub struct StatefulDirectory {
-    directory: Directory,
-    file_items: Vec<FileItem>,
-    length: usize,
-    state: TableState,
-}
-
-impl StatefulDirectory {
-    fn new(dir_path: PathBuf) -> StatefulDirectory {
-        let file_item = make_info_files_from_dirpath(&dir_path);
-        StatefulDirectory {
-            directory: Directory::new(dir_path),
-            length: file_item.len(),
-            file_items: file_item,
-            state: TableState::default(),
-        }
-    }
-
-    fn select_top(&mut self) {
-        if self.length < 1 {
-            return;
-        }
-        self.state.select(Some(0));
-    }
-
-    fn select_next(&mut self) {
-        if self.length < 1 {
-            return;
-        }
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.file_items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    fn select_previous(&mut self) {
-        if self.length < 1 {
-            return;
-        }
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.file_items.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    fn is_selected(&self) -> bool {
-        self.state.selected().is_some()
-    }
-
-    fn sort_by_kinds(&mut self) {
-        self.file_items
-            .sort_by(|a, b| b.kinds().partial_cmp(&a.kinds()).unwrap());
-    }
-}
 
 #[derive(Debug)]
 struct App {
