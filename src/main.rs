@@ -18,7 +18,7 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-use ui::ui as main_ui;
+use ui::ui;
 
 mod file_item_list;
 mod path_process;
@@ -128,7 +128,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         let index = app.get_dirtab_index();
         let tabs = app.get_list_of_dirtab();
         let selected_dir = app.peek_selected_statefuldir();
-        terminal.draw(|f| main_ui(f, selected_dir, tabs, index))?;
+        terminal.draw(|f| ui(f, selected_dir, tabs, index))?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
