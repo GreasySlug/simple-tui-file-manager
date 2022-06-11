@@ -4,7 +4,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use path_process::{get_current_dir_path, get_home_directory_path};
+use path_process::{get_current_dir_path, get_home_directory_path, pathbuf_to_string_name};
 use state::StatefulDirectory;
 use std::{error::Error, io};
 use tui::{
@@ -28,12 +28,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut terminal = Terminal::new(backend)?;
 
     let crr_dir_path = get_current_dir_path();
+    let dir_name = pathbuf_to_string_name(&crr_dir_path);
     let mut app = App::new();
     app.insert_new_statefuldir(crr_dir_path);
+    app.push_new_dirname_to_dirtab(dir_name);
 
     let home_dir_path = get_home_directory_path();
     if let Some(path) = home_dir_path {
+        let dir_name = pathbuf_to_string_name(&path);
         app.insert_new_statefuldir(path);
+        app.push_new_dirname_to_dirtab(dir_name);
     }
 
     let res = run_app(&mut terminal, app);

@@ -1,6 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::path::PathBuf;
 
+use crate::file_item_list::{directory_item, Kinds};
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
 
@@ -36,14 +37,16 @@ impl App {
 
     pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
         let dir_name = pathbuf_to_string_name(&dir_path);
-        if let Entry::Vacant(item) = self.dir_map.entry(dir_name.clone()) {
+        if let Entry::Vacant(item) = self.dir_map.entry(dir_name) {
             let mut new_stateful_dir = StatefulDirectory::new(dir_path);
+
             new_stateful_dir.sort_by_kinds();
-            if new_stateful_dir.is_selected() {
+
+            if !new_stateful_dir.is_selected() {
                 new_stateful_dir.select_top();
             }
             item.insert(new_stateful_dir);
-            self.push_new_dirname_to_dirtab(dir_name);
+            // self.push_new_dirname_to_dirtab(dir_name);
         }
     }
 
@@ -65,7 +68,22 @@ impl App {
         }
     }
 
-    pub fn move_to_child_dir(&mut self) {}
+    pub fn move_to_child_dir(&mut self) {
+        let select_dir = self.peek_selected_statefuldir();
+        if let Some(file_item) = select_dir.selecting_file_item() {
+            match Kinds::classifiy_kinds(file_item.path(), file_item.meta()) {
+                Kinds::Directory(_) => {
+                    let dir_name = pathbuf_to_string_name(file_item.path());
+                    let new_dir_path = file_item.path().to_path_buf();
+                    self.insert_new_statefuldir(new_dir_path);
+                    let i = self.tab_index;
+                    let name = self.directory_tabs.get_mut(i);
+                    *name.unwrap() = dir_name;
+                }
+                Kinds::File(_) => {}
+            }
+        }
+    }
 
     pub fn move_to_parent_dir(&mut self) {}
 }
