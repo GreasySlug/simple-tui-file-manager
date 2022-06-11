@@ -18,7 +18,7 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
             let file_path = entry.path();
             let file_name = pathbuf_to_string_name(&file_path);
             let meta = entry.metadata().unwrap();
-            let kinds = Kinds::classifiy_kinds(path);
+            let kinds = Kinds::classifiy_kinds(path, &meta);
             let hidden = Kinds::is_hidden(path);
             let extension = if kinds == Kinds::Directory(true) || hidden {
                 None
@@ -35,7 +35,7 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
 pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
     let file_name = pathbuf_to_string_name(file_path);
     let meta = file_path.metadata().expect("Failed to get metadata");
-    let kinds = Kinds::classifiy_kinds(file_path);
+    let kinds = Kinds::classifiy_kinds(file_path, &meta);
     let hidden = Kinds::is_hidden(file_path);
     let extension = if kinds == Kinds::Directory(true) || hidden {
         None

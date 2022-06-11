@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::{fs::Metadata, path::Path};
 
 use crate::path_process::pathbuf_to_string_name;
 
@@ -7,16 +7,16 @@ pub mod file_item;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Kinds {
-    File = 1,
-    Directory = 2,
+    File(bool),
+    Directory(bool),
 }
 
 impl Kinds {
-    pub fn classifiy_kinds(path: &Path) -> Self {
-        if path.is_dir() {
-            Self::Directory
+    pub fn classifiy_kinds(path: &Path, meta: &Metadata) -> Self {
+        if path.is_file() || meta.is_file() {
+            Self::File(Self::is_hidden(path))
         } else {
-            Self::File
+            Self::Directory(Self::is_hidden(path))
         }
     }
 
