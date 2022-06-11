@@ -29,8 +29,8 @@ pub fn ui<B: Backend>(
     let file_symbol = " ";
     let selecting_symbol = ">>";
     let file_style = Style::default().fg(ayu_darkgray);
-    let dir_style = Style::default().fg(ayu_cyan);
-    let selecting_style = Style::default().fg(ayu_yellow);
+    let dir_style = Style::default().fg(ayu_perple);
+    let selecting_style = Style::default().fg(ayu_cyan);
     let header_style = Style::default().fg(ayu_orange);
     let background_style = Style::default().bg(ayu_white).fg(ayu_darkgray);
     let tab_style = Style::default().fg(ayu_darkgray);
@@ -91,7 +91,10 @@ pub fn ui<B: Backend>(
         };
         let size = file_item.get_file_item_size();
         let date = file_item.get_created_date_and_time();
-        let lines = if file_item.kinds() == Kinds::Directory(true) {
+
+        let lines = if file_item.kinds() == Kinds::Directory(true)
+            || file_item.kinds() == Kinds::Directory(false)
+        {
             vec![
                 Span::raw(dir_symbol),
                 Span::styled(name, dir_style),
