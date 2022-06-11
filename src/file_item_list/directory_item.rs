@@ -19,7 +19,11 @@ impl Directory {
         Self { name, path, parent }
     }
 
-    pub fn get_path(&self) -> PathBuf {
-        self.path.clone()
+    pub fn pathbuf(&self) -> &PathBuf {
+        &self.path
+    }
+
+    pub fn parent(&self) -> &PathBuf {
+        &self.parent
     }
 }
