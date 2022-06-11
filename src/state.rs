@@ -15,26 +15,38 @@ pub struct StatefulDirectory {
 
 impl StatefulDirectory {
     pub fn new(dir_path: PathBuf) -> StatefulDirectory {
-        let file_item = make_info_files_from_dirpath(&dir_path);
+        let file_items = make_info_files_from_dirpath(&dir_path);
         StatefulDirectory {
             directory: Directory::new(dir_path),
-            length: file_item.len(),
-            file_items: file_item,
             state: TableState::default(),
+            length: file_items.len(),
+            file_items,
         }
     }
 
-    pub fn take_crr_dir_name(&self) -> String {
-        let path = self.directory.get_path();
-        pathbuf_to_string_name(&path)
+    pub fn crr_dir_parent_path(&self) -> &PathBuf {
+        self.directory.parent()
     }
 
-    pub fn take_file_items(&self) -> Vec<FileItem> {
+    pub fn crr_dir_name(&self) -> String {
+        let path = self.directory.pathbuf();
+        pathbuf_to_string_name(path)
+    }
+
+    pub fn file_items_vec(&self) -> Vec<FileItem> {
         self.file_items.clone()
     }
 
-    pub fn take_state_dir(&self) -> TableState {
+    pub fn state_table(&self) -> TableState {
         self.state.clone()
+    }
+
+    pub fn selecting_file_item(&self) -> Option<&FileItem> {
+        if let Some(i) = self.state.selected() {
+            self.file_items.get(i)
+        } else {
+            None
+        }
     }
 
     pub fn select_top(&mut self) {
