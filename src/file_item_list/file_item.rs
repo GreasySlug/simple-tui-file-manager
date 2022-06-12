@@ -74,6 +74,14 @@ impl FileItem {
         }
     }
 
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    pub fn meta(&self) -> &Metadata {
+        &self.meta
+    }
+
     pub fn name(&self) -> String {
         self.name.clone()
     }

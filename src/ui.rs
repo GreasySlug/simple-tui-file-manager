@@ -38,7 +38,7 @@ pub fn ui<B: Backend>(
         .add_modifier(Modifier::BOLD)
         .add_modifier(Modifier::ITALIC);
 
-    let current_dir_path = dir.take_crr_dir_name();
+    let current_dir_path = dir.crr_dir_name();
     let header_titles = ["", "name", "permission", "size", "date"]
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
@@ -81,7 +81,7 @@ pub fn ui<B: Backend>(
     // TODO: Display and hide the header and each element with bool
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
-    let file_item_iter = dir.take_file_items();
+    let file_item_iter = dir.file_items_vec();
     let file_items_list = file_item_iter.iter().map(|file_item| {
         let name = file_item.name();
         let perm = if file_item.get_permission() {
@@ -125,5 +125,5 @@ pub fn ui<B: Backend>(
         .highlight_symbol(selecting_symbol)
         .widths(&header_constraints);
 
-    f.render_stateful_widget(items, chunks[1], &mut dir.take_state_dir());
+    f.render_stateful_widget(items, chunks[1], &mut dir.state_table());
 }
