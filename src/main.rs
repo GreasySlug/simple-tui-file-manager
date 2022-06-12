@@ -15,6 +15,7 @@ use tui::{
 mod application;
 mod file_item_list;
 mod input_ui;
+mod keymapping;
 mod path_process;
 mod state;
 mod ui;

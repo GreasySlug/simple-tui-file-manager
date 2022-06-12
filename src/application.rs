@@ -7,6 +7,7 @@ use tui::backend::Backend;
 use tui::Terminal;
 
 use crate::file_item_list::Kinds;
+use crate::keymapping::main_keybindings;
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
 use crate::ui::ui;
@@ -134,15 +135,8 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
         let selected_dir = app.peek_selected_statefuldir();
         terminal.draw(|f| ui(f, selected_dir, tabs, index, commands_history, mode))?;
         if let Event::Key(key) = event::read()? {
-            match (mode, key.code) {
-                (Mode::Normal, KeyCode::Char('q')) => return Ok(()),
-                (Mode::Normal, KeyCode::Char('j') | KeyCode::Down) => selected_dir.select_next(),
-                (Mode::Normal, KeyCode::Char('k') | KeyCode::Up) => selected_dir.select_previous(),
-                (Mode::Normal, KeyCode::Char('h') | KeyCode::Left) => app.move_to_parent_dir(),
-                (Mode::Normal, KeyCode::Char('l') | KeyCode::Right) => app.move_to_child_dir(),
-                (Mode::Normal, KeyCode::Tab) => app.next_dirtab(),
-                (Mode::Normal, KeyCode::BackTab) => app.prev_dirtab(),
-                (_, _) => {}
+            if main_keybindings(key, mode, &mut app) {
+                return Ok(());
             }
             app.push_command_log(&key.code);
         }
