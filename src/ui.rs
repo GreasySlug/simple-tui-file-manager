@@ -1,9 +1,9 @@
 use tui::{
     backend::Backend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, Cell, Row, Table, Tabs},
+    widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Tabs},
     Frame,
 };
 
@@ -14,6 +14,7 @@ pub fn ui<B: Backend>(
     dir: &mut StatefulDirectory,
     tabs: Vec<String>,
     index: usize,
+    command_hist: Vec<String>,
 ) {
     // TODO: use config file
     let ayu_white = Color::Rgb(250, 250, 250);
@@ -47,14 +48,20 @@ pub fn ui<B: Backend>(
         Constraint::Length(2),  // file item's icon
         Constraint::Length(20), // file name
         Constraint::Length(10), // permission
-        Constraint::Length(5),  // size
+        Constraint::Length(10), // size
         Constraint::Length(10), // date
     ];
 
+    let main_windows_constrains = [
+        Constraint::Length(3), // tab
+        Constraint::Min(0),    // directory
+        Constraint::Length(3), // command
+    ]
+    .as_ref();
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
+        .constraints(main_windows_constrains)
         .split(size);
 
     let background_window = Block::default().style(background_style);
@@ -126,4 +133,26 @@ pub fn ui<B: Backend>(
         .widths(&header_constraints);
 
     f.render_stateful_widget(items, chunks[1], &mut dir.state_table());
+
+    command_display_ui(f, command_hist, chunks[2]);
+}
+
+fn command_display_ui<B: Backend>(f: &mut Frame<B>, command_hist: Vec<String>, rect: Rect) {
+    if command_hist.is_empty() {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Double);
+        f.render_widget(block, rect);
+        return;
+    }
+    let i = command_hist.len() - 1;
+    let last_command: Option<&String> = command_hist.get(i);
+    if let Some(cmd) = last_command {
+        let para = Paragraph::new(cmd.clone()).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Double),
+        );
+        f.render_widget(para, rect);
+    }
 }

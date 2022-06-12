@@ -1,15 +1,22 @@
 use std::collections::{hash_map::Entry, HashMap};
+use std::io;
 use std::path::PathBuf;
 
-use crate::file_item_list::{directory_item, Kinds};
+use crossterm::event::{self, Event, KeyCode};
+use tui::backend::Backend;
+use tui::Terminal;
+
+use crate::file_item_list::Kinds;
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
+use crate::ui::ui;
 
 #[derive(Debug)]
 pub struct App {
     directory_tabs: Vec<String>,
     tab_index: usize,
     dir_map: HashMap<String, StatefulDirectory>,
+    command_history: Vec<String>,
 }
 
 impl App {
@@ -18,10 +25,11 @@ impl App {
             directory_tabs: Vec::new(),
             tab_index: 0,
             dir_map: HashMap::new(),
+            command_history: Vec::new(),
         }
     }
 
-    // The current directory should be selected, so that tab and hashmap must be existed.
+    // The current directory should be selected, so that tab and hashmap must existe.
     pub fn peek_selected_statefuldir(&mut self) -> &mut StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
         self.dir_map.get_mut(selected_tab).unwrap()
@@ -68,6 +76,19 @@ impl App {
         }
     }
 
+    pub fn push_command_log(&mut self, command: &KeyCode) {
+        let cmm = format!("{:?}", command);
+        self.command_history.push(cmm)
+    }
+
+    pub fn pop_command_log(&mut self) -> Option<String> {
+        self.command_history.pop()
+    }
+
+    pub fn command_history(&self) -> Vec<String> {
+        self.command_history.clone()
+    }
+
     pub fn move_to_child_dir(&mut self) {
         let select_dir = self.peek_selected_statefuldir();
         if let Some(file_item) = select_dir.selecting_file_item() {
@@ -85,5 +106,36 @@ impl App {
         }
     }
 
-    pub fn move_to_parent_dir(&mut self) {}
+    pub fn move_to_parent_dir(&mut self) {
+        let selected_dir = self.peek_selected_statefuldir();
+        let crr_dir_parent_path = selected_dir.crr_dir_parent_path().clone();
+        let crr_dir_name = selected_dir.crr_dir_name();
+        self.insert_new_statefuldir(crr_dir_parent_path);
+        let i = self.tab_index;
+        let name = self.directory_tabs.get_mut(i).unwrap();
+        *name = crr_dir_name;
+    }
+}
+
+pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+    loop {
+        let index = app.get_dirtab_index();
+        let tabs = app.get_list_of_dirtab();
+        let commands_history = app.command_history();
+        let selected_dir = app.peek_selected_statefuldir();
+        terminal.draw(|f| ui(f, selected_dir, tabs, index, commands_history))?;
+        if let Event::Key(key) = event::read()? {
+            match key.code {
+                KeyCode::Char('q') => return Ok(()),
+                KeyCode::Char('j') | KeyCode::Down => selected_dir.select_next(),
+                KeyCode::Char('k') | KeyCode::Up => selected_dir.select_previous(),
+                KeyCode::Char('h') | KeyCode::Left => app.move_to_parent_dir(),
+                KeyCode::Char('l') | KeyCode::Right => app.move_to_child_dir(),
+                KeyCode::Tab => app.next_dirtab(),
+                KeyCode::BackTab => app.prev_dirtab(),
+                _ => {}
+            }
+            app.push_command_log(&key.code);
+        }
+    }
 }
