@@ -121,7 +121,7 @@ fn calc_file_item_size(byte: u64) -> String {
     let byte = byte as f64;
     let i = byte.log(1024.0).round();
     let size = byte / 1024.0f64.powf(i) * DECIMAL_PLACE;
-    format!("{:>5}{}", size.round() / DECIMAL_PLACE, UNITS[i as usize])
+    format!("{:>5} {}", size.round() / DECIMAL_PLACE, UNITS[i as usize])
 }
 
 #[cfg(test)]

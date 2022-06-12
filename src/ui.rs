@@ -138,21 +138,17 @@ pub fn ui<B: Backend>(
 }
 
 fn command_display_ui<B: Backend>(f: &mut Frame<B>, command_hist: Vec<String>, rect: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Double);
     if command_hist.is_empty() {
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Double);
         f.render_widget(block, rect);
         return;
     }
     let i = command_hist.len() - 1;
     let last_command: Option<&String> = command_hist.get(i);
     if let Some(cmd) = last_command {
-        let para = Paragraph::new(cmd.clone()).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Double),
-        );
+        let para = Paragraph::new(cmd.clone()).block(block);
         f.render_widget(para, rect);
     }
 }
