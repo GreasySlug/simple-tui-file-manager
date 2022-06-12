@@ -16,6 +16,7 @@ pub struct App {
     directory_tabs: Vec<String>,
     tab_index: usize,
     dir_map: HashMap<String, StatefulDirectory>,
+    command_history: Vec<String>,
 }
 
 impl App {
@@ -24,6 +25,7 @@ impl App {
             directory_tabs: Vec::new(),
             tab_index: 0,
             dir_map: HashMap::new(),
+            command_history: Vec::new(),
         }
     }
 
@@ -74,6 +76,19 @@ impl App {
         }
     }
 
+    pub fn push_command_log(&mut self, command: &KeyCode) {
+        let cmm = format!("{:?}", command);
+        self.command_history.push(cmm)
+    }
+
+    pub fn pop_command_log(&mut self) -> Option<String> {
+        self.command_history.pop()
+    }
+
+    pub fn command_history(&self) -> Vec<String> {
+        self.command_history.clone()
+    }
+
     pub fn move_to_child_dir(&mut self) {
         let select_dir = self.peek_selected_statefuldir();
         if let Some(file_item) = select_dir.selecting_file_item() {
@@ -106,8 +121,9 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     loop {
         let index = app.get_dirtab_index();
         let tabs = app.get_list_of_dirtab();
+        let commands_history = app.command_history();
         let selected_dir = app.peek_selected_statefuldir();
-        terminal.draw(|f| ui(f, selected_dir, tabs, index))?;
+        terminal.draw(|f| ui(f, selected_dir, tabs, index, commands_history))?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
@@ -119,6 +135,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                 KeyCode::BackTab => app.prev_dirtab(),
                 _ => {}
             }
+            app.push_command_log(&key.code);
         }
     }
 }
