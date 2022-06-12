@@ -7,7 +7,7 @@ use tui::{
     Frame,
 };
 
-use crate::{file_item_list::Kinds, StatefulDirectory};
+use crate::{application::Mode, file_item_list::Kinds, input_ui::input_ui, StatefulDirectory};
 
 pub fn ui<B: Backend>(
     f: &mut Frame<B>,
@@ -15,6 +15,7 @@ pub fn ui<B: Backend>(
     tabs: Vec<String>,
     index: usize,
     command_hist: Vec<String>,
+    mode: Mode,
 ) {
     // TODO: use config file
     let ayu_white = Color::Rgb(250, 250, 250);
@@ -67,23 +68,31 @@ pub fn ui<B: Backend>(
     let background_window = Block::default().style(background_style);
     f.render_widget(background_window, size);
 
-    let tab_titles = tabs
-        .iter()
-        .map(|t| {
-            let (first, rest) = t.split_at(1);
-            Spans::from(vec![
-                Span::styled(first, Style::default().fg(ayu_orange)),
-                Span::styled(rest, Style::default().fg(ayu_darkgray)),
-            ])
-        })
-        .collect();
-    let tabs = Tabs::new(tab_titles)
-        .block(Block::default().borders(Borders::ALL).title("Tabs"))
-        .select(index)
-        .style(tab_style)
-        .highlight_style(tab_highlight_style);
+    match mode {
+        Mode::Normal => {
+            let tab_titles = tabs
+                .iter()
+                .map(|t| {
+                    let (first, rest) = t.split_at(1);
+                    Spans::from(vec![
+                        Span::styled(first, Style::default().fg(ayu_orange)),
+                        Span::styled(rest, Style::default().fg(ayu_darkgray)),
+                    ])
+                })
+                .collect();
+            let tabs = Tabs::new(tab_titles)
+                .block(Block::default().borders(Borders::ALL).title("Tabs"))
+                .select(index)
+                .style(tab_style)
+                .highlight_style(tab_highlight_style);
 
-    f.render_widget(tabs, chunks[0]);
+            f.render_widget(tabs, chunks[0]);
+        }
+        Mode::Input => {
+            input_ui(f, chunks[0]).unwrap();
+        }
+        Mode::Stacker => todo!(),
+    }
 
     // TODO: Display and hide the header and each element with bool
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);

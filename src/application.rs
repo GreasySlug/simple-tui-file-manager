@@ -11,12 +11,20 @@ use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
 use crate::ui::ui;
 
+#[derive(Debug, Clone, Copy)]
+enum Mode {
+    Normal,
+    Input,
+    Stacker,
+}
+
 #[derive(Debug)]
 pub struct App {
     directory_tabs: Vec<String>,
     tab_index: usize,
     dir_map: HashMap<String, StatefulDirectory>,
     command_history: Vec<String>,
+    mode: Mode,
 }
 
 impl App {
@@ -26,6 +34,7 @@ impl App {
             tab_index: 0,
             dir_map: HashMap::new(),
             command_history: Vec::new(),
+            mode: Mode::Normal,
         }
     }
 
@@ -118,21 +127,22 @@ impl App {
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
+        let mode = app.mode;
         let index = app.get_dirtab_index();
         let tabs = app.get_list_of_dirtab();
         let commands_history = app.command_history();
         let selected_dir = app.peek_selected_statefuldir();
         terminal.draw(|f| ui(f, selected_dir, tabs, index, commands_history))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                KeyCode::Char('j') | KeyCode::Down => selected_dir.select_next(),
-                KeyCode::Char('k') | KeyCode::Up => selected_dir.select_previous(),
-                KeyCode::Char('h') | KeyCode::Left => app.move_to_parent_dir(),
-                KeyCode::Char('l') | KeyCode::Right => app.move_to_child_dir(),
-                KeyCode::Tab => app.next_dirtab(),
-                KeyCode::BackTab => app.prev_dirtab(),
-                _ => {}
+            match (mode, key.code) {
+                (Mode::Normal, KeyCode::Char('q')) => return Ok(()),
+                (Mode::Normal, KeyCode::Char('j') | KeyCode::Down) => selected_dir.select_next(),
+                (Mode::Normal, KeyCode::Char('k') | KeyCode::Up) => selected_dir.select_previous(),
+                (Mode::Normal, KeyCode::Char('h') | KeyCode::Left) => app.move_to_parent_dir(),
+                (Mode::Normal, KeyCode::Char('l') | KeyCode::Right) => app.move_to_child_dir(),
+                (Mode::Normal, KeyCode::Tab) => app.next_dirtab(),
+                (Mode::Normal, KeyCode::BackTab) => app.prev_dirtab(),
+                (_, _) => {}
             }
             app.push_command_log(&key.code);
         }

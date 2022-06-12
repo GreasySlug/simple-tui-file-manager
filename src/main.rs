@@ -1,6 +1,6 @@
 use application::{run_app, App};
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -11,10 +11,10 @@ use tui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
-use ui::ui;
 
 mod application;
 mod file_item_list;
+mod input_ui;
 mod path_process;
 mod state;
 mod ui;
