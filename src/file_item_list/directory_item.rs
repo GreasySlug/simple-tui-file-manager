@@ -14,6 +14,7 @@ impl Directory {
         let name = pathbuf_to_string_name(&path);
         let mut parent = path.clone();
         if !parent.pop() {
+            // TODO: macos, windows, linux
             parent = PathBuf::from("root");
         }
         Self { name, path, parent }
