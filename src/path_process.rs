@@ -6,7 +6,11 @@ use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 
 pub fn pathbuf_to_string_name(path: &Path) -> String {
-    path.file_name().unwrap().to_str().unwrap().to_string()
+    let path_name = path.file_name();
+    if let Some(name) = path_name {
+        return name.to_str().unwrap().to_string();
+    }
+    "root".to_string()
 }
 
 pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
@@ -45,7 +49,7 @@ pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
     FileItem::new(file_name, file_path.to_path_buf(), meta, kinds, extension)
 }
 
-pub fn get_current_dir_path() -> PathBuf {
+pub fn current_dir_path() -> PathBuf {
     match current_dir() {
         Ok(path) => path,
         Err(e) => panic!("Permission denide: {}", e),
