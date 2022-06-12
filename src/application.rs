@@ -12,7 +12,7 @@ use crate::state::StatefulDirectory;
 use crate::ui::ui;
 
 #[derive(Debug, Clone, Copy)]
-enum Mode {
+pub enum Mode {
     Normal,
     Input,
     Stacker,
@@ -132,7 +132,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
         let tabs = app.get_list_of_dirtab();
         let commands_history = app.command_history();
         let selected_dir = app.peek_selected_statefuldir();
-        terminal.draw(|f| ui(f, selected_dir, tabs, index, commands_history))?;
+        terminal.draw(|f| ui(f, selected_dir, tabs, index, commands_history, mode))?;
         if let Event::Key(key) = event::read()? {
             match (mode, key.code) {
                 (Mode::Normal, KeyCode::Char('q')) => return Ok(()),
