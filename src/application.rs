@@ -117,12 +117,24 @@ impl App {
 
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.peek_selected_statefuldir();
+        let dir_name = selected_dir.crr_dir_name();
         let parent_path = selected_dir.crr_dir_parent_path().clone();
         let parent_dir_name = pathbuf_to_string_name(&parent_path);
         self.insert_new_statefuldir(parent_path);
         let i = self.tab_index;
         let name = self.directory_tabs.get_mut(i).unwrap();
         *name = parent_dir_name;
+
+        // select the position of crr dir name or select top
+        let dir_pos = self
+            .peek_selected_statefuldir()
+            .file_items_vec()
+            .iter()
+            // .inspect(|x| println!("{:?}", x.name() == dir_name))
+            .position(|x| x.name() == dir_name);
+
+        let mut state_dir = self.peek_selected_statefuldir();
+        state_dir.select_index(dir_pos)
     }
 }
 

@@ -41,6 +41,10 @@ impl StatefulDirectory {
         self.state.clone()
     }
 
+    pub fn select_index(&mut self, i: Option<usize>) {
+        self.state.select(i);
+    }
+
     pub fn selecting_file_item(&self) -> Option<&FileItem> {
         if let Some(i) = self.state.selected() {
             self.file_items.get(i)
