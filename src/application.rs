@@ -54,7 +54,6 @@ impl App {
                 new_stateful_dir.select_top();
             }
             item.insert(new_stateful_dir);
-            // self.push_new_dirname_to_dirtab(dir_name);
         }
     }
 
@@ -81,7 +80,7 @@ impl App {
         self.command_history.push(cmm)
     }
 
-    pub fn pop_command_log(&mut self) -> Option<String> {
+    pub fn _pop_command_log(&mut self) -> Option<String> {
         self.command_history.pop()
     }
 
@@ -108,12 +107,12 @@ impl App {
 
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.peek_selected_statefuldir();
-        let crr_dir_parent_path = selected_dir.crr_dir_parent_path().clone();
-        let crr_dir_name = selected_dir.crr_dir_name();
-        self.insert_new_statefuldir(crr_dir_parent_path);
+        let parent_path = selected_dir.crr_dir_parent_path().clone();
+        let parent_dir_name = pathbuf_to_string_name(&parent_path);
+        self.insert_new_statefuldir(parent_path);
         let i = self.tab_index;
         let name = self.directory_tabs.get_mut(i).unwrap();
-        *name = crr_dir_name;
+        *name = parent_dir_name;
     }
 }
 
