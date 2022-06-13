@@ -9,3 +9,5 @@ edition = "2021"
 crossterm = "0.23.2"
 tui = "0.18.0"
 chrono = "0.4"
+ron = "0.7"
+serde = { version= "1", features = ["derive"] }

@@ -1,0 +1,15 @@
+(
+    user_colors: SettingColors (
+        background: White,
+        header_font: Black,
+        boader: Black,
+        directory: Blue,
+        file_item: Black,
+        select: Magenta,
+    ),
+    symbols: SettingSymbols (
+        file: " ",
+        directory: "▶",
+        select: ">>"
+    ),
+)

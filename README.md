@@ -4,15 +4,15 @@ Simple file manager to practice using tui-rs
 
 ## Keymap
 
-implemented 
-
-| Key     | description  |
-| ------- | ------------ |
-| j, up   | move up      |
-| k, down | move down    |
-| tab     | next dir tab |
-| S+tab   | prev dir tab |
-| q       | quick puit   |
+| Key      | description     |
+| -------  | --------------- |
+| j, up    | move up         |
+| k, down  | move down       |
+| h, Left  | move parent dir |
+| l, Right | move child dir  |
+| tab      | next dir tab    |
+| S+tab    | prev dir tab    |
+| q        | quick puit      |
 
 TODO: Update as needed
 
