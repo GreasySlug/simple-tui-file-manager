@@ -1,6 +1,7 @@
+use serde::Deserialize;
 use tui::style::{Color, Style};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 enum Colors {
     White,
     Black,
@@ -16,11 +17,12 @@ enum Colors {
     LightRed,
     LightGreen,
     LightMagenta,
+    LightYellow,
     LightCyan,
     Rgb(u8, u8, u8),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 enum Keyboad {
     H,
     J,
@@ -39,7 +41,7 @@ enum Keyboad {
     CtrLQ,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct SettingColors {
     background: Colors,
     header_font: Colors,
@@ -89,6 +91,7 @@ fn color_translator(color: Colors) -> Option<Color> {
         Colors::LightRed => Color::LightRed,
         Colors::LightGreen => Color::LightGreen,
         Colors::LightMagenta => Color::LightMagenta,
+        Colors::LightYellow => Color::LightYellow,
         Colors::LightCyan => Color::LightCyan,
         Colors::Rgb(r, g, b) => Color::Rgb(r, g, b),
         _ => Color::Reset,
@@ -96,7 +99,32 @@ fn color_translator(color: Colors) -> Option<Color> {
     Some(c)
 }
 
-#[derive(Debug, Clone)]
+fn tui_color_transformer(color: Color) -> Colors {
+    let c = match color {
+        Color::Reset => Colors::Rgb(0, 0, 0),
+        Color::Black => Colors::Black,
+        Color::Red => Colors::Red,
+        Color::Green => Colors::Green,
+        Color::Yellow => Colors::Yellow,
+        Color::Blue => Colors::Blue,
+        Color::Magenta => Colors::Magenta,
+        Color::Cyan => Colors::Cyan,
+        Color::Gray => Colors::DarkGray,
+        Color::DarkGray => Colors::DarkGray,
+        Color::LightRed => Colors::LightRed,
+        Color::LightGreen => Colors::LightGreen,
+        Color::LightYellow => Colors::LightYellow,
+        Color::LightBlue => Colors::LightBlue,
+        Color::LightMagenta => Colors::LightMagenta,
+        Color::LightCyan => Colors::LightCyan,
+        Color::White => Colors::White,
+        Color::Rgb(r, g, b) => Colors::Rgb(r, g, b),
+        Color::Indexed(_) => Colors::Rgb(255, 255, 255),
+    };
+    c
+}
+
+#[derive(Debug, Clone, Deserialize)]
 struct SettingKeybind {
     move_to_next_file_item: Keyboad,
     move_to_prev_file_item: Keyboad,
@@ -104,7 +132,7 @@ struct SettingKeybind {
     move_to_child_dir: Keyboad,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 struct SettingSymbols {
     file: String,
     directory: String,
@@ -129,7 +157,7 @@ impl SettingSymbols {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct UserConfig {
     user_colors: SettingColors,
     symbols: SettingSymbols,
@@ -204,4 +232,28 @@ impl UserConfig {
     pub fn select_symbol(&self) -> &str {
         &self.symbols.select
     }
+}
+
+pub fn load_user_config_file() -> UserConfig {
+    // Each Windows, Mac(Linux)
+    // Consider specifying PATH in each OS
+    let path = "config.ron";
+    let f = std::fs::File::open(path);
+    if let Ok(f) = f {
+        let config: UserConfig = match ron::de::from_reader(f) {
+            Ok(x) => x,
+            Err(_) => UserConfig::deault_dark(),
+        };
+        config
+    } else {
+        UserConfig::deault_dark()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::load_user_config_file;
+
+    #[test]
+    fn can_parse_ron_file() {}
 }

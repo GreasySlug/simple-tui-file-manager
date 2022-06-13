@@ -7,7 +7,11 @@ use tui::{
     Frame,
 };
 
-use crate::{file_item_list::Kinds, load_config::UserConfig, StatefulDirectory};
+use crate::{
+    file_item_list::Kinds,
+    load_config::{load_user_config_file, UserConfig},
+    StatefulDirectory,
+};
 
 pub fn ui<B: Backend>(
     f: &mut Frame<B>,
@@ -16,7 +20,7 @@ pub fn ui<B: Backend>(
     index: usize,
     command_hist: Vec<String>,
 ) {
-    let theme = UserConfig::default_light();
+    let theme = load_user_config_file();
     let file_style = theme.file_style();
     let dir_style = theme.dir_style();
     let selecting_style = theme.select_style();
