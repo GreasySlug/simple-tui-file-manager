@@ -1,11 +1,17 @@
 (
+    // default color theme
+    background: "light",
+
+    // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
+    // LightRed, LightGeen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
     user_colors: SettingColors (
-        background: White,
-        header_font: Black,
-        boader: Black,
-        directory: Blue,
-        file_item: Black,
-        select: Magenta,
+        background: Black,
+        header: Magenta, // file name, permission, size, date
+        boader: White, // frame line
+        directory: Blue, // dir font
+        file_item: White, // file font
+        select: Green, // selecting hightlinght
+        command: White,
     ),
     symbols: SettingSymbols (
         file: " ",
