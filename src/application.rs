@@ -11,6 +11,11 @@ use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
 use crate::ui::ui;
 
+// TODO: Restrictions without reason, so think cost
+const DRAIN_SIZE: usize = 50;
+const MAX_HIST_SIZE: usize = 500;
+
+// TODO: Do I have to load  use config in this struct?
 #[derive(Debug)]
 pub struct App {
     directory_tabs: Vec<String>,
@@ -35,12 +40,12 @@ impl App {
         self.dir_map.get_mut(selected_tab).unwrap()
     }
 
-    pub fn get_dirtab_index(&self) -> usize {
+    pub fn tab_index(&self) -> usize {
         self.tab_index
     }
 
-    pub fn get_list_of_dirtab(&self) -> Vec<String> {
-        self.directory_tabs.clone()
+    pub fn dirtab(&self) -> &Vec<String> {
+        &self.directory_tabs
     }
 
     pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
@@ -48,6 +53,7 @@ impl App {
         if let Entry::Vacant(item) = self.dir_map.entry(dir_name) {
             let mut new_stateful_dir = StatefulDirectory::new(dir_path);
 
+            // Sorted by name in each of the files and directories
             new_stateful_dir.sort_by_kinds();
 
             if !new_stateful_dir.is_selected() {
@@ -83,7 +89,15 @@ impl App {
         }
     }
 
+    pub fn limit_command_log(&mut self) {
+        // TODO: Think about Max limit
+        if self.command_history.len() > MAX_HIST_SIZE {
+            self.command_history.drain(0..DRAIN_SIZE);
+        }
+    }
+
     pub fn push_command_log(&mut self, command: &KeyCode) {
+        self.limit_command_log();
         let cmm = format!("{:?}", command);
         self.command_history.push(cmm)
     }
@@ -113,6 +127,9 @@ impl App {
         }
     }
 
+    // If it's the first time you go to the parent directory, selects the top one.
+    // The second and subsequent times, select the directory you were in before the move.
+    // I want to select the directory before moving from the beginning.
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.peek_selected_statefuldir();
         let parent_path = selected_dir.crr_dir_parent_path().clone();
@@ -126,11 +143,8 @@ impl App {
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
-        let index = app.get_dirtab_index();
-        let tabs = app.get_list_of_dirtab();
-        let commands_history = app.command_history();
-        let selected_dir = app.peek_selected_statefuldir();
-        terminal.draw(|f| ui(f, selected_dir, tabs, index, commands_history))?;
+        // let selected_dir = app.peek_selected_statefuldir();
+        terminal.draw(|f| ui(f, &mut app))?;
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),

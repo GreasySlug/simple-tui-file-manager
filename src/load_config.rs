@@ -39,38 +39,62 @@ enum Keyboad {
     CtrlK,
     CtrlL,
     CtrLQ,
+    Left,
+    Up,
+    Down,
+    Right,
+    Escape,
+    Enter,
+    Tab,
+    Tabspace,
+    Backspace,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SettingColors {
     background: Colors,
-    header_font: Colors,
     boader: Colors,
     directory: Colors,
     file_item: Colors,
     select: Colors,
+    header: Colors,
+    command: Colors,
 }
 
 impl SettingColors {
     fn dark_theme() -> SettingColors {
         SettingColors {
             background: Colors::Black,
-            header_font: Colors::Cyan,
+            header: Colors::Cyan,
             boader: Colors::White,
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::LightMagenta,
+            command: Colors::White,
         }
     }
 
     fn light_theme() -> SettingColors {
         SettingColors {
             background: Colors::Gray,
-            header_font: Colors::Green,
-            boader: Colors::DarkGray,
+            header: Colors::Green,
+            boader: Colors::Gray,
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
+            command: Colors::Gray,
+        }
+    }
+
+    fn dark_blue_theme() -> SettingColors {
+        SettingColors {
+            background: Colors::Rgb(39, 67, 100),
+            header: Colors::Green,
+            boader: Colors::Rgb(97, 169, 252),
+            directory: Colors::Blue,
+            file_item: Colors::Gray,
+            select: Colors::Green,
+            command: Colors::Rgb(97, 169, 252),
         }
     }
 }
@@ -109,7 +133,7 @@ fn tui_color_transformer(color: Color) -> Colors {
         Color::Blue => Colors::Blue,
         Color::Magenta => Colors::Magenta,
         Color::Cyan => Colors::Cyan,
-        Color::Gray => Colors::DarkGray,
+        Color::Gray => Colors::Gray,
         Color::DarkGray => Colors::DarkGray,
         Color::LightRed => Colors::LightRed,
         Color::LightGreen => Colors::LightGreen,
@@ -130,6 +154,17 @@ struct SettingKeybind {
     move_to_prev_file_item: Keyboad,
     move_to_parent_dir: Keyboad,
     move_to_child_dir: Keyboad,
+}
+
+impl SettingKeybind {
+    fn default_vim_like_movements() -> SettingKeybind {
+        SettingKeybind {
+            move_to_next_file_item: Keyboad::J,
+            move_to_prev_file_item: Keyboad::K,
+            move_to_parent_dir: Keyboad::H,
+            move_to_child_dir: Keyboad::L,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -159,21 +194,32 @@ impl SettingSymbols {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct UserConfig {
+    background: String,
     user_colors: SettingColors,
     symbols: SettingSymbols,
     // keybind: UserKeybind,
 }
 
 impl UserConfig {
-    pub fn deault_dark() -> UserConfig {
+    pub fn default_dark() -> UserConfig {
         UserConfig {
+            background: "dark".to_string(),
             user_colors: SettingColors::dark_theme(),
+            symbols: SettingSymbols::simple_symbols(),
+        }
+    }
+
+    pub fn default_dark_blue() -> UserConfig {
+        UserConfig {
+            background: "dark".to_string(),
+            user_colors: SettingColors::dark_blue_theme(),
             symbols: SettingSymbols::simple_symbols(),
         }
     }
 
     pub fn default_light() -> UserConfig {
         UserConfig {
+            background: "light".to_string(),
             user_colors: SettingColors::light_theme(),
             symbols: SettingSymbols::example_symbols(),
         }
@@ -181,44 +227,37 @@ impl UserConfig {
 
     pub fn file_style(&self) -> Style {
         let user_color = self.user_colors.file_item.clone();
-        let color = color_translator(user_color).unwrap();
-        Style::default().fg(color)
+        style_formatter(user_color, true, false)
     }
 
     pub fn dir_style(&self) -> Style {
         let user_color = self.user_colors.directory.clone();
-        let color = color_translator(user_color).unwrap();
-        Style::default().fg(color)
+        style_formatter(user_color, true, false)
     }
 
     pub fn select_style(&self) -> Style {
         let user_color = self.user_colors.select.clone();
-        let color = color_translator(user_color).unwrap();
-        Style::default().fg(color)
+        style_formatter(user_color, true, false)
     }
 
     pub fn header_style(&self) -> Style {
-        let user_color = self.user_colors.header_font.clone();
-        let color = color_translator(user_color).unwrap();
-        Style::default().fg(color)
+        let user_color = self.user_colors.header.clone();
+        style_formatter(user_color, true, false)
     }
 
     pub fn boader_style(&self) -> Style {
         let user_color = self.user_colors.boader.clone();
-        let color = color_translator(user_color).unwrap();
-        Style::default().fg(color)
+        style_formatter(user_color, true, false)
     }
 
     pub fn command_style(&self) -> Style {
-        let user_color = self.user_colors.boader.clone();
-        let color = color_translator(user_color).unwrap();
-        Style::default().fg(color)
+        let user_color = self.user_colors.command.clone();
+        style_formatter(user_color, true, false)
     }
 
     pub fn background_style(&self) -> Style {
         let user_color = self.user_colors.background.clone();
-        let color = color_translator(user_color).unwrap();
-        Style::default().bg(color)
+        style_formatter(user_color, false, true)
     }
 
     pub fn file_symbol(&self) -> &str {
@@ -234,6 +273,16 @@ impl UserConfig {
     }
 }
 
+fn style_formatter(color: Colors, is_fg: bool, is_bg: bool) -> Style {
+    let color = color_translator(color).unwrap();
+    match (is_fg, is_bg) {
+        (true, true) => panic!("is_fg and is_bg is not always true"),
+        (true, false) => Style::default().fg(color),
+        (false, true) => Style::default().bg(color),
+        (false, false) => panic!("is_fg or is_bg is always true"),
+    }
+}
+
 pub fn load_user_config_file() -> UserConfig {
     // Each Windows, Mac(Linux)
     // Consider specifying PATH in each OS
@@ -242,11 +291,11 @@ pub fn load_user_config_file() -> UserConfig {
     if let Ok(f) = f {
         let config: UserConfig = match ron::de::from_reader(f) {
             Ok(x) => x,
-            Err(_) => UserConfig::deault_dark(),
+            Err(_) => UserConfig::default_dark_blue(),
         };
         config
     } else {
-        UserConfig::deault_dark()
+        UserConfig::default_dark_blue()
     }
 }
 
