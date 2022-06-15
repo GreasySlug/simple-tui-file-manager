@@ -18,4 +18,13 @@
         directory: "▶",
         select: ">>"
     ),
+    user_keybinds: UserKeybinds (
+        keybinds: {
+            "move_to_parent_dir": "h",
+            "move_to_next_file_irem": "j",
+            "move_to_prev_file_item": "k",
+            "move_to_child_dir": "l",
+            "quit": "q",
+        }
+    )
 )
