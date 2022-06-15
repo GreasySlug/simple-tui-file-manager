@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crossterm::event::{KeyCode, KeyEvent};
 use serde::Deserialize;
 use tui::style::{Color, Style};
 
@@ -25,7 +26,7 @@ enum Colors {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-enum Keyboad {
+pub enum UserKeyboad {
     H,
     J,
     K,
@@ -54,69 +55,105 @@ enum Keyboad {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-struct UserKeybinds {
-    keybinds: HashMap<String, String>,
+pub struct UserKeybinds {
+    pub keybinds: HashMap<String, String>,
 }
 
+// TODO: chang {Key: Command}
+// TODO: add function to insert new {key: cmd} easily
 impl UserKeybinds {
-    fn default_vim_movements() -> UserKeybinds {
+    pub fn default_vim_movements() -> UserKeybinds {
         let mut keybinds: HashMap<String, String> = HashMap::new();
-        keybinds.insert("move_to_parent_dir".to_string(), "h".to_string());
-        keybinds.insert("move_to_next_file_item".to_string(), "j".to_string());
-        keybinds.insert("move_to_prev_file_item".to_string(), "k".to_string());
-        keybinds.insert("move_to_child_dir".to_string(), "l".to_string());
-        keybinds.insert("quit".to_string(), "q".to_string());
+        keybinds.insert("h".to_string(), "move_to_parent_dir".to_string());
+        keybinds.insert("j".to_string(), "move_to_next_file_item".to_string());
+        keybinds.insert("k".to_string(), "move_to_prev_file_item".to_string());
+        keybinds.insert("l".to_string(), "move_to_child_dir".to_string());
+        keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+        keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+        keybinds.insert("q".to_string(), "quit".to_string());
 
         UserKeybinds { keybinds }
     }
 
-    fn default_arrow_key() -> UserKeybinds {
+    pub fn default_arrow_key() -> UserKeybinds {
         let mut keybinds: HashMap<String, String> = HashMap::new();
-        keybinds.insert("move_to_parent_dir".to_string(), "left".to_string());
-        keybinds.insert("move_to_next_file_item".to_string(), "down".to_string());
-        keybinds.insert("move_to_prev_file_item".to_string(), "up".to_string());
-        keybinds.insert("move_to_child_dir".to_string(), "right".to_string());
-        keybinds.insert("quit".to_string(), "q".to_string());
+        keybinds.insert("left".to_string(), "move_to_parent_dir".to_string());
+        keybinds.insert("down".to_string(), "move_to_next_file_item".to_string());
+        keybinds.insert("up".to_string(), "move_to_prev_file_item".to_string());
+        keybinds.insert("right".to_string(), "move_to_child_dir".to_string());
+        keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+        keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+        keybinds.insert("q".to_string(), "quit".to_string());
 
         UserKeybinds { keybinds }
     }
 
-    fn default_vim_ctrl_movements() -> UserKeybinds {
+    pub fn default_vim_ctrl_movements() -> UserKeybinds {
         let mut keybinds: HashMap<String, String> = HashMap::new();
-        keybinds.insert("move_to_parent_dir".to_string(), "C-h".to_string());
-        keybinds.insert("move_to_next_file_item".to_string(), "C-j".to_string());
-        keybinds.insert("move_to_prev_file_item".to_string(), "C-k".to_string());
-        keybinds.insert("move_to_child_dir".to_string(), "C-l".to_string());
-        keybinds.insert("quit".to_string(), "q".to_string());
+        keybinds.insert("C-h".to_string(), "move_to_parent_dir".to_string());
+        keybinds.insert("C-j".to_string(), "move_to_next_file_item".to_string());
+        keybinds.insert("C-k".to_string(), "move_to_prev_file_item".to_string());
+        keybinds.insert("C-l".to_string(), "move_to_child_dir".to_string());
+        keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+        keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+        keybinds.insert("q".to_string(), "quit".to_string());
 
         UserKeybinds { keybinds }
     }
 
-    fn string_to_keyboard(self) -> HashMap<String, Keyboad> {
-        let mut keybind: HashMap<String, Keyboad> = HashMap::new();
-        for (cmd, key) in self.keybinds.into_iter() {
-            let key = string_to_keyboard(&key);
-            keybind.insert(cmd, key);
+    pub fn string_map_to_user_keyboad(&self) -> HashMap<UserKeyboad, String> {
+        let mut keybind: HashMap<UserKeyboad, String> = HashMap::new();
+        for (key, cmd) in self.keybinds.iter() {
+            let user_keyboad = string_to_keyboard(&key);
+            keybind.insert(user_keyboad, cmd.to_string());
         }
         keybind
     }
 }
 
-fn string_to_keyboard(s: &str) -> Keyboad {
+fn string_to_keyboard(s: &str) -> UserKeyboad {
     match s {
-        "h" => Keyboad::H,
-        "j" => Keyboad::J,
-        "k" => Keyboad::K,
-        "l" => Keyboad::K,
-        "S-h" => Keyboad::ShiftH,
-        "S-j" => Keyboad::ShiftJ,
-        "C-k" => Keyboad::CtrlK,
-        "S-l" => Keyboad::ShiftL,
-        "left" => Keyboad::Left,
-        "up" => Keyboad::Up,
-        "down" => Keyboad::Down,
-        "right" => Keyboad::Right,
-        _ => Keyboad::Unknown,
+        "h" => UserKeyboad::H,
+        "j" => UserKeyboad::J,
+        "k" => UserKeyboad::K,
+        "l" => UserKeyboad::L,
+        "q" => UserKeyboad::Q,
+        "S-h" => UserKeyboad::ShiftH,
+        "S-j" => UserKeyboad::ShiftJ,
+        "S-k" => UserKeyboad::SHiftK,
+        "S-l" => UserKeyboad::ShiftL,
+        "C-h" => UserKeyboad::CtrlH,
+        "C-j" => UserKeyboad::CtrlJ,
+        "C-k" => UserKeyboad::CtrlK,
+        "C-l" => UserKeyboad::CtrlL,
+        "left" => UserKeyboad::Left,
+        "up" => UserKeyboad::Up,
+        "down" => UserKeyboad::Down,
+        "right" => UserKeyboad::Right,
+        "tab" => UserKeyboad::Tab,
+        "tabspace" => UserKeyboad::Tabspace,
+        _ => UserKeyboad::Unknown,
+    }
+}
+
+pub fn crossterm_keycode_to_commands(key: &KeyEvent) -> UserKeyboad {
+    match key.code {
+        KeyCode::BackTab => UserKeyboad::Tabspace,
+        KeyCode::Esc => UserKeyboad::Escape,
+        KeyCode::Left => UserKeyboad::Left,
+        KeyCode::Up => UserKeyboad::Up,
+        KeyCode::Down => UserKeyboad::Down,
+        KeyCode::Right => UserKeyboad::Right,
+        KeyCode::Tab => UserKeyboad::Tab,
+        KeyCode::Char(c) => match c {
+            'q' => UserKeyboad::Q,
+            'l' => UserKeyboad::L,
+            'j' => UserKeyboad::J,
+            'k' => UserKeyboad::K,
+            'h' => UserKeyboad::H,
+            _ => UserKeyboad::Unknown,
+        },
+        _ => UserKeyboad::Unknown,
     }
 }
 
@@ -148,11 +185,11 @@ impl SettingColors {
         SettingColors {
             background: Colors::Gray,
             header: Colors::Green,
-            boader: Colors::Gray,
+            boader: Colors::Black,
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
-            command: Colors::Gray,
+            command: Colors::Green,
         }
     }
 
@@ -245,7 +282,6 @@ impl SettingSymbols {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct UserConfig {
-    background: String,
     user_colors: SettingColors,
     symbols: SettingSymbols,
     user_keybinds: UserKeybinds,
@@ -254,7 +290,6 @@ pub struct UserConfig {
 impl UserConfig {
     pub fn default_dark() -> UserConfig {
         UserConfig {
-            background: "dark".to_string(),
             user_colors: SettingColors::dark_theme(),
             symbols: SettingSymbols::simple_symbols(),
             user_keybinds: UserKeybinds::default_vim_movements(),
@@ -263,7 +298,6 @@ impl UserConfig {
 
     pub fn default_dark_blue() -> UserConfig {
         UserConfig {
-            background: "dark".to_string(),
             user_colors: SettingColors::dark_blue_theme(),
             symbols: SettingSymbols::simple_symbols(),
             user_keybinds: UserKeybinds::default_vim_ctrl_movements(),
@@ -272,7 +306,6 @@ impl UserConfig {
 
     pub fn default_light() -> UserConfig {
         UserConfig {
-            background: "light".to_string(),
             user_colors: SettingColors::light_theme(),
             symbols: SettingSymbols::example_symbols(),
             user_keybinds: UserKeybinds::default_arrow_key(),
@@ -325,6 +358,10 @@ impl UserConfig {
     pub fn select_symbol(&self) -> &str {
         &self.symbols.select
     }
+
+    pub fn keybindings_map(&self) -> &UserKeybinds {
+        &self.user_keybinds
+    }
 }
 
 fn style_formatter(color: Colors, is_fg: bool, is_bg: bool) -> Style {
@@ -341,15 +378,17 @@ pub fn load_user_config_file() -> UserConfig {
     // Each Windows, Mac(Linux)
     // Consider specifying PATH in each OS
     let path = "config.ron";
-    let f = std::fs::File::open(path);
-    if let Ok(f) = f {
-        let config: UserConfig = match ron::de::from_reader(f) {
-            Ok(x) => x,
-            Err(_) => UserConfig::default_dark_blue(),
-        };
-        config
-    } else {
-        UserConfig::default_dark_blue()
+    match std::fs::File::open(path) {
+        Ok(f) => {
+            let config: Result<UserConfig, ron::de::Error> = ron::de::from_reader(f);
+            if let Ok(config) = config {
+                config
+            } else {
+                UserConfig::default_light()
+            }
+        }
+        // TODO: logging this e
+        Err(e) => UserConfig::default_dark(),
     }
 }
 
@@ -359,6 +398,8 @@ mod test {
 
     use crate::load_config::UserConfig;
 
+    use super::{string_to_keyboard, UserKeyboad};
+
     #[test]
     fn can_parse_ron_file() {
         let path = "config.ron";
@@ -366,5 +407,40 @@ mod test {
         assert!(f.is_ok());
         let config: Result<UserConfig, de::Error> = ron::de::from_reader(f.unwrap());
         assert!(config.is_ok());
+        let config = config.unwrap();
+        let keybinds = config.keybindings_map();
+        let keymap = &keybinds.keybinds;
+        println!("{:#?}", keymap);
+    }
+
+    #[test]
+    fn can_repace_string_to_enum() {
+        let sl = "l".to_string();
+        let el = UserKeyboad::L;
+        assert_eq!(string_to_keyboard(&sl), el);
+        let strings = [
+            "l", "h", "j", "k", "C-h", "C-j", "C-k", "C-l", "S-h", "S-j", "S-k", "S-l", "q",
+        ];
+
+        let enum_keys = [
+            UserKeyboad::L,
+            UserKeyboad::H,
+            UserKeyboad::J,
+            UserKeyboad::K,
+            UserKeyboad::CtrlH,
+            UserKeyboad::CtrlJ,
+            UserKeyboad::CtrlK,
+            UserKeyboad::CtrlL,
+            UserKeyboad::ShiftH,
+            UserKeyboad::ShiftJ,
+            UserKeyboad::SHiftK,
+            UserKeyboad::ShiftL,
+            UserKeyboad::Q,
+        ];
+
+        for (s, k) in strings.iter().zip(enum_keys.iter()) {
+            let s = s.to_string();
+            assert_eq!(string_to_keyboard(&s), *k);
+        }
     }
 }

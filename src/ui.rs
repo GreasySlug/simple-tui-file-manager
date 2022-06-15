@@ -15,6 +15,7 @@ use crate::{
 };
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    // if the theme is loaded here, config is also loaded at each loop.
     let theme = load_user_config_file();
     let file_style = theme.file_style();
     let dir_style = theme.dir_style();

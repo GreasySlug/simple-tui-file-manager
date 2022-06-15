@@ -1,7 +1,4 @@
 (
-    // default color theme
-    background: "light",
-
     // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
     // LightRed, LightGeen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
     user_colors: SettingColors (
@@ -20,11 +17,13 @@
     ),
     user_keybinds: UserKeybinds (
         keybinds: {
-            "move_to_parent_dir": "h",
-            "move_to_next_file_irem": "j",
-            "move_to_prev_file_item": "k",
-            "move_to_child_dir": "l",
-            "quit": "q",
+            "h": "move_to_parent_dir",
+            "j": "move_to_next_file_item",
+            "k": "move_to_prev_file_item",
+            "l": "move_to_child_dir",
+            "tab":"next_dirtab",
+            "tabspace":"prev_dirtab",
+            "q" :"quit",
         }
     )
 )
