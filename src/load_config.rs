@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use serde::Deserialize;
 use tui::style::{Color, Style};
 
@@ -22,7 +24,7 @@ enum Colors {
     Rgb(u8, u8, u8),
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 enum Keyboad {
     H,
     J,
@@ -48,6 +50,74 @@ enum Keyboad {
     Tab,
     Tabspace,
     Backspace,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct UserKeybinds {
+    keybinds: HashMap<String, String>,
+}
+
+impl UserKeybinds {
+    fn default_vim_movements() -> UserKeybinds {
+        let mut keybinds: HashMap<String, String> = HashMap::new();
+        keybinds.insert("move_to_parent_dir".to_string(), "h".to_string());
+        keybinds.insert("move_to_next_file_item".to_string(), "j".to_string());
+        keybinds.insert("move_to_prev_file_item".to_string(), "k".to_string());
+        keybinds.insert("move_to_child_dir".to_string(), "l".to_string());
+        keybinds.insert("quit".to_string(), "q".to_string());
+
+        UserKeybinds { keybinds }
+    }
+
+    fn default_arrow_key() -> UserKeybinds {
+        let mut keybinds: HashMap<String, String> = HashMap::new();
+        keybinds.insert("move_to_parent_dir".to_string(), "left".to_string());
+        keybinds.insert("move_to_next_file_item".to_string(), "down".to_string());
+        keybinds.insert("move_to_prev_file_item".to_string(), "up".to_string());
+        keybinds.insert("move_to_child_dir".to_string(), "right".to_string());
+        keybinds.insert("quit".to_string(), "q".to_string());
+
+        UserKeybinds { keybinds }
+    }
+
+    fn default_vim_ctrl_movements() -> UserKeybinds {
+        let mut keybinds: HashMap<String, String> = HashMap::new();
+        keybinds.insert("move_to_parent_dir".to_string(), "C-h".to_string());
+        keybinds.insert("move_to_next_file_item".to_string(), "C-j".to_string());
+        keybinds.insert("move_to_prev_file_item".to_string(), "C-k".to_string());
+        keybinds.insert("move_to_child_dir".to_string(), "C-l".to_string());
+        keybinds.insert("quit".to_string(), "q".to_string());
+
+        UserKeybinds { keybinds }
+    }
+
+    fn string_to_keyboard(self) -> HashMap<String, Keyboad> {
+        let mut keybind: HashMap<String, Keyboad> = HashMap::new();
+        for (cmd, key) in self.keybinds.into_iter() {
+            let key = string_to_keyboard(&key);
+            keybind.insert(cmd, key);
+        }
+        keybind
+    }
+}
+
+fn string_to_keyboard(s: &str) -> Keyboad {
+    match s {
+        "h" => Keyboad::H,
+        "j" => Keyboad::J,
+        "k" => Keyboad::K,
+        "l" => Keyboad::K,
+        "S-h" => Keyboad::ShiftH,
+        "S-j" => Keyboad::ShiftJ,
+        "C-k" => Keyboad::CtrlK,
+        "S-l" => Keyboad::ShiftL,
+        "left" => Keyboad::Left,
+        "up" => Keyboad::Up,
+        "down" => Keyboad::Down,
+        "right" => Keyboad::Right,
+        _ => Keyboad::Unknown,
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -149,25 +219,6 @@ fn tui_color_transformer(color: Color) -> Colors {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-struct SettingKeybind {
-    move_to_next_file_item: Keyboad,
-    move_to_prev_file_item: Keyboad,
-    move_to_parent_dir: Keyboad,
-    move_to_child_dir: Keyboad,
-}
-
-impl SettingKeybind {
-    fn default_vim_like_movements() -> SettingKeybind {
-        SettingKeybind {
-            move_to_next_file_item: Keyboad::J,
-            move_to_prev_file_item: Keyboad::K,
-            move_to_parent_dir: Keyboad::H,
-            move_to_child_dir: Keyboad::L,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize)]
 struct SettingSymbols {
     file: String,
     directory: String,
@@ -197,7 +248,7 @@ pub struct UserConfig {
     background: String,
     user_colors: SettingColors,
     symbols: SettingSymbols,
-    // keybind: UserKeybind,
+    user_keybinds: UserKeybinds,
 }
 
 impl UserConfig {
@@ -206,6 +257,7 @@ impl UserConfig {
             background: "dark".to_string(),
             user_colors: SettingColors::dark_theme(),
             symbols: SettingSymbols::simple_symbols(),
+            user_keybinds: UserKeybinds::default_vim_movements(),
         }
     }
 
@@ -214,6 +266,7 @@ impl UserConfig {
             background: "dark".to_string(),
             user_colors: SettingColors::dark_blue_theme(),
             symbols: SettingSymbols::simple_symbols(),
+            user_keybinds: UserKeybinds::default_vim_ctrl_movements(),
         }
     }
 
@@ -222,6 +275,7 @@ impl UserConfig {
             background: "light".to_string(),
             user_colors: SettingColors::light_theme(),
             symbols: SettingSymbols::example_symbols(),
+            user_keybinds: UserKeybinds::default_arrow_key(),
         }
     }
 
@@ -301,8 +355,16 @@ pub fn load_user_config_file() -> UserConfig {
 
 #[cfg(test)]
 mod test {
-    use super::load_user_config_file;
+    use ron::de;
+
+    use crate::load_config::UserConfig;
 
     #[test]
-    fn can_parse_ron_file() {}
+    fn can_parse_ron_file() {
+        let path = "config.ron";
+        let f = std::fs::File::open(path);
+        assert!(f.is_ok());
+        let config: Result<UserConfig, de::Error> = ron::de::from_reader(f.unwrap());
+        assert!(config.is_ok());
+    }
 }

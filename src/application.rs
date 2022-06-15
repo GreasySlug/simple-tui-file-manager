@@ -173,9 +173,9 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
+                KeyCode::Char('h') | KeyCode::Left => app.move_to_parent_dir(),
                 KeyCode::Char('j') | KeyCode::Down => app.move_to_next_file_item(),
                 KeyCode::Char('k') | KeyCode::Up => app.move_to_prev_file_item(),
-                KeyCode::Char('h') | KeyCode::Left => app.move_to_parent_dir(),
                 KeyCode::Char('l') | KeyCode::Right => app.move_to_child_dir(),
                 KeyCode::Tab => app.next_dirtab(),
                 KeyCode::BackTab => app.prev_dirtab(),
