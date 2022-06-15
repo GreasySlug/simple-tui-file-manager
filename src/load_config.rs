@@ -54,61 +54,56 @@ pub enum UserKeyboad {
     Unknown,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct UserKeybinds {
-    pub keybinds: HashMap<String, String>,
-}
-
 // TODO: chang {Key: Command}
 // TODO: add function to insert new {key: cmd} easily
-impl UserKeybinds {
-    pub fn default_vim_movements() -> UserKeybinds {
-        let mut keybinds: HashMap<String, String> = HashMap::new();
-        keybinds.insert("h".to_string(), "move_to_parent_dir".to_string());
-        keybinds.insert("j".to_string(), "move_to_next_file_item".to_string());
-        keybinds.insert("k".to_string(), "move_to_prev_file_item".to_string());
-        keybinds.insert("l".to_string(), "move_to_child_dir".to_string());
-        keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-        keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
-        keybinds.insert("q".to_string(), "quit".to_string());
+pub fn default_vim_movements() -> HashMap<String, String> {
+    let mut keybinds: HashMap<String, String> = HashMap::new();
+    keybinds.insert("h".to_string(), "move_to_parent_dir".to_string());
+    keybinds.insert("j".to_string(), "move_to_next_file_item".to_string());
+    keybinds.insert("k".to_string(), "move_to_prev_file_item".to_string());
+    keybinds.insert("l".to_string(), "move_to_child_dir".to_string());
+    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("q".to_string(), "quit".to_string());
 
-        UserKeybinds { keybinds }
+    keybinds
+}
+
+pub fn default_arrow_key() -> HashMap<String, String> {
+    let mut keybinds: HashMap<String, String> = HashMap::new();
+    keybinds.insert("left".to_string(), "move_to_parent_dir".to_string());
+    keybinds.insert("down".to_string(), "move_to_next_file_item".to_string());
+    keybinds.insert("up".to_string(), "move_to_prev_file_item".to_string());
+    keybinds.insert("right".to_string(), "move_to_child_dir".to_string());
+    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("q".to_string(), "quit".to_string());
+
+    keybinds
+}
+
+pub fn default_vim_ctrl_movements() -> HashMap<String, String> {
+    let mut keybinds: HashMap<String, String> = HashMap::new();
+    keybinds.insert("C-h".to_string(), "move_to_parent_dir".to_string());
+    keybinds.insert("C-j".to_string(), "move_to_next_file_item".to_string());
+    keybinds.insert("C-k".to_string(), "move_to_prev_file_item".to_string());
+    keybinds.insert("C-l".to_string(), "move_to_child_dir".to_string());
+    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("q".to_string(), "quit".to_string());
+
+    keybinds
+}
+
+pub fn string_map_to_user_keyboad(
+    keybinds: &HashMap<String, String>,
+) -> HashMap<UserKeyboad, String> {
+    let mut keybind: HashMap<UserKeyboad, String> = HashMap::new();
+    for (key, cmd) in keybinds.iter() {
+        let user_keyboad = string_to_keyboard(key);
+        keybind.insert(user_keyboad, cmd.to_string());
     }
-
-    pub fn default_arrow_key() -> UserKeybinds {
-        let mut keybinds: HashMap<String, String> = HashMap::new();
-        keybinds.insert("left".to_string(), "move_to_parent_dir".to_string());
-        keybinds.insert("down".to_string(), "move_to_next_file_item".to_string());
-        keybinds.insert("up".to_string(), "move_to_prev_file_item".to_string());
-        keybinds.insert("right".to_string(), "move_to_child_dir".to_string());
-        keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-        keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
-        keybinds.insert("q".to_string(), "quit".to_string());
-
-        UserKeybinds { keybinds }
-    }
-
-    pub fn default_vim_ctrl_movements() -> UserKeybinds {
-        let mut keybinds: HashMap<String, String> = HashMap::new();
-        keybinds.insert("C-h".to_string(), "move_to_parent_dir".to_string());
-        keybinds.insert("C-j".to_string(), "move_to_next_file_item".to_string());
-        keybinds.insert("C-k".to_string(), "move_to_prev_file_item".to_string());
-        keybinds.insert("C-l".to_string(), "move_to_child_dir".to_string());
-        keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-        keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
-        keybinds.insert("q".to_string(), "quit".to_string());
-
-        UserKeybinds { keybinds }
-    }
-
-    pub fn string_map_to_user_keyboad(&self) -> HashMap<UserKeyboad, String> {
-        let mut keybind: HashMap<UserKeyboad, String> = HashMap::new();
-        for (key, cmd) in self.keybinds.iter() {
-            let user_keyboad = string_to_keyboard(&key);
-            keybind.insert(user_keyboad, cmd.to_string());
-        }
-        keybind
-    }
+    keybind
 }
 
 fn string_to_keyboard(s: &str) -> UserKeyboad {
@@ -158,7 +153,7 @@ pub fn crossterm_keycode_to_commands(key: &KeyEvent) -> UserKeyboad {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct SettingColors {
+pub struct SettingTheme {
     background: Colors,
     boader: Colors,
     directory: Colors,
@@ -168,9 +163,9 @@ pub struct SettingColors {
     command: Colors,
 }
 
-impl SettingColors {
-    fn dark_theme() -> SettingColors {
-        SettingColors {
+impl SettingTheme {
+    fn dark_theme() -> SettingTheme {
+        SettingTheme {
             background: Colors::Black,
             header: Colors::Cyan,
             boader: Colors::White,
@@ -181,20 +176,20 @@ impl SettingColors {
         }
     }
 
-    fn light_theme() -> SettingColors {
-        SettingColors {
-            background: Colors::Gray,
+    fn light_theme() -> SettingTheme {
+        SettingTheme {
+            background: Colors::White,
             header: Colors::Green,
             boader: Colors::Black,
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
-            command: Colors::Green,
+            command: Colors::Black,
         }
     }
 
-    fn dark_blue_theme() -> SettingColors {
-        SettingColors {
+    fn dark_blue_theme() -> SettingTheme {
+        SettingTheme {
             background: Colors::Rgb(39, 67, 100),
             header: Colors::Green,
             boader: Colors::Rgb(97, 169, 252),
@@ -203,6 +198,41 @@ impl SettingColors {
             select: Colors::Green,
             command: Colors::Rgb(97, 169, 252),
         }
+    }
+
+    pub fn file_style(&self) -> Style {
+        let user_color = self.file_item.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn dir_style(&self) -> Style {
+        let user_color = self.directory.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn select_style(&self) -> Style {
+        let user_color = self.select.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn header_style(&self) -> Style {
+        let user_color = self.header.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn boader_style(&self) -> Style {
+        let user_color = self.boader.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn command_style(&self) -> Style {
+        let user_color = self.command.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn background_style(&self) -> Style {
+        let user_color = self.background.clone();
+        style_formatter(user_color, false, true)
     }
 }
 
@@ -255,111 +285,71 @@ fn tui_color_transformer(color: Color) -> Colors {
     c
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct SettingSymbols {
-    file: String,
-    directory: String,
-    select: String,
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Hash)]
+pub enum FileItems {
+    File,
+    Directory,
+    Select,
 }
 
-impl SettingSymbols {
-    fn example_symbols() -> SettingSymbols {
-        SettingSymbols {
-            file: "📜".to_string(),
-            directory: "📁".to_string(),
-            select: "⋙".to_string(),
-        }
-    }
+fn example_symbols() -> HashMap<FileItems, String> {
+    let map: HashMap<FileItems, String> = HashMap::from([
+        (FileItems::File, "📜".to_string()),
+        (FileItems::Directory, "📁".to_string()),
+        (FileItems::Select, "⋙".to_string()),
+    ]);
+    map
+}
 
-    fn simple_symbols() -> SettingSymbols {
-        SettingSymbols {
-            file: " ".to_string(),
-            directory: "▸".to_string(),
-            select: ">>".to_string(),
-        }
-    }
+fn simple_symbols() -> HashMap<FileItems, String> {
+    let map: HashMap<FileItems, String> = HashMap::from([
+        (FileItems::File, " ".to_string()),
+        (FileItems::Directory, "▸".to_string()),
+        (FileItems::Select, ">>".to_string()),
+    ]);
+    map
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct UserConfig {
-    user_colors: SettingColors,
-    symbols: SettingSymbols,
-    user_keybinds: UserKeybinds,
+    theme: SettingTheme,
+    symbols: HashMap<FileItems, String>,
+    user_keybinds: HashMap<String, String>,
 }
 
 impl UserConfig {
     pub fn default_dark() -> UserConfig {
         UserConfig {
-            user_colors: SettingColors::dark_theme(),
-            symbols: SettingSymbols::simple_symbols(),
-            user_keybinds: UserKeybinds::default_vim_movements(),
+            theme: SettingTheme::dark_theme(),
+            symbols: simple_symbols(),
+            user_keybinds: default_vim_movements(),
         }
     }
 
     pub fn default_dark_blue() -> UserConfig {
         UserConfig {
-            user_colors: SettingColors::dark_blue_theme(),
-            symbols: SettingSymbols::simple_symbols(),
-            user_keybinds: UserKeybinds::default_vim_ctrl_movements(),
+            theme: SettingTheme::dark_blue_theme(),
+            symbols: simple_symbols(),
+            user_keybinds: default_vim_ctrl_movements(),
         }
     }
 
     pub fn default_light() -> UserConfig {
         UserConfig {
-            user_colors: SettingColors::light_theme(),
-            symbols: SettingSymbols::example_symbols(),
-            user_keybinds: UserKeybinds::default_arrow_key(),
+            theme: SettingTheme::light_theme(),
+            symbols: example_symbols(),
+            user_keybinds: default_arrow_key(),
         }
     }
-
-    pub fn file_style(&self) -> Style {
-        let user_color = self.user_colors.file_item.clone();
-        style_formatter(user_color, true, false)
+    pub fn symbols(&self) -> &HashMap<FileItems, String> {
+        &self.symbols
     }
 
-    pub fn dir_style(&self) -> Style {
-        let user_color = self.user_colors.directory.clone();
-        style_formatter(user_color, true, false)
+    pub fn theme(&self) -> &SettingTheme {
+        &self.theme
     }
 
-    pub fn select_style(&self) -> Style {
-        let user_color = self.user_colors.select.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn header_style(&self) -> Style {
-        let user_color = self.user_colors.header.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn boader_style(&self) -> Style {
-        let user_color = self.user_colors.boader.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn command_style(&self) -> Style {
-        let user_color = self.user_colors.command.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn background_style(&self) -> Style {
-        let user_color = self.user_colors.background.clone();
-        style_formatter(user_color, false, true)
-    }
-
-    pub fn file_symbol(&self) -> &str {
-        &self.symbols.file
-    }
-
-    pub fn dir_symbol(&self) -> &str {
-        &self.symbols.directory
-    }
-
-    pub fn select_symbol(&self) -> &str {
-        &self.symbols.select
-    }
-
-    pub fn keybindings_map(&self) -> &UserKeybinds {
+    pub fn keybindings_map(&self) -> &HashMap<String, String> {
         &self.user_keybinds
     }
 }
@@ -406,11 +396,14 @@ mod test {
         let f = std::fs::File::open(path);
         assert!(f.is_ok());
         let config: Result<UserConfig, de::Error> = ron::de::from_reader(f.unwrap());
+        match &config {
+            Ok(_) => {}
+            Err(e) => println!("{e:#?}"),
+        }
         assert!(config.is_ok());
         let config = config.unwrap();
         let keybinds = config.keybindings_map();
-        let keymap = &keybinds.keybinds;
-        println!("{:#?}", keymap);
+        println!("{:#?}", keybinds);
     }
 
     #[test]
