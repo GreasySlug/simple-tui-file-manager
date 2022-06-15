@@ -1,13 +1,17 @@
-## App
+## 1. Introduction
 
-App stil have much tasks, so let's go step by step.
+This project is for practice.
 
-### 1. rename
+No one is forced to do so, so feel free to join and leave.
 
-names is important, but I give variables and methods to wrong names.
+It's not always efficient.
 
-If they are not good or don't match the function, please change them!
+Make mistakes and correct them and learn from them.
 
-### 2. additional functions
+## 2. Cross Platform
 
-when you want to enhance or add functions, you do it.
+This project is designed to work cross-platform
+
+but, My pc has Windows and Linux
+
+I cannot mantain about bugs and suggestions of Mac, so please suggest testing and debugging!

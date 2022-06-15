@@ -1,10 +1,7 @@
 (
-    // default color theme
-    background: "light",
-
     // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
     // LightRed, LightGeen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
-    user_colors: SettingColors (
+    theme: SettingTheme (
         background: Black,
         header: Magenta, // file name, permission, size, date
         boader: White, // frame line
@@ -13,9 +10,18 @@
         select: Green, // selecting hightlinght
         command: White,
     ),
-    symbols: SettingSymbols (
-        file: " ",
-        directory: "▶",
-        select: ">>"
-    ),
+    symbols: {
+        File: " ",
+        Directory: "▶",
+        Select: ">>"
+    },
+    user_keybinds: {
+        "h": "move_to_parent_dir",
+        "j": "move_to_next_file_item",
+        "k": "move_to_prev_file_item",
+        "l": "move_to_child_dir",
+        "tab":"next_dirtab",
+        "tabspace":"prev_dirtab",
+        "q" :"quit",
+    }
 )

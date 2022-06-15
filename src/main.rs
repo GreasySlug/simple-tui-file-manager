@@ -1,16 +1,18 @@
 use application::{run_app, App};
-use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
+use crossterm::execute;
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
+
 use path_process::{current_dir_path, get_home_directory_path, pathbuf_to_string_name};
-use state::StatefulDirectory;
 use std::{error::Error, io};
 use tui::{backend::CrosstermBackend, Terminal};
 
 mod application;
 mod file_item_list;
+mod input_ui;
+mod keymapping;
 mod load_config;
 mod path_process;
 mod state;

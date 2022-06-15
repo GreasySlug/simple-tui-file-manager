@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use crossterm::event::{KeyCode, KeyEvent};
 use serde::Deserialize;
 use tui::style::{Color, Style};
 
@@ -22,8 +25,8 @@ enum Colors {
     Rgb(u8, u8, u8),
 }
 
-#[derive(Debug, Clone, Deserialize)]
-enum Keyboad {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum UserKeyboad {
     H,
     J,
     K,
@@ -48,10 +51,109 @@ enum Keyboad {
     Tab,
     Tabspace,
     Backspace,
+    Unknown,
+}
+
+// TODO: chang {Key: Command}
+// TODO: add function to insert new {key: cmd} easily
+pub fn default_vim_movements() -> HashMap<String, String> {
+    let mut keybinds: HashMap<String, String> = HashMap::new();
+    keybinds.insert("h".to_string(), "move_to_parent_dir".to_string());
+    keybinds.insert("j".to_string(), "move_to_next_file_item".to_string());
+    keybinds.insert("k".to_string(), "move_to_prev_file_item".to_string());
+    keybinds.insert("l".to_string(), "move_to_child_dir".to_string());
+    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("q".to_string(), "quit".to_string());
+
+    keybinds
+}
+
+pub fn default_arrow_key() -> HashMap<String, String> {
+    let mut keybinds: HashMap<String, String> = HashMap::new();
+    keybinds.insert("left".to_string(), "move_to_parent_dir".to_string());
+    keybinds.insert("down".to_string(), "move_to_next_file_item".to_string());
+    keybinds.insert("up".to_string(), "move_to_prev_file_item".to_string());
+    keybinds.insert("right".to_string(), "move_to_child_dir".to_string());
+    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("q".to_string(), "quit".to_string());
+
+    keybinds
+}
+
+pub fn default_vim_ctrl_movements() -> HashMap<String, String> {
+    let mut keybinds: HashMap<String, String> = HashMap::new();
+    keybinds.insert("C-h".to_string(), "move_to_parent_dir".to_string());
+    keybinds.insert("C-j".to_string(), "move_to_next_file_item".to_string());
+    keybinds.insert("C-k".to_string(), "move_to_prev_file_item".to_string());
+    keybinds.insert("C-l".to_string(), "move_to_child_dir".to_string());
+    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
+    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("q".to_string(), "quit".to_string());
+
+    keybinds
+}
+
+pub fn string_map_to_user_keyboad(
+    keybinds: &HashMap<String, String>,
+) -> HashMap<UserKeyboad, String> {
+    let mut keybind: HashMap<UserKeyboad, String> = HashMap::new();
+    for (key, cmd) in keybinds.iter() {
+        let user_keyboad = string_to_keyboard(key);
+        keybind.insert(user_keyboad, cmd.to_string());
+    }
+    keybind
+}
+
+fn string_to_keyboard(s: &str) -> UserKeyboad {
+    match s {
+        "h" => UserKeyboad::H,
+        "j" => UserKeyboad::J,
+        "k" => UserKeyboad::K,
+        "l" => UserKeyboad::L,
+        "q" => UserKeyboad::Q,
+        "S-h" => UserKeyboad::ShiftH,
+        "S-j" => UserKeyboad::ShiftJ,
+        "S-k" => UserKeyboad::SHiftK,
+        "S-l" => UserKeyboad::ShiftL,
+        "C-h" => UserKeyboad::CtrlH,
+        "C-j" => UserKeyboad::CtrlJ,
+        "C-k" => UserKeyboad::CtrlK,
+        "C-l" => UserKeyboad::CtrlL,
+        "left" => UserKeyboad::Left,
+        "up" => UserKeyboad::Up,
+        "down" => UserKeyboad::Down,
+        "right" => UserKeyboad::Right,
+        "tab" => UserKeyboad::Tab,
+        "tabspace" => UserKeyboad::Tabspace,
+        _ => UserKeyboad::Unknown,
+    }
+}
+
+pub fn crossterm_keycode_to_commands(key: &KeyEvent) -> UserKeyboad {
+    match key.code {
+        KeyCode::BackTab => UserKeyboad::Tabspace,
+        KeyCode::Esc => UserKeyboad::Escape,
+        KeyCode::Left => UserKeyboad::Left,
+        KeyCode::Up => UserKeyboad::Up,
+        KeyCode::Down => UserKeyboad::Down,
+        KeyCode::Right => UserKeyboad::Right,
+        KeyCode::Tab => UserKeyboad::Tab,
+        KeyCode::Char(c) => match c {
+            'q' => UserKeyboad::Q,
+            'l' => UserKeyboad::L,
+            'j' => UserKeyboad::J,
+            'k' => UserKeyboad::K,
+            'h' => UserKeyboad::H,
+            _ => UserKeyboad::Unknown,
+        },
+        _ => UserKeyboad::Unknown,
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct SettingColors {
+pub struct SettingTheme {
     background: Colors,
     boader: Colors,
     directory: Colors,
@@ -61,9 +163,9 @@ pub struct SettingColors {
     command: Colors,
 }
 
-impl SettingColors {
-    fn dark_theme() -> SettingColors {
-        SettingColors {
+impl SettingTheme {
+    fn dark_theme() -> SettingTheme {
+        SettingTheme {
             background: Colors::Black,
             header: Colors::Cyan,
             boader: Colors::White,
@@ -74,20 +176,20 @@ impl SettingColors {
         }
     }
 
-    fn light_theme() -> SettingColors {
-        SettingColors {
-            background: Colors::Gray,
+    fn light_theme() -> SettingTheme {
+        SettingTheme {
+            background: Colors::White,
             header: Colors::Green,
-            boader: Colors::Gray,
+            boader: Colors::Black,
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
-            command: Colors::Gray,
+            command: Colors::Black,
         }
     }
 
-    fn dark_blue_theme() -> SettingColors {
-        SettingColors {
+    fn dark_blue_theme() -> SettingTheme {
+        SettingTheme {
             background: Colors::Rgb(39, 67, 100),
             header: Colors::Green,
             boader: Colors::Rgb(97, 169, 252),
@@ -96,6 +198,41 @@ impl SettingColors {
             select: Colors::Green,
             command: Colors::Rgb(97, 169, 252),
         }
+    }
+
+    pub fn file_style(&self) -> Style {
+        let user_color = self.file_item.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn dir_style(&self) -> Style {
+        let user_color = self.directory.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn select_style(&self) -> Style {
+        let user_color = self.select.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn header_style(&self) -> Style {
+        let user_color = self.header.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn boader_style(&self) -> Style {
+        let user_color = self.boader.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn command_style(&self) -> Style {
+        let user_color = self.command.clone();
+        style_formatter(user_color, true, false)
+    }
+
+    pub fn background_style(&self) -> Style {
+        let user_color = self.background.clone();
+        style_formatter(user_color, false, true)
     }
 }
 
@@ -148,128 +285,72 @@ fn tui_color_transformer(color: Color) -> Colors {
     c
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct SettingKeybind {
-    move_to_next_file_item: Keyboad,
-    move_to_prev_file_item: Keyboad,
-    move_to_parent_dir: Keyboad,
-    move_to_child_dir: Keyboad,
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Hash)]
+pub enum FileItems {
+    File,
+    Directory,
+    Select,
 }
 
-impl SettingKeybind {
-    fn default_vim_like_movements() -> SettingKeybind {
-        SettingKeybind {
-            move_to_next_file_item: Keyboad::J,
-            move_to_prev_file_item: Keyboad::K,
-            move_to_parent_dir: Keyboad::H,
-            move_to_child_dir: Keyboad::L,
-        }
-    }
+fn example_symbols() -> HashMap<FileItems, String> {
+    let map: HashMap<FileItems, String> = HashMap::from([
+        (FileItems::File, "📜".to_string()),
+        (FileItems::Directory, "📁".to_string()),
+        (FileItems::Select, "⋙".to_string()),
+    ]);
+    map
 }
 
-#[derive(Debug, Clone, Deserialize)]
-struct SettingSymbols {
-    file: String,
-    directory: String,
-    select: String,
-}
-
-impl SettingSymbols {
-    fn example_symbols() -> SettingSymbols {
-        SettingSymbols {
-            file: "📜".to_string(),
-            directory: "📁".to_string(),
-            select: "⋙".to_string(),
-        }
-    }
-
-    fn simple_symbols() -> SettingSymbols {
-        SettingSymbols {
-            file: " ".to_string(),
-            directory: "▸".to_string(),
-            select: ">>".to_string(),
-        }
-    }
+fn simple_symbols() -> HashMap<FileItems, String> {
+    let map: HashMap<FileItems, String> = HashMap::from([
+        (FileItems::File, " ".to_string()),
+        (FileItems::Directory, "▸".to_string()),
+        (FileItems::Select, ">>".to_string()),
+    ]);
+    map
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct UserConfig {
-    background: String,
-    user_colors: SettingColors,
-    symbols: SettingSymbols,
-    // keybind: UserKeybind,
+    theme: SettingTheme,
+    symbols: HashMap<FileItems, String>,
+    user_keybinds: HashMap<String, String>,
 }
 
 impl UserConfig {
     pub fn default_dark() -> UserConfig {
         UserConfig {
-            background: "dark".to_string(),
-            user_colors: SettingColors::dark_theme(),
-            symbols: SettingSymbols::simple_symbols(),
+            theme: SettingTheme::dark_theme(),
+            symbols: simple_symbols(),
+            user_keybinds: default_vim_movements(),
         }
     }
 
     pub fn default_dark_blue() -> UserConfig {
         UserConfig {
-            background: "dark".to_string(),
-            user_colors: SettingColors::dark_blue_theme(),
-            symbols: SettingSymbols::simple_symbols(),
+            theme: SettingTheme::dark_blue_theme(),
+            symbols: simple_symbols(),
+            user_keybinds: default_vim_ctrl_movements(),
         }
     }
 
     pub fn default_light() -> UserConfig {
         UserConfig {
-            background: "light".to_string(),
-            user_colors: SettingColors::light_theme(),
-            symbols: SettingSymbols::example_symbols(),
+            theme: SettingTheme::light_theme(),
+            symbols: example_symbols(),
+            user_keybinds: default_arrow_key(),
         }
     }
-
-    pub fn file_style(&self) -> Style {
-        let user_color = self.user_colors.file_item.clone();
-        style_formatter(user_color, true, false)
+    pub fn symbols(&self) -> &HashMap<FileItems, String> {
+        &self.symbols
     }
 
-    pub fn dir_style(&self) -> Style {
-        let user_color = self.user_colors.directory.clone();
-        style_formatter(user_color, true, false)
+    pub fn theme(&self) -> &SettingTheme {
+        &self.theme
     }
 
-    pub fn select_style(&self) -> Style {
-        let user_color = self.user_colors.select.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn header_style(&self) -> Style {
-        let user_color = self.user_colors.header.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn boader_style(&self) -> Style {
-        let user_color = self.user_colors.boader.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn command_style(&self) -> Style {
-        let user_color = self.user_colors.command.clone();
-        style_formatter(user_color, true, false)
-    }
-
-    pub fn background_style(&self) -> Style {
-        let user_color = self.user_colors.background.clone();
-        style_formatter(user_color, false, true)
-    }
-
-    pub fn file_symbol(&self) -> &str {
-        &self.symbols.file
-    }
-
-    pub fn dir_symbol(&self) -> &str {
-        &self.symbols.directory
-    }
-
-    pub fn select_symbol(&self) -> &str {
-        &self.symbols.select
+    pub fn keybindings_map(&self) -> &HashMap<String, String> {
+        &self.user_keybinds
     }
 }
 
@@ -287,22 +368,72 @@ pub fn load_user_config_file() -> UserConfig {
     // Each Windows, Mac(Linux)
     // Consider specifying PATH in each OS
     let path = "config.ron";
-    let f = std::fs::File::open(path);
-    if let Ok(f) = f {
-        let config: UserConfig = match ron::de::from_reader(f) {
-            Ok(x) => x,
-            Err(_) => UserConfig::default_dark_blue(),
-        };
-        config
-    } else {
-        UserConfig::default_dark_blue()
+    match std::fs::File::open(path) {
+        Ok(f) => {
+            let config: Result<UserConfig, ron::de::Error> = ron::de::from_reader(f);
+            if let Ok(config) = config {
+                config
+            } else {
+                UserConfig::default_light()
+            }
+        }
+        // TODO: logging this e
+        Err(e) => UserConfig::default_dark(),
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::load_user_config_file;
+    use ron::de;
+
+    use crate::load_config::UserConfig;
+
+    use super::{string_to_keyboard, UserKeyboad};
 
     #[test]
-    fn can_parse_ron_file() {}
+    fn can_parse_ron_file() {
+        let path = "config.ron";
+        let f = std::fs::File::open(path);
+        assert!(f.is_ok());
+        let config: Result<UserConfig, de::Error> = ron::de::from_reader(f.unwrap());
+        match &config {
+            Ok(_) => {}
+            Err(e) => println!("{e:#?}"),
+        }
+        assert!(config.is_ok());
+        let config = config.unwrap();
+        let keybinds = config.keybindings_map();
+        println!("{:#?}", keybinds);
+    }
+
+    #[test]
+    fn can_repace_string_to_enum() {
+        let sl = "l".to_string();
+        let el = UserKeyboad::L;
+        assert_eq!(string_to_keyboard(&sl), el);
+        let strings = [
+            "l", "h", "j", "k", "C-h", "C-j", "C-k", "C-l", "S-h", "S-j", "S-k", "S-l", "q",
+        ];
+
+        let enum_keys = [
+            UserKeyboad::L,
+            UserKeyboad::H,
+            UserKeyboad::J,
+            UserKeyboad::K,
+            UserKeyboad::CtrlH,
+            UserKeyboad::CtrlJ,
+            UserKeyboad::CtrlK,
+            UserKeyboad::CtrlL,
+            UserKeyboad::ShiftH,
+            UserKeyboad::ShiftJ,
+            UserKeyboad::SHiftK,
+            UserKeyboad::ShiftL,
+            UserKeyboad::Q,
+        ];
+
+        for (s, k) in strings.iter().zip(enum_keys.iter()) {
+            let s = s.to_string();
+            assert_eq!(string_to_keyboard(&s), *k);
+        }
+    }
 }

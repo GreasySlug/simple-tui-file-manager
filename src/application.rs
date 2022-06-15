@@ -1,15 +1,27 @@
 use std::collections::{hash_map::Entry, HashMap};
+use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
 
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use tui::backend::Backend;
 use tui::Terminal;
 
 use crate::file_item_list::Kinds;
+use crate::load_config::{
+    crossterm_keycode_to_commands, load_user_config_file, string_map_to_user_keyboad, SettingTheme,
+    UserConfig, UserKeyboad,
+};
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
 use crate::ui::ui;
+
+#[derive(Debug, Clone, Copy)]
+pub enum Mode {
+    Normal,
+    Input,
+    Stacker,
+}
 
 // TODO: Restrictions without reason, so think cost
 const DRAIN_SIZE: usize = 50;
@@ -22,6 +34,8 @@ pub struct App {
     tab_index: usize,
     dir_map: HashMap<String, StatefulDirectory>,
     command_history: Vec<String>,
+    mode: Mode,
+    config: UserConfig,
 }
 
 impl App {
@@ -30,8 +44,14 @@ impl App {
             directory_tabs: Vec::new(),
             tab_index: 0,
             dir_map: HashMap::new(),
-            command_history: Vec::new(),
+            command_history: vec!["start app".to_string()],
+            mode: Mode::Normal,
+            config: load_user_config_file(),
         }
+    }
+
+    pub fn mode(&self) -> &Mode {
+        &self.mode
     }
 
     // The current directory should be selected, so that tab and hashmap must existe.
@@ -96,10 +116,15 @@ impl App {
         }
     }
 
-    pub fn push_command_log(&mut self, command: &KeyCode) {
+    pub fn push_command_keycode_log(&mut self, command: &KeyCode) {
         self.limit_command_log();
         let cmm = format!("{:?}", command);
-        self.command_history.push(cmm)
+        self.command_history.push(cmm);
+    }
+
+    pub fn push_command_error_log(&mut self, command: String) {
+        self.limit_command_log();
+        self.command_history.push(command);
     }
 
     pub fn _pop_command_log(&mut self) -> Option<String> {
@@ -108,6 +133,15 @@ impl App {
 
     pub fn command_history(&self) -> Vec<String> {
         self.command_history.clone()
+    }
+
+    pub fn theme(&self) -> &SettingTheme {
+        self.config.theme()
+    }
+
+    pub fn symbols(&self, item: &crate::load_config::FileItems) -> String {
+        let config = &self.config;
+        config.symbols().get(item).unwrap().to_owned()
     }
 
     pub fn move_to_child_dir(&mut self) {
@@ -132,31 +166,55 @@ impl App {
     // I want to select the directory before moving from the beginning.
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.peek_selected_statefuldir();
+        let dir_name = selected_dir.crr_dir_name();
         let parent_path = selected_dir.crr_dir_parent_path().clone();
         let parent_dir_name = pathbuf_to_string_name(&parent_path);
         self.insert_new_statefuldir(parent_path);
         let i = self.tab_index;
         let name = self.directory_tabs.get_mut(i).unwrap();
         *name = parent_dir_name;
+
+        // select the position of crr dir name or select top
+        let dir_pos = self
+            .peek_selected_statefuldir()
+            .file_items_vec()
+            .iter()
+            // .inspect(|x| println!("{:?}", x.name() == dir_name))
+            .position(|x| x.name() == dir_name);
+
+        let state_dir = self.peek_selected_statefuldir();
+        state_dir.select_index(dir_pos)
+    }
+
+    fn user_keymapings(&self) -> HashMap<UserKeyboad, String> {
+        let keymap = self.config.keybindings_map();
+        string_map_to_user_keyboad(keymap)
     }
 }
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+    let keymap = app.user_keymapings();
     loop {
         // let selected_dir = app.peek_selected_statefuldir();
         terminal.draw(|f| ui(f, &mut app))?;
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                KeyCode::Char('j') | KeyCode::Down => app.move_to_next_file_item(),
-                KeyCode::Char('k') | KeyCode::Up => app.move_to_prev_file_item(),
-                KeyCode::Char('h') | KeyCode::Left => app.move_to_parent_dir(),
-                KeyCode::Char('l') | KeyCode::Right => app.move_to_child_dir(),
-                KeyCode::Tab => app.next_dirtab(),
-                KeyCode::BackTab => app.prev_dirtab(),
-                _ => {}
+            let key_code = crossterm_keycode_to_commands(&key);
+            match keymap.get(&key_code) {
+                Some(cmd) => {
+                    match cmd.as_str() {
+                        "move_to_parent_dir" => app.move_to_parent_dir(),
+                        "move_to_next_file_item" => app.move_to_next_file_item(),
+                        "move_to_prev_file_item" => app.move_to_prev_file_item(),
+                        "move_to_child_dir" => app.move_to_child_dir(),
+                        "next_dirtab" => app.next_dirtab(),
+                        "prev_dirtab" => app.prev_dirtab(),
+                        "quit" => return Ok(()),
+                        _ => app.push_command_error_log("No Commands".to_string()),
+                    }
+                    app.push_command_keycode_log(&key.code);
+                }
+                None => app.push_command_error_log("None".to_string()),
             }
-            app.push_command_log(&key.code);
         }
     }
 }
