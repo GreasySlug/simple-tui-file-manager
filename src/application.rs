@@ -9,7 +9,8 @@ use tui::Terminal;
 
 use crate::file_item_list::Kinds;
 use crate::load_config::{
-    crossterm_keycode_to_commands, load_user_config_file, UserConfig, UserKeyboad,
+    crossterm_keycode_to_commands, load_user_config_file, string_map_to_user_keyboad, SettingTheme,
+    UserConfig, UserKeyboad,
 };
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
@@ -134,6 +135,15 @@ impl App {
         self.command_history.clone()
     }
 
+    pub fn theme(&self) -> &SettingTheme {
+        self.config.theme()
+    }
+
+    pub fn symbols(&self, item: &crate::load_config::FileItems) -> String {
+        let config = &self.config;
+        config.symbols().get(item).unwrap().to_owned()
+    }
+
     pub fn move_to_child_dir(&mut self) {
         let select_dir = self.peek_selected_statefuldir();
         if let Some(file_item) = select_dir.selecting_file_item() {
@@ -178,7 +188,7 @@ impl App {
 
     fn user_keymapings(&self) -> HashMap<UserKeyboad, String> {
         let keymap = self.config.keybindings_map();
-        keymap.string_map_to_user_keyboad()
+        string_map_to_user_keyboad(keymap)
     }
 }
 

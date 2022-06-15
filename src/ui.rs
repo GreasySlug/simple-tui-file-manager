@@ -10,13 +10,12 @@ use tui::{
 use crate::{
     application::{App, Mode},
     file_item_list::Kinds,
-    input_ui::{self, input_ui},
-    load_config::{load_user_config_file, UserConfig},
+    input_ui::input_ui,
+    load_config::{FileItems, SettingTheme},
 };
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    // if the theme is loaded here, config is also loaded at each loop.
-    let theme = load_user_config_file();
+    let theme = app.theme();
     let file_style = theme.file_style();
     let dir_style = theme.dir_style();
     let selecting_style = theme.select_style();
@@ -25,10 +24,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let tab_style = theme.boader_style();
     let dir_block_style = theme.boader_style();
     let tab_highlight_style = theme.select_style().add_modifier(Modifier::BOLD);
-
-    let file_symbol = theme.file_symbol();
-    let dir_symbol = theme.dir_symbol();
-    let select_symbol = theme.select_symbol();
 
     let index = app.tab_index();
     let tabs = app.dirtab();
@@ -63,6 +58,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let background_window = Block::default().style(background_style);
     f.render_widget(background_window, size);
 
+    command_display_ui(f, commands_history, chunks[2], theme);
+
     match mode {
         Mode::Normal => {
             let tab_titles: Vec<Spans> = tabs
@@ -83,14 +80,17 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         }
         Mode::Stacker => todo!(),
     }
-
     // TODO: Display and hide the header and each element with bool
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
-    let dir = app.peek_selected_statefuldir();
+    let file_symbol = app.symbols(&FileItems::File);
+    let dir_symbol = app.symbols(&FileItems::Directory);
+    let select_symbol = app.symbols(&FileItems::Select);
 
+    let dir = app.peek_selected_statefuldir();
     let current_dir_path = dir.crr_dir_name();
     let file_item_iter = dir.file_items_vec();
+
     let file_items_list = file_item_iter.iter().map(|file_item| {
         let name = file_item.name();
         let perm = if file_item.get_permission() {
@@ -105,7 +105,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         {
             vec![
                 Span::raw(" "),
-                Span::styled(dir_symbol, dir_style),
+                Span::styled(&dir_symbol, dir_style),
                 Span::styled(name, dir_style),
                 Span::raw(perm),
                 Span::raw(size),
@@ -114,7 +114,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         } else {
             vec![
                 Span::raw(" "),
-                Span::styled(file_symbol, file_style),
+                Span::styled(&file_symbol, file_style),
                 Span::styled(name, file_style),
                 Span::raw(perm),
                 Span::raw(size),
@@ -137,19 +137,17 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 .title(current_dir_path),
         )
         .highlight_style(selecting_style)
-        .highlight_symbol(select_symbol)
+        .highlight_symbol(&select_symbol)
         .widths(&header_constraints);
 
     f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
-
-    command_display_ui(f, commands_history, chunks[2], theme);
 }
 
 fn command_display_ui<B: Backend>(
     f: &mut Frame<B>,
     cmd_hist: Vec<String>,
     cmd_window: Rect,
-    theme: UserConfig,
+    theme: &SettingTheme,
 ) {
     let block_style = theme.command_style();
 
