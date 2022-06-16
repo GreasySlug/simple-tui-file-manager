@@ -138,7 +138,7 @@ pub enum UserKeyboad {
     Escape,
     Enter,
     Tab,
-    Tabspace,
+    Backtab,
     Backspace,
     Shape,
     Period,
@@ -176,7 +176,7 @@ pub fn default_vim_movements() -> HashMap<String, String> {
     keybinds.insert("k".to_string(), "move_to_prev_file_item".to_string());
     keybinds.insert("l".to_string(), "move_to_child_dir".to_string());
     keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("Backtab".to_string(), "prev_dirtab".to_string());
     keybinds.insert("q".to_string(), "quit".to_string());
 
     keybinds
@@ -189,7 +189,7 @@ pub fn default_arrow_key() -> HashMap<String, String> {
     keybinds.insert("up".to_string(), "move_to_prev_file_item".to_string());
     keybinds.insert("right".to_string(), "move_to_child_dir".to_string());
     keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("Backtab".to_string(), "prev_dirtab".to_string());
     keybinds.insert("q".to_string(), "quit".to_string());
 
     keybinds
@@ -202,7 +202,7 @@ pub fn default_vim_ctrl_movements() -> HashMap<String, String> {
     keybinds.insert("C-k".to_string(), "move_to_prev_file_item".to_string());
     keybinds.insert("C-l".to_string(), "move_to_child_dir".to_string());
     keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-    keybinds.insert("Tabspace".to_string(), "prev_dirtab".to_string());
+    keybinds.insert("Backtab".to_string(), "prev_dirtab".to_string());
     keybinds.insert("q".to_string(), "quit".to_string());
 
     keybinds
@@ -332,7 +332,7 @@ fn string_to_keyboard(s: &str) -> UserKeyboad {
         "escape" => UserKeyboad::Escape,
         "enter" => UserKeyboad::Enter,
         "tab" => UserKeyboad::Tab,
-        "tabspace" => UserKeyboad::Tabspace,
+        "Backtab" => UserKeyboad::Backtab,
         "backspace" => UserKeyboad::Backspace,
         "#" => UserKeyboad::Shape,
         "." => UserKeyboad::Period,
@@ -362,9 +362,150 @@ fn string_to_keyboard(s: &str) -> UserKeyboad {
     }
 }
 
+pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad {
+    match (key.code, key.modifiers) {
+        (KeyCode::Char(c), KeyModifiers::CONTROL) => match c {
+            'a' => UserKeyboad::CtrlA,
+            'b' => UserKeyboad::CtrlB,
+            'c' => UserKeyboad::CtrlC,
+            'd' => UserKeyboad::CtrlD,
+            'e' => UserKeyboad::CtrlE,
+            'f' => UserKeyboad::CtrlF,
+            'g' => UserKeyboad::CtrlG,
+            'h' => UserKeyboad::CtrlH,
+            'i' => UserKeyboad::CtrlI,
+            'j' => UserKeyboad::CtrlJ,
+            'k' => UserKeyboad::CtrlK,
+            'l' => UserKeyboad::CtrlL,
+            'm' => UserKeyboad::CtrlM,
+            'n' => UserKeyboad::CtrlN,
+            'o' => UserKeyboad::CtrlO,
+            'p' => UserKeyboad::CtrlP,
+            'q' => UserKeyboad::CtrlQ,
+            'r' => UserKeyboad::CtrlR,
+            's' => UserKeyboad::CtrlS,
+            't' => UserKeyboad::CtrlT,
+            'u' => UserKeyboad::CtrlU,
+            'v' => UserKeyboad::CtrlV,
+            'w' => UserKeyboad::CtrlW,
+            'x' => UserKeyboad::CtrlX,
+            'y' => UserKeyboad::CtrlY,
+            'z' => UserKeyboad::CtrlZ,
+            _ => UserKeyboad::Unknown,
+        },
+        (KeyCode::Char(c), KeyModifiers::SHIFT) => match c {
+            'A' => UserKeyboad::ShiftA,
+            'B' => UserKeyboad::ShiftB,
+            'C' => UserKeyboad::ShiftC,
+            'D' => UserKeyboad::ShiftD,
+            'E' => UserKeyboad::ShiftE,
+            'F' => UserKeyboad::ShiftF,
+            'G' => UserKeyboad::ShiftG,
+            'H' => UserKeyboad::ShiftH,
+            'I' => UserKeyboad::ShiftI,
+            'J' => UserKeyboad::ShiftJ,
+            'K' => UserKeyboad::SHiftK,
+            'L' => UserKeyboad::ShiftL,
+            'M' => UserKeyboad::ShiftM,
+            'N' => UserKeyboad::ShiftN,
+            'O' => UserKeyboad::ShiftO,
+            'P' => UserKeyboad::ShiftP,
+            'Q' => UserKeyboad::ShiftQ,
+            'R' => UserKeyboad::ShiftR,
+            'S' => UserKeyboad::ShiftS,
+            'T' => UserKeyboad::ShiftT,
+            'U' => UserKeyboad::ShiftU,
+            'V' => UserKeyboad::ShiftV,
+            'W' => UserKeyboad::ShiftW,
+            'X' => UserKeyboad::ShiftX,
+            'Y' => UserKeyboad::ShiftY,
+            'Z' => UserKeyboad::ShiftZ,
+            _ => UserKeyboad::Unknown,
+        },
+        (KeyCode::Char(c), KeyModifiers::ALT) => match c {
+            'a' => UserKeyboad::AltA,
+            'b' => UserKeyboad::AltB,
+            'c' => UserKeyboad::AltC,
+            'd' => UserKeyboad::AltD,
+            'e' => UserKeyboad::AltE,
+            'f' => UserKeyboad::AltF,
+            'g' => UserKeyboad::AltG,
+            'h' => UserKeyboad::AltH,
+            'i' => UserKeyboad::AltI,
+            'j' => UserKeyboad::AltJ,
+            'k' => UserKeyboad::AltK,
+            'l' => UserKeyboad::AltL,
+            'm' => UserKeyboad::AltM,
+            'n' => UserKeyboad::AltN,
+            'o' => UserKeyboad::AltO,
+            'p' => UserKeyboad::AltP,
+            'q' => UserKeyboad::AltQ,
+            'r' => UserKeyboad::AltR,
+            's' => UserKeyboad::AltS,
+            't' => UserKeyboad::AltT,
+            'u' => UserKeyboad::AltU,
+            'v' => UserKeyboad::AltV,
+            'w' => UserKeyboad::AltW,
+            'x' => UserKeyboad::AltX,
+            'y' => UserKeyboad::AltY,
+            'z' => UserKeyboad::AltZ,
+            _ => UserKeyboad::Unknown,
+        },
+        (KeyCode::Char(c), _) => match c {
+            'a' => UserKeyboad::A,
+            'b' => UserKeyboad::B,
+            'c' => UserKeyboad::C,
+            'd' => UserKeyboad::D,
+            'e' => UserKeyboad::E,
+            'f' => UserKeyboad::F,
+            'g' => UserKeyboad::G,
+            'h' => UserKeyboad::H,
+            'i' => UserKeyboad::I,
+            'j' => UserKeyboad::J,
+            'k' => UserKeyboad::K,
+            'l' => UserKeyboad::L,
+            'm' => UserKeyboad::M,
+            'n' => UserKeyboad::N,
+            'o' => UserKeyboad::O,
+            'p' => UserKeyboad::P,
+            'q' => UserKeyboad::Q,
+            'r' => UserKeyboad::R,
+            's' => UserKeyboad::S,
+            't' => UserKeyboad::T,
+            'u' => UserKeyboad::U,
+            'v' => UserKeyboad::V,
+            'w' => UserKeyboad::W,
+            'x' => UserKeyboad::X,
+            'y' => UserKeyboad::Y,
+            'z' => UserKeyboad::Z,
+            '#' => UserKeyboad::Shape,
+            '.' => UserKeyboad::Period,
+            '+' => UserKeyboad::Plus,
+            '-' => UserKeyboad::Minus,
+            '>' => UserKeyboad::GT,
+            '<' => UserKeyboad::LT,
+            '?' => UserKeyboad::QuestionMark,
+            '!' => UserKeyboad::ExclamationMark,
+            ',' => UserKeyboad::Comma,
+            ' ' => UserKeyboad::Space,
+            _ => UserKeyboad::Unknown,
+        },
+        (KeyCode::BackTab, _) => UserKeyboad::Backtab,
+        (KeyCode::Esc, _) => UserKeyboad::Escape,
+        (KeyCode::Left, _) => UserKeyboad::Left,
+        (KeyCode::Up, _) => UserKeyboad::Up,
+        (KeyCode::Down, _) => UserKeyboad::Down,
+        (KeyCode::Right, _) => UserKeyboad::Right,
+        (KeyCode::Home, _) => UserKeyboad::Home,
+        (KeyCode::End, _) => UserKeyboad::End,
+        (KeyCode::Tab, _) => UserKeyboad::Tab,
+        (_, _) => todo!(),
+    }
+}
+
 pub fn simgle_mapping_crossterm_keycode_to_commands(key: &KeyEvent) -> UserKeyboad {
     match key.code {
-        KeyCode::BackTab => UserKeyboad::Tabspace,
+        KeyCode::BackTab => UserKeyboad::Backtab,
         KeyCode::Esc => UserKeyboad::Escape,
         KeyCode::Left => UserKeyboad::Left,
         KeyCode::Up => UserKeyboad::Up,
@@ -386,6 +527,96 @@ pub fn simgle_mapping_crossterm_keycode_to_commands(key: &KeyEvent) -> UserKeybo
             10 => UserKeyboad::F10,
             11 => UserKeyboad::F11,
             12 => UserKeyboad::F12,
+            _ => UserKeyboad::Unknown,
+        },
+        KeyCode::Char(c) => match c {
+            'A' => UserKeyboad::ShiftA,
+            'B' => UserKeyboad::ShiftB,
+            'C' => UserKeyboad::ShiftC,
+            'D' => UserKeyboad::ShiftD,
+            'E' => UserKeyboad::ShiftE,
+            'F' => UserKeyboad::ShiftF,
+            'G' => UserKeyboad::ShiftG,
+            'H' => UserKeyboad::ShiftH,
+            'I' => UserKeyboad::ShiftI,
+            'J' => UserKeyboad::ShiftJ,
+            'K' => UserKeyboad::SHiftK,
+            'L' => UserKeyboad::ShiftL,
+            'M' => UserKeyboad::ShiftM,
+            'N' => UserKeyboad::ShiftN,
+            'O' => UserKeyboad::ShiftO,
+            'P' => UserKeyboad::ShiftP,
+            'Q' => UserKeyboad::ShiftQ,
+            'R' => UserKeyboad::ShiftR,
+            'S' => UserKeyboad::ShiftS,
+            'T' => UserKeyboad::ShiftT,
+            'U' => UserKeyboad::ShiftU,
+            'V' => UserKeyboad::ShiftV,
+            'W' => UserKeyboad::ShiftW,
+            'X' => UserKeyboad::ShiftX,
+            'Y' => UserKeyboad::ShiftY,
+            'Z' => UserKeyboad::ShiftZ,
+            _ => UserKeyboad::Unknown,
+        },
+        KeyCode::Char(c) if key.modifiers == KeyModifiers::CONTROL => match c {
+            'a' => UserKeyboad::CtrlA,
+            'b' => UserKeyboad::CtrlB,
+            'c' => UserKeyboad::CtrlC,
+            'd' => UserKeyboad::CtrlD,
+            'e' => UserKeyboad::CtrlE,
+            'f' => UserKeyboad::CtrlF,
+            'g' => UserKeyboad::CtrlG,
+            'h' => UserKeyboad::CtrlH,
+            'i' => UserKeyboad::CtrlI,
+            'j' => UserKeyboad::CtrlJ,
+            'k' => UserKeyboad::CtrlK,
+            'l' => UserKeyboad::CtrlL,
+            'm' => UserKeyboad::CtrlM,
+            'n' => UserKeyboad::CtrlN,
+            'o' => UserKeyboad::CtrlO,
+            'p' => UserKeyboad::CtrlP,
+            'q' => UserKeyboad::CtrlQ,
+            'r' => UserKeyboad::CtrlR,
+            's' => UserKeyboad::CtrlS,
+            't' => UserKeyboad::CtrlT,
+            'u' => UserKeyboad::CtrlU,
+            'v' => UserKeyboad::CtrlV,
+            'w' => UserKeyboad::CtrlW,
+            'x' => UserKeyboad::CtrlX,
+            'y' => UserKeyboad::CtrlY,
+            'z' => UserKeyboad::CtrlZ,
+            '#' => UserKeyboad::Space,
+            _ => UserKeyboad::Unknown,
+        },
+
+        KeyCode::Char(c) if key.modifiers == KeyModifiers::ALT => match c {
+            'a' => UserKeyboad::AltA,
+            'b' => UserKeyboad::AltB,
+            'c' => UserKeyboad::AltC,
+            'd' => UserKeyboad::AltD,
+            'e' => UserKeyboad::AltE,
+            'f' => UserKeyboad::AltF,
+            'g' => UserKeyboad::AltG,
+            'h' => UserKeyboad::AltH,
+            'i' => UserKeyboad::AltI,
+            'j' => UserKeyboad::AltJ,
+            'k' => UserKeyboad::AltK,
+            'l' => UserKeyboad::AltL,
+            'm' => UserKeyboad::AltM,
+            'n' => UserKeyboad::AltN,
+            'o' => UserKeyboad::AltO,
+            'p' => UserKeyboad::AltP,
+            'q' => UserKeyboad::AltQ,
+            'r' => UserKeyboad::AltR,
+            's' => UserKeyboad::AltS,
+            't' => UserKeyboad::AltT,
+            'u' => UserKeyboad::AltU,
+            'v' => UserKeyboad::AltV,
+            'w' => UserKeyboad::AltW,
+            'x' => UserKeyboad::AltX,
+            'y' => UserKeyboad::AltY,
+            'z' => UserKeyboad::AltZ,
+            '#' => UserKeyboad::Space,
             _ => UserKeyboad::Unknown,
         },
         KeyCode::Char(c) => match c {
@@ -425,97 +656,6 @@ pub fn simgle_mapping_crossterm_keycode_to_commands(key: &KeyEvent) -> UserKeybo
             '!' => UserKeyboad::ExclamationMark,
             ',' => UserKeyboad::Comma,
             ' ' => UserKeyboad::Space,
-            _ => UserKeyboad::Unknown,
-        },
-        KeyCode::Char(c) => match c {
-            'a' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftA,
-            'b' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftB,
-            'c' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftC,
-            'd' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftD,
-            'e' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftE,
-            'f' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftF,
-            'g' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftG,
-            'h' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftH,
-            'i' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftI,
-            'j' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftJ,
-            'k' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::SHiftK,
-            'l' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftL,
-            'm' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftM,
-            'n' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftN,
-            'o' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftO,
-            'p' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftP,
-            'q' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftQ,
-            'r' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftR,
-            's' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftS,
-            't' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftT,
-            'u' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftU,
-            'v' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftV,
-            'w' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftW,
-            'x' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftX,
-            'y' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftY,
-            'z' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::ShiftZ,
-            '#' if key.modifiers == KeyModifiers::SHIFT => UserKeyboad::Shape,
-            _ => UserKeyboad::Unknown,
-        },
-        KeyCode::Char(c) => match c {
-            'a' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlA,
-            'b' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlB,
-            'c' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlC,
-            'd' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlD,
-            'e' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlE,
-            'f' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlF,
-            'g' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlG,
-            'h' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlH,
-            'i' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlI,
-            'j' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlJ,
-            'k' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlK,
-            'l' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlL,
-            'm' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlM,
-            'n' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlN,
-            'o' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlO,
-            'p' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlP,
-            'q' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlQ,
-            'r' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlR,
-            's' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlS,
-            't' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlT,
-            'u' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlU,
-            'v' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlV,
-            'w' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlW,
-            'x' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlX,
-            'y' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlY,
-            'z' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::CtrlZ,
-            '#' if key.modifiers == KeyModifiers::CONTROL => UserKeyboad::Space,
-            _ => UserKeyboad::Unknown,
-        },
-
-        KeyCode::Char(c) => match c {
-            'a' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltA,
-            'b' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltB,
-            'c' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltC,
-            'd' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltD,
-            'e' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltE,
-            'f' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltF,
-            'g' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltG,
-            'h' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltH,
-            'i' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltI,
-            'j' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltJ,
-            'k' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltK,
-            'l' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltL,
-            'm' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltM,
-            'n' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltN,
-            'o' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltO,
-            'p' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltP,
-            'q' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltQ,
-            'r' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltR,
-            's' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltS,
-            't' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltT,
-            'u' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltU,
-            'v' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltV,
-            'w' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltW,
-            'x' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltX,
-            'y' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltY,
-            'z' if key.modifiers == KeyModifiers::ALT => UserKeyboad::AltZ,
-            '#' if key.modifiers == KeyModifiers::ALT => UserKeyboad::Space,
             _ => UserKeyboad::Unknown,
         },
         _ => UserKeyboad::Unknown,
@@ -772,14 +912,15 @@ pub fn load_user_config_file() -> UserConfig {
 
 #[cfg(test)]
 mod test {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use ron::de;
 
-    use crate::load_config::UserConfig;
+    use crate::load_config::{mappings_crossterm, UserConfig};
 
-    use super::{string_to_keyboard, UserKeyboad};
+    use super::{simgle_mapping_crossterm_keycode_to_commands, string_to_keyboard, UserKeyboad};
 
     #[test]
-    fn can_parse_ron_file() {
+    fn can_read_ron_file() {
         let path = "config.ron";
         let f = std::fs::File::open(path);
         assert!(f.is_ok());
@@ -800,7 +941,8 @@ mod test {
         let el = UserKeyboad::L;
         assert_eq!(string_to_keyboard(&sl), el);
         let strings = [
-            "l", "h", "j", "k", "C-h", "C-j", "C-k", "C-l", "S-h", "S-j", "S-k", "S-l", "q",
+            "l", "h", "j", "k", "q", "C-h", "C-j", "C-k", "C-l", "S-h", "S-j", "S-k", "S-l", "A-h",
+            "A-j", "A-k", "A-l",
         ];
 
         let enum_keys = [
@@ -808,6 +950,7 @@ mod test {
             UserKeyboad::H,
             UserKeyboad::J,
             UserKeyboad::K,
+            UserKeyboad::Q,
             UserKeyboad::CtrlH,
             UserKeyboad::CtrlJ,
             UserKeyboad::CtrlK,
@@ -816,12 +959,58 @@ mod test {
             UserKeyboad::ShiftJ,
             UserKeyboad::SHiftK,
             UserKeyboad::ShiftL,
-            UserKeyboad::Q,
+            UserKeyboad::AltH,
+            UserKeyboad::AltJ,
+            UserKeyboad::AltK,
+            UserKeyboad::AltL,
         ];
 
         for (s, k) in strings.iter().zip(enum_keys.iter()) {
             let s = s.to_string();
             assert_eq!(string_to_keyboard(&s), *k);
+        }
+    }
+
+    #[test]
+    fn can_crosster_keyevent_to_userkyboad() {
+        let key_events = [
+            (
+                KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL),
+                UserKeyboad::CtrlH,
+            ),
+            (
+                KeyEvent::new(KeyCode::Char('j'), KeyModifiers::CONTROL),
+                UserKeyboad::CtrlJ,
+            ),
+            (
+                KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL),
+                UserKeyboad::CtrlK,
+            ),
+            (
+                KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL),
+                UserKeyboad::CtrlL,
+            ),
+            (
+                KeyEvent::new(KeyCode::Char('H'), KeyModifiers::SHIFT),
+                UserKeyboad::ShiftH,
+            ),
+            (
+                KeyEvent::new(KeyCode::Char('J'), KeyModifiers::SHIFT),
+                UserKeyboad::ShiftJ,
+            ),
+            (
+                KeyEvent::new(KeyCode::Char('K'), KeyModifiers::SHIFT),
+                UserKeyboad::SHiftK,
+            ),
+            (
+                KeyEvent::new(KeyCode::Char('L'), KeyModifiers::SHIFT),
+                UserKeyboad::ShiftL,
+            ),
+        ];
+
+        for (key_event, user_key) in key_events.into_iter() {
+            let ans = mappings_crossterm(&key_event);
+            assert_eq!(ans, user_key);
         }
     }
 }
