@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyCode};
 use tui::backend::Backend;
 use tui::Terminal;
 
@@ -44,7 +44,7 @@ impl App {
             directory_tabs: Vec::new(),
             tab_index: 0,
             dir_map: HashMap::new(),
-            command_history: vec!["start app".to_string()],
+            command_history: Vec::new(),
             mode: Mode::Normal,
             config: load_user_config_file(),
         }
