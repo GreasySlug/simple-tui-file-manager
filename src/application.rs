@@ -9,8 +9,8 @@ use tui::Terminal;
 
 use crate::file_item_list::Kinds;
 use crate::load_config::{
-    load_user_config_file, simgle_mapping_crossterm_keycode_to_commands,
-    string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeyboad,
+    load_user_config_file, mappings_crossterm_keyevent_to_userkeyboad, string_map_to_user_keyboad,
+    SettingTheme, UserConfig, UserKeyboad,
 };
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
@@ -198,7 +198,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
         // let selected_dir = app.peek_selected_statefuldir();
         terminal.draw(|f| ui(f, &mut app))?;
         if let Event::Key(key) = event::read()? {
-            let key_code = simgle_mapping_crossterm_keycode_to_commands(&key);
+            let key_code = mappings_crossterm_keyevent_to_userkeyboad(&key);
             match keymap.get(&key_code) {
                 Some(cmd) => {
                     match cmd.as_str() {
