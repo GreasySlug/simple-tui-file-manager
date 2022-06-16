@@ -160,7 +160,8 @@ pub struct SettingTheme {
     file_item: Colors,
     select: Colors,
     header: Colors,
-    command: Colors,
+    // (bg, fg): normal, input, stacker
+    command: Vec<(Colors, Colors)>,
 }
 
 impl SettingTheme {
@@ -172,7 +173,11 @@ impl SettingTheme {
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::LightMagenta,
-            command: Colors::White,
+            command: vec![
+                (Colors::Green, Colors::Cyan),
+                (Colors::White, Colors::Blue),
+                (Colors::Magenta, Colors::Red),
+            ],
         }
     }
 
@@ -184,7 +189,11 @@ impl SettingTheme {
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
-            command: Colors::Black,
+            command: vec![
+                (Colors::Blue, Colors::White),
+                (Colors::Green, Colors::White),
+                (Colors::Magenta, Colors::White),
+            ],
         }
     }
 
@@ -196,7 +205,11 @@ impl SettingTheme {
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::Green,
-            command: Colors::Rgb(97, 169, 252),
+            command: vec![
+                (Colors::Blue, Colors::Black),
+                (Colors::Green, Colors::Blue),
+                (Colors::Magenta, Colors::Blue),
+            ],
         }
     }
 
@@ -225,9 +238,15 @@ impl SettingTheme {
         style_formatter(user_color, true, false)
     }
 
-    pub fn command_style(&self) -> Style {
+    pub fn command_style(&self) -> [Style; 3] {
         let user_color = self.command.clone();
-        style_formatter(user_color, true, false)
+        let mut styles: [Style; 3] = [Style::default(); 3];
+        for (i, (bg, fg)) in user_color.into_iter().enumerate() {
+            let bg = style_formatter(bg, true, false);
+            let fg = style_formatter(fg, false, true);
+            styles[i] = bg.patch(fg);
+        }
+        styles
     }
 
     pub fn background_style(&self) -> Style {
@@ -374,7 +393,7 @@ pub fn load_user_config_file() -> UserConfig {
             if let Ok(config) = config {
                 config
             } else {
-                UserConfig::default_light()
+                UserConfig::default_dark_blue()
             }
         }
         // TODO: logging this e

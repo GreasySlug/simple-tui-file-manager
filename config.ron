@@ -7,8 +7,13 @@
         boader: White, // frame line
         directory: Blue, // dir font
         file_item: White, // file font
-        select: Green, // selecting hightlinght
-        command: White,
+        select: Green, // selecting hightlight
+        command: [
+            // bg, font
+            (White, Black), // normal
+            (Green, White), // imput
+            (Blue,  White), // stacker
+            ],
     ),
     symbols: {
         File: " ",
