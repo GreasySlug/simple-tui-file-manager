@@ -490,6 +490,21 @@ pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad
             ' ' => UserKeyboad::Space,
             _ => UserKeyboad::Unknown,
         },
+        (KeyCode::F(n), _) => match n {
+            1 => UserKeyboad::F1,
+            2 => UserKeyboad::F2,
+            3 => UserKeyboad::F3,
+            4 => UserKeyboad::F4,
+            5 => UserKeyboad::F5,
+            6 => UserKeyboad::F6,
+            7 => UserKeyboad::F7,
+            8 => UserKeyboad::F8,
+            9 => UserKeyboad::F9,
+            10 => UserKeyboad::F10,
+            11 => UserKeyboad::F11,
+            12 => UserKeyboad::F12,
+            _ => UserKeyboad::Unknown,
+        },
         (KeyCode::BackTab, _) => UserKeyboad::Backtab,
         (KeyCode::Esc, _) => UserKeyboad::Escape,
         (KeyCode::Left, _) => UserKeyboad::Left,
@@ -915,7 +930,7 @@ mod test {
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use ron::de;
 
-    use crate::load_config::{mappings_crossterm, UserConfig};
+    use crate::load_config::{mappings_crossterm_keyevent_to_userkeyboad, UserConfig};
 
     use super::{simgle_mapping_crossterm_keycode_to_commands, string_to_keyboard, UserKeyboad};
 
@@ -1009,7 +1024,7 @@ mod test {
         ];
 
         for (key_event, user_key) in key_events.into_iter() {
-            let ans = mappings_crossterm(&key_event);
+            let ans = mappings_crossterm_keyevent_to_userkeyboad(&key_event);
             assert_eq!(ans, user_key);
         }
     }
