@@ -8,6 +8,7 @@ use tui::backend::Backend;
 use tui::Terminal;
 
 use crate::file_item_list::Kinds;
+use crate::input_ui::{init_input_area_terminal, run_user_input};
 use crate::load_config::{
     load_user_config_file, mappings_crossterm_keyevent_to_userkeyboad, string_map_to_user_keyboad,
     SettingTheme, UserConfig, UserKeyboad,
@@ -16,7 +17,7 @@ use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
 use crate::ui::ui;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Normal,
     Input,
@@ -101,6 +102,18 @@ impl App {
         self.peek_selected_statefuldir().select_previous();
     }
 
+    pub fn shift_to_input_mode(&mut self) {
+        self.mode = Mode::Input;
+    }
+
+    pub fn shift_to_normal_mode(&mut self) {
+        self.mode = Mode::Normal;
+    }
+
+    pub fn shift_to_stacker_mode(&mut self) {
+        self.mode = Mode::Stacker;
+    }
+
     pub fn prev_dirtab(&mut self) {
         if self.tab_index > 0 {
             self.tab_index -= 1;
@@ -161,9 +174,6 @@ impl App {
         }
     }
 
-    // If it's the first time you go to the parent directory, selects the top one.
-    // The second and subsequent times, select the directory you were in before the move.
-    // I want to select the directory before moving from the beginning.
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.peek_selected_statefuldir();
         let dir_name = selected_dir.crr_dir_name();
@@ -190,6 +200,15 @@ impl App {
         let keymap = self.config.keybindings_map();
         string_map_to_user_keyboad(keymap)
     }
+
+    fn run_user_input(&mut self) -> Option<String> {
+        let mut terminal = init_input_area_terminal().unwrap();
+        let mut name = String::with_capacity(40);
+        if let Ok(()) = run_user_input(&mut terminal, &mut name) {
+            return Some(name);
+        }
+        None
+    }
 }
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
@@ -197,23 +216,52 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     loop {
         // let selected_dir = app.peek_selected_statefuldir();
         terminal.draw(|f| ui(f, &mut app))?;
+        if app.mode() == &Mode::Normal {
+            let cmd = keybindings(&keymap)?;
+            match cmd.as_str() {
+                "move_to_parent_dir" => app.move_to_parent_dir(),
+                "move_to_next_file_item" => app.move_to_next_file_item(),
+                "move_to_prev_file_item" => app.move_to_prev_file_item(),
+                "move_to_child_dir" => app.move_to_child_dir(),
+                "next_dirtab" => app.next_dirtab(),
+                "prev_dirtab" => app.prev_dirtab(),
+                "quit" => return Ok(()),
+                "input" => app.shift_to_input_mode(),
+                _ => app.push_command_error_log("No Comands".to_string()),
+            }
+        } else if app.mode() == &Mode::Input {
+            let cmd = keybindings(&keymap)?;
+            match cmd.as_str() {
+                "next_dirtab" => app.next_dirtab(),
+                "prev_dirtab" => app.prev_dirtab(),
+                // "make directory" => app.mkdir_in_crr_dir(),
+                // "make file" => app.touch_in_crr_dir(),
+                "quit" => return Ok(()),
+                "normal" => app.shift_to_normal_mode(),
+                "stacker" => app.shift_to_stacker_mode(),
+                _ => app.push_command_error_log("No Comands".to_string()),
+            }
+        } else if app.mode() == &Mode::Stacker {
+            let cmd = keybindings(&keymap)?;
+            match cmd.as_str() {
+                "next_dirtab" => app.next_dirtab(),
+                "prev_dirtab" => app.prev_dirtab(),
+                "quit" => return Ok(()),
+                "normal" => app.shift_to_normal_mode(),
+                "input" => app.shift_to_input_mode(),
+                _ => app.push_command_error_log("No Comands".to_string()),
+            }
+        }
+    }
+}
+
+fn keybindings(keymap: &HashMap<UserKeyboad, String>) -> io::Result<String> {
+    loop {
         if let Event::Key(key) = event::read()? {
             let key_code = mappings_crossterm_keyevent_to_userkeyboad(&key);
-            match keymap.get(&key_code) {
-                Some(cmd) => {
-                    match cmd.as_str() {
-                        "move_to_parent_dir" => app.move_to_parent_dir(),
-                        "move_to_next_file_item" => app.move_to_next_file_item(),
-                        "move_to_prev_file_item" => app.move_to_prev_file_item(),
-                        "move_to_child_dir" => app.move_to_child_dir(),
-                        "next_dirtab" => app.next_dirtab(),
-                        "prev_dirtab" => app.prev_dirtab(),
-                        "quit" => return Ok(()),
-                        _ => app.push_command_error_log("No Commands".to_string()),
-                    }
-                    app.push_command_keycode_log(&key.code);
-                }
-                None => app.push_command_error_log("None".to_string()),
+            let keybinds = keymap.get(&key_code);
+            if let Some(keybind) = keybinds {
+                return Ok(keybind.to_owned());
             }
         }
     }

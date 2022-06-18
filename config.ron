@@ -28,5 +28,7 @@
         "tab":"next_dirtab",
         "Backtab":"prev_dirtab",
         "q" :"quit",
+        "S-i": "input", // experement
+        "S-n": "normal",// experiment
     }
 )
