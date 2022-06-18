@@ -24,6 +24,10 @@ impl StatefulDirectory {
         }
     }
 
+    pub fn directory(&self) -> &Directory {
+        &self.directory
+    }
+
     pub fn crr_dir_parent_path(&self) -> &PathBuf {
         self.directory.parent()
     }
