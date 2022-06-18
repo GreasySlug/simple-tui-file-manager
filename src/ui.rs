@@ -10,7 +10,7 @@ use tui::{
 use crate::{
     application::{App, Mode},
     file_item_list::Kinds,
-    input_ui::input_ui,
+    input_ui::init_input_area_terminal,
     load_config::FileItems,
 };
 
@@ -92,7 +92,21 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             f.render_widget(tabs, chunks[0]);
         }
         Mode::Input => {
-            input_ui(f, chunks[0]).unwrap();
+            // let tab_titles: Vec<Spans> = tabs
+            //     .iter()
+            //     .map(|t| Spans::from(vec![Span::raw(t)]))
+            //     .collect();
+
+            // let tabs = Tabs::new(tab_titles)
+            //     .block(Block::default().borders(Borders::ALL).title("Tabs"))
+            //     .select(app.tab_index())
+            //     .style(tab_style)
+            //     .highlight_style(tab_highlight_style);
+            // f.render_widget(tabs, chunks[0]);
+            // let item_name = init_input_area_terminal();
+            // if let Ok(name) = item_name {
+            //     f.render_widget(Paragraph::new(name), chunks[2]);
+            // }
         }
         Mode::Stacker => todo!(),
     }

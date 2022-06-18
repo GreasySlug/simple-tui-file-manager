@@ -1,28 +1,56 @@
-use std::io;
+use std::io::{self, Stdout};
 
-use crossterm::event::{read, Event, KeyEvent};
+use crossterm::{
+    event::{read, Event, KeyCode, KeyEvent},
+    execute,
+};
 use tui::{
-    backend::Backend,
-    layout::Rect,
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     widgets::{Block, Borders, Paragraph},
-    Frame,
+    Frame, Terminal,
 };
 
-use crate::keymapping::input_keybindings;
+pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
+    let mut stdout = io::stdout();
+    execute!(stdout)?;
+    let backend = CrosstermBackend::new(stdout);
+    let terminal = Terminal::new(backend)?;
+    Ok(terminal)
+}
 
-pub fn input_ui<B: Backend>(f: &mut Frame<B>, rect: Rect) -> io::Result<String> {
-    let mut line = String::with_capacity(40);
-    let input_style = Style::default().bg(Color::LightYellow).bg(Color::Black);
+pub fn run_user_input<B: Backend>(terminal: &mut Terminal<B>, line: &mut String) -> io::Result<()> {
+    terminal.draw(|f| input_area_ui(f, line))?;
+    while let Event::Key(KeyEvent { code, .. }) = read().expect("Failed to get user input") {
+        match code {
+            KeyCode::Enter => break,
+            KeyCode::Char(c) => line.push(c),
+            KeyCode::Backspace => {
+                line.pop();
+            }
+            KeyCode::Esc => {
+                line.clear();
+                break;
+            }
+            _ => {}
+        }
+        terminal.draw(|f| input_area_ui(f, line))?;
+    }
+    Ok(())
+}
+
+pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str) {
+    let input_area = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(3), Constraint::Percentage(90)])
+        .split(f.size())[0];
+
+    let input_style = Style::default().bg(Color::LightYellow).bg(Color::White);
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(input_style);
 
-    f.render_widget(block.clone(), rect);
-    while let Event::Key(KeyEvent { code, .. }) = read()? {
-        line = input_keybindings(code, line);
-        let para = Paragraph::new(line.clone()).block(block.clone());
-        f.render_widget(para, rect)
-    }
-    Ok(line)
+    let para = Paragraph::new(line).block(block.clone());
+    f.render_widget(para, input_area);
 }
