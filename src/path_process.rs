@@ -4,6 +4,7 @@ use std::{env::current_dir, path::Path};
 use crate::file_item_list::file_item::Extension;
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
+use crate::application::App;
 
 pub fn pathbuf_to_string_name(path: &Path) -> String {
     let path_name = path.file_name();
@@ -74,4 +75,9 @@ pub fn get_home_directory_path() -> Option<PathBuf> {
         Ok(path) => Some(PathBuf::from(path)),
         Err(e) => None,
     }
+}
+
+fn create_dir_by_relpath(app: &mut App, relpath: impl AsRef<Path>) -> std::io::Result<()> {
+    let fullpath = app.peek_selected_statefuldir().directory().pathbuf().join(relpath);
+    std::fs::create_dir_all(fullpath)
 }
