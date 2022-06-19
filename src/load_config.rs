@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use serde::Deserialize;
-use tui::style::{Color, Modifier, Style};
+use tui::style::{Color, Style};
 
 #[derive(Debug, Clone, Deserialize)]
 enum Colors {
@@ -363,7 +363,7 @@ fn string_to_keyboard(s: &str) -> UserKeyboad {
 }
 
 pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad {
-    match KeyEvent {
+    match key {
         KeyEvent {
             code: KeyCode::Char(c),
             modifiers: KeyModifiers::CONTROL,
