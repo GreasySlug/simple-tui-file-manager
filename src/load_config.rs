@@ -167,43 +167,59 @@ pub enum UserKeyboad {
     Unknown,
 }
 
-// TODO: chang {Key: Command}
-// TODO: add function to insert new {key: cmd} easily
 pub fn default_vim_movements() -> HashMap<String, String> {
     let mut keybinds: HashMap<String, String> = HashMap::new();
-    keybinds.insert("h".to_string(), "move_to_parent_dir".to_string());
-    keybinds.insert("j".to_string(), "move_to_next_file_item".to_string());
-    keybinds.insert("k".to_string(), "move_to_prev_file_item".to_string());
-    keybinds.insert("l".to_string(), "move_to_child_dir".to_string());
-    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-    keybinds.insert("Backtab".to_string(), "prev_dirtab".to_string());
-    keybinds.insert("q".to_string(), "quit".to_string());
+    let iter = [
+        ("h", "move_to_parent_dir"),
+        ("j", "move_to_next_file_item"),
+        ("k", "move_to_prev_file_item"),
+        ("l", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("q", "quit"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        keybinds.insert(name.to_string(), cmd.to_string());
+    }
 
     keybinds
 }
 
 pub fn default_arrow_key() -> HashMap<String, String> {
     let mut keybinds: HashMap<String, String> = HashMap::new();
-    keybinds.insert("left".to_string(), "move_to_parent_dir".to_string());
-    keybinds.insert("down".to_string(), "move_to_next_file_item".to_string());
-    keybinds.insert("up".to_string(), "move_to_prev_file_item".to_string());
-    keybinds.insert("right".to_string(), "move_to_child_dir".to_string());
-    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-    keybinds.insert("Backtab".to_string(), "prev_dirtab".to_string());
-    keybinds.insert("q".to_string(), "quit".to_string());
+    let iter = [
+        ("Left", "move_to_parent_dir"),
+        ("Down", "move_to_next_file_item"),
+        ("Up", "move_to_prev_file_item"),
+        ("Right", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("q", "quit"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        keybinds.insert(name.to_string(), cmd.to_string());
+    }
 
     keybinds
 }
 
 pub fn default_vim_ctrl_movements() -> HashMap<String, String> {
     let mut keybinds: HashMap<String, String> = HashMap::new();
-    keybinds.insert("C-h".to_string(), "move_to_parent_dir".to_string());
-    keybinds.insert("C-j".to_string(), "move_to_next_file_item".to_string());
-    keybinds.insert("C-k".to_string(), "move_to_prev_file_item".to_string());
-    keybinds.insert("C-l".to_string(), "move_to_child_dir".to_string());
-    keybinds.insert("Tab".to_string(), "next_dirtab".to_string());
-    keybinds.insert("Backtab".to_string(), "prev_dirtab".to_string());
-    keybinds.insert("q".to_string(), "quit".to_string());
+    let iter = [
+        ("C-h", "move_to_parent_dir"),
+        ("C-j", "move_to_next_file_item"),
+        ("C-k", "move_to_prev_file_item"),
+        ("C-l", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("q", "quit"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        keybinds.insert(name.to_string(), cmd.to_string());
+    }
 
     keybinds
 }
@@ -559,7 +575,7 @@ pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad
         KeyEvent {
             code: _,
             modifiers: _,
-        } => todo!(),
+        } => UserKeyboad::Unknown,
     }
 }
 
