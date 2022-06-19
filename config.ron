@@ -1,6 +1,6 @@
 (
     // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
-    // LightRed, LightGeen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
+    // LightRed, LightGreen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
     theme: SettingTheme (
         background: Black,
         header: Magenta, // file name, permission, size, date
@@ -11,8 +11,8 @@
         command: [
             // bg, font
             (White, Black), // normal
-            (Green, White), // imput
-            (Blue,  White), // stacker
+            (LightGreen, White), // imput
+            (LightBlue,  White), // stacker
             ],
     ),
     symbols: {
@@ -29,7 +29,7 @@
         "Backtab":"prev_dirtab",
         "q" :"quit",
         "S-i": "input", // experement
-        "S-n": "normal",// experiment
-        "m": "make_directory"
+        "escape": "normal",// experiment
+        "m": "make_directory" // TODO: add mode annotation
     }
 )

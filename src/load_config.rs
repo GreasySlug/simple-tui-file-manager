@@ -363,8 +363,11 @@ fn string_to_keyboard(s: &str) -> UserKeyboad {
 }
 
 pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad {
-    match (key.code, key.modifiers) {
-        (KeyCode::Char(c), KeyModifiers::CONTROL) => match c {
+    match KeyEvent {
+        KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: KeyModifiers::CONTROL,
+        } => match c {
             'a' => UserKeyboad::CtrlA,
             'b' => UserKeyboad::CtrlB,
             'c' => UserKeyboad::CtrlC,
@@ -393,7 +396,10 @@ pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad
             'z' => UserKeyboad::CtrlZ,
             _ => UserKeyboad::Unknown,
         },
-        (KeyCode::Char(c), KeyModifiers::SHIFT) => match c {
+        KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: KeyModifiers::SHIFT,
+        } => match c {
             'A' => UserKeyboad::ShiftA,
             'B' => UserKeyboad::ShiftB,
             'C' => UserKeyboad::ShiftC,
@@ -422,7 +428,10 @@ pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad
             'Z' => UserKeyboad::ShiftZ,
             _ => UserKeyboad::Unknown,
         },
-        (KeyCode::Char(c), KeyModifiers::ALT) => match c {
+        KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: KeyModifiers::ALT,
+        } => match c {
             'a' => UserKeyboad::AltA,
             'b' => UserKeyboad::AltB,
             'c' => UserKeyboad::AltC,
@@ -451,7 +460,10 @@ pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad
             'z' => UserKeyboad::AltZ,
             _ => UserKeyboad::Unknown,
         },
-        (KeyCode::Char(c), _) => match c {
+        KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: _,
+        } => match c {
             'a' => UserKeyboad::A,
             'b' => UserKeyboad::B,
             'c' => UserKeyboad::C,
@@ -490,7 +502,10 @@ pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad
             ' ' => UserKeyboad::Space,
             _ => UserKeyboad::Unknown,
         },
-        (KeyCode::F(n), _) => match n {
+        KeyEvent {
+            code: KeyCode::F(n),
+            modifiers: _,
+        } => match n {
             1 => UserKeyboad::F1,
             2 => UserKeyboad::F2,
             3 => UserKeyboad::F3,
@@ -505,16 +520,46 @@ pub fn mappings_crossterm_keyevent_to_userkeyboad(key: &KeyEvent) -> UserKeyboad
             12 => UserKeyboad::F12,
             _ => UserKeyboad::Unknown,
         },
-        (KeyCode::BackTab, _) => UserKeyboad::Backtab,
-        (KeyCode::Esc, _) => UserKeyboad::Escape,
-        (KeyCode::Left, _) => UserKeyboad::Left,
-        (KeyCode::Up, _) => UserKeyboad::Up,
-        (KeyCode::Down, _) => UserKeyboad::Down,
-        (KeyCode::Right, _) => UserKeyboad::Right,
-        (KeyCode::Home, _) => UserKeyboad::Home,
-        (KeyCode::End, _) => UserKeyboad::End,
-        (KeyCode::Tab, _) => UserKeyboad::Tab,
-        (_, _) => todo!(),
+        KeyEvent {
+            code: KeyCode::BackTab,
+            modifiers: _,
+        } => UserKeyboad::Backtab,
+        KeyEvent {
+            code: KeyCode::Esc,
+            modifiers: _,
+        } => UserKeyboad::Escape,
+        KeyEvent {
+            code: KeyCode::Left,
+            modifiers: _,
+        } => UserKeyboad::Left,
+        KeyEvent {
+            code: KeyCode::Up,
+            modifiers: _,
+        } => UserKeyboad::Up,
+        KeyEvent {
+            code: KeyCode::Down,
+            modifiers: _,
+        } => UserKeyboad::Down,
+        KeyEvent {
+            code: KeyCode::Right,
+            modifiers: _,
+        } => UserKeyboad::Right,
+        KeyEvent {
+            code: KeyCode::Home,
+            modifiers: _,
+        } => UserKeyboad::Home,
+        KeyEvent {
+            code: KeyCode::End,
+            modifiers: _,
+        } => UserKeyboad::End,
+        KeyEvent {
+            code: KeyCode::Tab,
+            modifiers: _,
+        } => UserKeyboad::Tab,
+        KeyEvent {
+            code: _,
+            modifiers: _,
+        } => todo!(),
     }
 }
 
@@ -713,7 +758,7 @@ impl UserConfig {
     pub fn default_dark_blue() -> UserConfig {
         UserConfig {
             theme: SettingTheme::dark_blue_theme(),
-            symbols: simple_symbols(),
+            symbols: example_symbols(),
             user_keybinds: default_vim_ctrl_movements(),
         }
     }
