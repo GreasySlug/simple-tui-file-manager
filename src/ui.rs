@@ -39,7 +39,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let index = {
         let state = app.peek_selected_statefuldir();
-        state.state_table().selected().unwrap()
+        state.state_table().selected().unwrap_or(0) // when item is empty, return 0
     };
     let file_items = {
         let state = app.peek_selected_statefuldir();
@@ -91,23 +91,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
             f.render_widget(tabs, chunks[0]);
         }
-        Mode::Input => {
-            // let tab_titles: Vec<Spans> = tabs
-            //     .iter()
-            //     .map(|t| Spans::from(vec![Span::raw(t)]))
-            //     .collect();
-
-            // let tabs = Tabs::new(tab_titles)
-            //     .block(Block::default().borders(Borders::ALL).title("Tabs"))
-            //     .select(app.tab_index())
-            //     .style(tab_style)
-            //     .highlight_style(tab_highlight_style);
-            // f.render_widget(tabs, chunks[0]);
-            // let item_name = init_input_area_terminal();
-            // if let Ok(name) = item_name {
-            //     f.render_widget(Paragraph::new(name), chunks[2]);
-            // }
-        }
+        Mode::Input => {}
         Mode::Stacker => todo!(),
     }
     // TODO: Display and hide the header and each element with bool
