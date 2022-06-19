@@ -7,6 +7,7 @@ use crossterm::event::{self, Event, KeyCode};
 use tui::backend::Backend;
 use tui::Terminal;
 
+use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 use crate::input_ui::{init_input_area_terminal, run_user_input};
 use crate::load_config::{
@@ -59,6 +60,21 @@ impl App {
     pub fn peek_selected_statefuldir(&mut self) -> &mut StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
         self.dir_map.get_mut(selected_tab).unwrap()
+    }
+
+    pub fn peeking_selected_statefuldir(&self) -> &StatefulDirectory {
+        let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
+        self.dir_map.get(selected_tab).unwrap()
+    }
+
+    pub fn crr_dir_path(&self) -> &std::path::Path {
+        let selected_stateful_dir = self.peeking_selected_statefuldir();
+        selected_stateful_dir.dir_path()
+    }
+
+    pub fn crr_file_items(&self) -> &Vec<FileItem> {
+        let stateful_dir = self.peeking_selected_statefuldir();
+        stateful_dir.file_items_vec()
     }
 
     pub fn tab_index(&self) -> usize {
@@ -135,17 +151,13 @@ impl App {
         self.command_history.push(cmm);
     }
 
-    pub fn push_command_error_log(&mut self, command: String) {
+    pub fn push_command_log(&mut self, command: String) {
         self.limit_command_log();
         self.command_history.push(command);
     }
 
-    pub fn _pop_command_log(&mut self) -> Option<String> {
-        self.command_history.pop()
-    }
-
-    pub fn command_history(&self) -> Vec<String> {
-        self.command_history.clone()
+    pub fn command_history(&self) -> &Vec<String> {
+        &self.command_history
     }
 
     pub fn theme(&self) -> &SettingTheme {
@@ -227,19 +239,19 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                 "prev_dirtab" => app.prev_dirtab(),
                 "quit" => return Ok(()),
                 "input" => app.shift_to_input_mode(),
-                _ => app.push_command_error_log("No Comands".to_string()),
+                _ => app.push_command_log("No Comands".to_string()),
             }
         } else if app.mode() == &Mode::Input {
             let cmd = keybindings(&keymap)?;
             match cmd.as_str() {
                 "next_dirtab" => app.next_dirtab(),
                 "prev_dirtab" => app.prev_dirtab(),
-                // "make directory" => app.mkdir_in_crr_dir(),
+                // "make directory" => {}
                 // "make file" => app.touch_in_crr_dir(),
                 "quit" => return Ok(()),
                 "normal" => app.shift_to_normal_mode(),
                 "stacker" => app.shift_to_stacker_mode(),
-                _ => app.push_command_error_log("No Comands".to_string()),
+                _ => app.push_command_log("No Comands".to_string()),
             }
         } else if app.mode() == &Mode::Stacker {
             let cmd = keybindings(&keymap)?;
@@ -249,7 +261,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                 "quit" => return Ok(()),
                 "normal" => app.shift_to_normal_mode(),
                 "input" => app.shift_to_input_mode(),
-                _ => app.push_command_error_log("No Comands".to_string()),
+                _ => app.push_command_log("No Comands".to_string()),
             }
         }
     }
