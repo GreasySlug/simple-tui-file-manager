@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use serde::Deserialize;
@@ -141,6 +141,10 @@ pub enum UserKeyboad {
     Backtab,
     Backspace,
     Shape,
+    Asterrisk,
+    Slash,
+    SingleQuotation,
+    DoubleQuotation,
     Period,
     Plus,
     Minus,
@@ -167,8 +171,8 @@ pub enum UserKeyboad {
     Unknown,
 }
 
-pub fn default_vim_movements() -> HashMap<String, String> {
-    let mut keybinds: HashMap<String, String> = HashMap::new();
+pub fn default_vim_movements() -> ModeKeybinds {
+    let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
         ("h", "move_to_parent_dir"),
         ("j", "move_to_next_file_item"),
@@ -177,17 +181,56 @@ pub fn default_vim_movements() -> HashMap<String, String> {
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
+        ("i", "input"),
+        ("v", "stacker"),
     ]
     .into_iter();
     for (name, cmd) in iter {
-        keybinds.insert(name.to_string(), cmd.to_string());
+        normal.insert(name.to_string(), cmd.to_string());
     }
 
-    keybinds
+    let mut input: HashMap<String, String> = HashMap::new();
+    let iter = [
+        ("C-h", "move_to_parent_dir"),
+        ("C-j", "move_to_next_file_item"),
+        ("C-k", "move_to_prev_file_item"),
+        ("C-l", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("escape", "normal"),
+        ("v", "stacker"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        input.insert(name.to_string(), cmd.to_string());
+    }
+
+    let mut stacker: HashMap<String, String> = HashMap::new();
+    let iter = [
+        ("h", "move_to_parent_dir"),
+        ("j", "move_to_next_file_item"),
+        ("k", "move_to_prev_file_item"),
+        ("l", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("q", "quit"),
+        ("escape", "normal"),
+        ("v", "stacker"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        stacker.insert(name.to_string(), cmd.to_string());
+    }
+
+    ModeKeybinds {
+        Normal: normal,
+        Input: input,
+        Stacker: stacker,
+    }
 }
 
-pub fn default_arrow_key() -> HashMap<String, String> {
-    let mut keybinds: HashMap<String, String> = HashMap::new();
+pub fn default_arrow_key() -> ModeKeybinds {
+    let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
         ("Left", "move_to_parent_dir"),
         ("Down", "move_to_next_file_item"),
@@ -196,17 +239,56 @@ pub fn default_arrow_key() -> HashMap<String, String> {
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
+        ("i", "input"),
+        ("v", "stacker"),
     ]
     .into_iter();
     for (name, cmd) in iter {
-        keybinds.insert(name.to_string(), cmd.to_string());
+        normal.insert(name.to_string(), cmd.to_string());
     }
 
-    keybinds
+    let mut input: HashMap<String, String> = HashMap::new();
+    let iter = [
+        ("Left", "move_to_parent_dir"),
+        ("Down", "move_to_next_file_item"),
+        ("Up", "move_to_prev_file_item"),
+        ("Right", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("escape", "normal"),
+        ("v", "stacker"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        input.insert(name.to_string(), cmd.to_string());
+    }
+
+    let mut stacker: HashMap<String, String> = HashMap::new();
+    let iter = [
+        ("Left", "move_to_parent_dir"),
+        ("Down", "move_to_next_file_item"),
+        ("Up", "move_to_prev_file_item"),
+        ("Right", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("q", "quit"),
+        ("escape", "normal"),
+        ("v", "stacker"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        stacker.insert(name.to_string(), cmd.to_string());
+    }
+
+    ModeKeybinds {
+        Normal: normal,
+        Input: input,
+        Stacker: stacker,
+    }
 }
 
-pub fn default_vim_ctrl_movements() -> HashMap<String, String> {
-    let mut keybinds: HashMap<String, String> = HashMap::new();
+pub fn default_vim_ctrl_movements() -> ModeKeybinds {
+    let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
         ("C-h", "move_to_parent_dir"),
         ("C-j", "move_to_next_file_item"),
@@ -215,166 +297,503 @@ pub fn default_vim_ctrl_movements() -> HashMap<String, String> {
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
+        ("i", "input"),
+        ("v", "stacker"),
     ]
     .into_iter();
     for (name, cmd) in iter {
-        keybinds.insert(name.to_string(), cmd.to_string());
+        normal.insert(name.to_string(), cmd.to_string());
     }
 
-    keybinds
+    let mut input: HashMap<String, String> = HashMap::new();
+    let iter = [
+        ("C-h", "move_to_parent_dir"),
+        ("C-j", "move_to_next_file_item"),
+        ("C-k", "move_to_prev_file_item"),
+        ("C-l", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("escape", "normal"),
+        ("v", "stacker"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        input.insert(name.to_string(), cmd.to_string());
+    }
+
+    let mut stacker: HashMap<String, String> = HashMap::new();
+    let iter = [
+        ("C-h", "move_to_parent_dir"),
+        ("C-j", "move_to_next_file_item"),
+        ("C-k", "move_to_prev_file_item"),
+        ("C-l", "move_to_child_dir"),
+        ("Tab", "next_dirtab"),
+        ("Backtab", "prev_dirtab"),
+        ("q", "quit"),
+        ("escape", "normal"),
+        ("v", "stacker"),
+    ]
+    .into_iter();
+    for (name, cmd) in iter {
+        stacker.insert(name.to_string(), cmd.to_string());
+    }
+
+    ModeKeybinds {
+        Normal: normal,
+        Input: input,
+        Stacker: stacker,
+    }
 }
 
-pub fn string_map_to_user_keyboad(
-    keybinds: &HashMap<String, String>,
-) -> HashMap<UserKeyboad, String> {
-    let mut keybind: HashMap<UserKeyboad, String> = HashMap::new();
+pub fn string_map_to_user_keyboad(keybinds: &HashMap<String, String>) -> HashMap<KeyEvent, String> {
+    let mut keybind: HashMap<KeyEvent, String> = HashMap::new();
     for (key, cmd) in keybinds.iter() {
-        let user_keyboad = string_to_keyboard(key);
+        let user_keyboad = string_to_keyevent(key);
         keybind.insert(user_keyboad, cmd.to_string());
     }
     keybind
 }
 
-fn string_to_keyboard(s: &str) -> UserKeyboad {
+pub fn multi_string_map_to_user_keyboad(
+    keybinds: &HashMap<String, String>,
+) -> HashMap<Vec<KeyEvent>, String> {
+    let mut keybind: HashMap<Vec<KeyEvent>, String> = HashMap::new();
+    for (key, cmd) in keybinds.iter() {
+        if key.split_whitespace().count() > 1 {
+            let mut split = key.split_whitespace();
+            let first = string_to_keyevent(split.next().unwrap());
+            let second = string_to_keyevent(split.next().unwrap());
+            keybind.insert(vec![first, second], cmd.to_owned());
+        } else {
+            let user_keyboad = string_to_keyevent(key);
+            keybind.insert(vec![user_keyboad], cmd.to_owned());
+        }
+    }
+    keybind
+}
+
+fn string_to_keyevent(s: &str) -> KeyEvent {
     match s {
-        "a" => UserKeyboad::A,
-        "b" => UserKeyboad::B,
-        "c" => UserKeyboad::C,
-        "d" => UserKeyboad::D,
-        "e" => UserKeyboad::E,
-        "f" => UserKeyboad::F,
-        "g" => UserKeyboad::G,
-        "h" => UserKeyboad::H,
-        "i" => UserKeyboad::I,
-        "j" => UserKeyboad::J,
-        "k" => UserKeyboad::K,
-        "l" => UserKeyboad::L,
-        "m" => UserKeyboad::M,
-        "n" => UserKeyboad::N,
-        "o" => UserKeyboad::O,
-        "p" => UserKeyboad::P,
-        "q" => UserKeyboad::Q,
-        "r" => UserKeyboad::R,
-        "s" => UserKeyboad::S,
-        "t" => UserKeyboad::T,
-        "u" => UserKeyboad::U,
-        "v" => UserKeyboad::V,
-        "w" => UserKeyboad::W,
-        "x" => UserKeyboad::X,
-        "y" => UserKeyboad::Y,
-        "z" => UserKeyboad::Z,
-        "S-a" => UserKeyboad::ShiftA,
-        "S-b" => UserKeyboad::ShiftB,
-        "S-c" => UserKeyboad::ShiftC,
-        "S-d" => UserKeyboad::ShiftD,
-        "S-e" => UserKeyboad::ShiftE,
-        "S-f" => UserKeyboad::ShiftF,
-        "S-g" => UserKeyboad::ShiftG,
-        "S-h" => UserKeyboad::ShiftH,
-        "S-i" => UserKeyboad::ShiftI,
-        "S-j" => UserKeyboad::ShiftJ,
-        "S-k" => UserKeyboad::SHiftK,
-        "S-l" => UserKeyboad::ShiftL,
-        "S-m" => UserKeyboad::ShiftM,
-        "S-n" => UserKeyboad::ShiftN,
-        "S-o" => UserKeyboad::ShiftO,
-        "S-p" => UserKeyboad::ShiftP,
-        "S-q" => UserKeyboad::ShiftQ,
-        "S-r" => UserKeyboad::ShiftR,
-        "S-s" => UserKeyboad::ShiftS,
-        "S-t" => UserKeyboad::ShiftT,
-        "S-u" => UserKeyboad::ShiftU,
-        "S-v" => UserKeyboad::ShiftV,
-        "S-w" => UserKeyboad::ShiftW,
-        "S-x" => UserKeyboad::ShiftX,
-        "S-y" => UserKeyboad::ShiftY,
-        "S-z" => UserKeyboad::ShiftZ,
-        "C-a" => UserKeyboad::CtrlA,
-        "C-b" => UserKeyboad::CtrlB,
-        "C-c" => UserKeyboad::CtrlC,
-        "C-d" => UserKeyboad::CtrlD,
-        "C-e" => UserKeyboad::CtrlE,
-        "C-f" => UserKeyboad::CtrlF,
-        "C-g" => UserKeyboad::CtrlG,
-        "C-h" => UserKeyboad::CtrlH,
-        "C-i" => UserKeyboad::CtrlI,
-        "C-j" => UserKeyboad::CtrlJ,
-        "C-k" => UserKeyboad::CtrlK,
-        "C-l" => UserKeyboad::CtrlL,
-        "C-m" => UserKeyboad::CtrlM,
-        "C-n" => UserKeyboad::CtrlN,
-        "C-o" => UserKeyboad::CtrlO,
-        "C-p" => UserKeyboad::CtrlP,
-        "C-q" => UserKeyboad::CtrlQ,
-        "C-r" => UserKeyboad::CtrlR,
-        "C-s" => UserKeyboad::CtrlS,
-        "C-t" => UserKeyboad::CtrlT,
-        "C-u" => UserKeyboad::CtrlU,
-        "C-v" => UserKeyboad::CtrlV,
-        "C-w" => UserKeyboad::CtrlW,
-        "C-x" => UserKeyboad::CtrlX,
-        "C-y" => UserKeyboad::CtrlY,
-        "C-z" => UserKeyboad::CtrlZ,
-        "A-a" => UserKeyboad::AltA,
-        "A-b" => UserKeyboad::AltB,
-        "A-c" => UserKeyboad::AltC,
-        "A-d" => UserKeyboad::AltD,
-        "A-e" => UserKeyboad::AltE,
-        "A-f" => UserKeyboad::AltF,
-        "A-g" => UserKeyboad::AltG,
-        "A-h" => UserKeyboad::AltH,
-        "A-i" => UserKeyboad::AltI,
-        "A-j" => UserKeyboad::AltJ,
-        "A-k" => UserKeyboad::AltK,
-        "A-l" => UserKeyboad::AltL,
-        "A-m" => UserKeyboad::AltM,
-        "A-n" => UserKeyboad::AltN,
-        "A-o" => UserKeyboad::AltO,
-        "A-p" => UserKeyboad::AltP,
-        "A-q" => UserKeyboad::AltQ,
-        "A-r" => UserKeyboad::AltR,
-        "A-s" => UserKeyboad::AltS,
-        "A-t" => UserKeyboad::AltT,
-        "A-u" => UserKeyboad::AltU,
-        "A-v" => UserKeyboad::AltV,
-        "A-w" => UserKeyboad::AltW,
-        "A-x" => UserKeyboad::AltX,
-        "A-y" => UserKeyboad::AltY,
-        "A-z" => UserKeyboad::AltZ,
-        "left" => UserKeyboad::Left,
-        "up" => UserKeyboad::Up,
-        "down" => UserKeyboad::Down,
-        "right" => UserKeyboad::Right,
-        "escape" => UserKeyboad::Escape,
-        "enter" => UserKeyboad::Enter,
-        "tab" => UserKeyboad::Tab,
-        "Backtab" => UserKeyboad::Backtab,
-        "backspace" => UserKeyboad::Backspace,
-        "#" => UserKeyboad::Shape,
-        "." => UserKeyboad::Period,
-        "+" => UserKeyboad::Plus,
-        "-" => UserKeyboad::Minus,
-        ">" => UserKeyboad::GT,
-        "<" => UserKeyboad::LT,
-        "?" => UserKeyboad::QuestionMark,
-        "!" => UserKeyboad::ExclamationMark,
-        "," => UserKeyboad::Comma,
-        "f1" => UserKeyboad::F1,
-        "f2" => UserKeyboad::F2,
-        "f3" => UserKeyboad::F3,
-        "f4" => UserKeyboad::F4,
-        "f5" => UserKeyboad::F5,
-        "f6" => UserKeyboad::F6,
-        "f7" => UserKeyboad::F7,
-        "f8" => UserKeyboad::F8,
-        "f9" => UserKeyboad::F9,
-        "f10" => UserKeyboad::F10,
-        "f11" => UserKeyboad::F11,
-        "f12" => UserKeyboad::F12,
-        "home" => UserKeyboad::Home,
-        "end" => UserKeyboad::End,
-        "space" => UserKeyboad::Space,
-        _ => UserKeyboad::Unknown,
+        "a" => KeyEvent {
+            code: KeyCode::Char('a'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "b" => KeyEvent {
+            code: KeyCode::Char('b'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "c" => KeyEvent {
+            code: KeyCode::Char('c'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "d" => KeyEvent {
+            code: KeyCode::Char('d'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "e" => KeyEvent {
+            code: KeyCode::Char('e'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f" => KeyEvent {
+            code: KeyCode::Char('f'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "g" => KeyEvent {
+            code: KeyCode::Char('g'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "h" => KeyEvent {
+            code: KeyCode::Char('h'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "i" => KeyEvent {
+            code: KeyCode::Char('i'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "j" => KeyEvent {
+            code: KeyCode::Char('j'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "k" => KeyEvent {
+            code: KeyCode::Char('k'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "l" => KeyEvent {
+            code: KeyCode::Char('l'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "m" => KeyEvent {
+            code: KeyCode::Char('m'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "n" => KeyEvent {
+            code: KeyCode::Char('n'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "o" => KeyEvent {
+            code: KeyCode::Char('o'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "p" => KeyEvent {
+            code: KeyCode::Char('p'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "q" => KeyEvent {
+            code: KeyCode::Char('q'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "r" => KeyEvent {
+            code: KeyCode::Char('r'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "s" => KeyEvent {
+            code: KeyCode::Char('s'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "t" => KeyEvent {
+            code: KeyCode::Char('t'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "u" => KeyEvent {
+            code: KeyCode::Char('u'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "v" => KeyEvent {
+            code: KeyCode::Char('v'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "w" => KeyEvent {
+            code: KeyCode::Char('w'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "x" => KeyEvent {
+            code: KeyCode::Char('x'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "y" => KeyEvent {
+            code: KeyCode::Char('y'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "z" => KeyEvent {
+            code: KeyCode::Char('z'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "S-a" => KeyEvent {
+            code: KeyCode::Char('A'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-b" => KeyEvent {
+            code: KeyCode::Char('B'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-c" => KeyEvent {
+            code: KeyCode::Char('C'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-d" => KeyEvent {
+            code: KeyCode::Char('D'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-e" => KeyEvent {
+            code: KeyCode::Char('E'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-f" => KeyEvent {
+            code: KeyCode::Char('F'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-g" => KeyEvent {
+            code: KeyCode::Char('G'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-h" => KeyEvent {
+            code: KeyCode::Char('H'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-i" => KeyEvent {
+            code: KeyCode::Char('I'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-j" => KeyEvent {
+            code: KeyCode::Char('J'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-k" => KeyEvent {
+            code: KeyCode::Char('K'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-l" => KeyEvent {
+            code: KeyCode::Char('L'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-m" => KeyEvent {
+            code: KeyCode::Char('M'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-n" => KeyEvent {
+            code: KeyCode::Char('N'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-o" => KeyEvent {
+            code: KeyCode::Char('O'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-p" => KeyEvent {
+            code: KeyCode::Char('P'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-q" => KeyEvent {
+            code: KeyCode::Char('Q'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-r" => KeyEvent {
+            code: KeyCode::Char('R'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-s" => KeyEvent {
+            code: KeyCode::Char('S'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-t" => KeyEvent {
+            code: KeyCode::Char('T'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-u" => KeyEvent {
+            code: KeyCode::Char('U'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-v" => KeyEvent {
+            code: KeyCode::Char('V'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-w" => KeyEvent {
+            code: KeyCode::Char('W'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-x" => KeyEvent {
+            code: KeyCode::Char('X'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-y" => KeyEvent {
+            code: KeyCode::Char('Y'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "S-z" => KeyEvent {
+            code: KeyCode::Char('Z'),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "C-a" => KeyEvent {
+            code: KeyCode::Char('A'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-b" => KeyEvent {
+            code: KeyCode::Char('B'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-c" => KeyEvent {
+            code: KeyCode::Char('C'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-d" => KeyEvent {
+            code: KeyCode::Char('D'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-e" => KeyEvent {
+            code: KeyCode::Char('E'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-f" => KeyEvent {
+            code: KeyCode::Char('F'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-g" => KeyEvent {
+            code: KeyCode::Char('G'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-h" => KeyEvent {
+            code: KeyCode::Char('H'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-i" => KeyEvent {
+            code: KeyCode::Char('I'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-j" => KeyEvent {
+            code: KeyCode::Char('J'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-k" => KeyEvent {
+            code: KeyCode::Char('K'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-l" => KeyEvent {
+            code: KeyCode::Char('L'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-m" => KeyEvent {
+            code: KeyCode::Char('M'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-n" => KeyEvent {
+            code: KeyCode::Char('N'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-o" => KeyEvent {
+            code: KeyCode::Char('O'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-p" => KeyEvent {
+            code: KeyCode::Char('P'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-q" => KeyEvent {
+            code: KeyCode::Char('Q'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-r" => KeyEvent {
+            code: KeyCode::Char('R'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-s" => KeyEvent {
+            code: KeyCode::Char('S'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-t" => KeyEvent {
+            code: KeyCode::Char('T'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-u" => KeyEvent {
+            code: KeyCode::Char('U'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-v" => KeyEvent {
+            code: KeyCode::Char('V'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-w" => KeyEvent {
+            code: KeyCode::Char('W'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-x" => KeyEvent {
+            code: KeyCode::Char('X'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-y" => KeyEvent {
+            code: KeyCode::Char('Y'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "C-z" => KeyEvent {
+            code: KeyCode::Char('Z'),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        "A-a" => KeyEvent {
+            code: KeyCode::Char('A'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-b" => KeyEvent {
+            code: KeyCode::Char('B'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-c" => KeyEvent {
+            code: KeyCode::Char('C'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-d" => KeyEvent {
+            code: KeyCode::Char('D'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-e" => KeyEvent {
+            code: KeyCode::Char('E'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-f" => KeyEvent {
+            code: KeyCode::Char('F'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-g" => KeyEvent {
+            code: KeyCode::Char('G'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-h" => KeyEvent {
+            code: KeyCode::Char('H'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-i" => KeyEvent {
+            code: KeyCode::Char('I'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-j" => KeyEvent {
+            code: KeyCode::Char('J'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-k" => KeyEvent {
+            code: KeyCode::Char('K'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-l" => KeyEvent {
+            code: KeyCode::Char('L'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-m" => KeyEvent {
+            code: KeyCode::Char('M'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-n" => KeyEvent {
+            code: KeyCode::Char('N'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-o" => KeyEvent {
+            code: KeyCode::Char('O'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-p" => KeyEvent {
+            code: KeyCode::Char('P'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-q" => KeyEvent {
+            code: KeyCode::Char('Q'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-r" => KeyEvent {
+            code: KeyCode::Char('R'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-s" => KeyEvent {
+            code: KeyCode::Char('S'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-t" => KeyEvent {
+            code: KeyCode::Char('T'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-u" => KeyEvent {
+            code: KeyCode::Char('U'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-v" => KeyEvent {
+            code: KeyCode::Char('V'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-w" => KeyEvent {
+            code: KeyCode::Char('W'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-x" => KeyEvent {
+            code: KeyCode::Char('X'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-y" => KeyEvent {
+            code: KeyCode::Char('Y'),
+            modifiers: KeyModifiers::ALT,
+        },
+        "A-z" => KeyEvent {
+            code: KeyCode::Char('Z'),
+            modifiers: KeyModifiers::ALT,
+        },
+        _ => KeyEvent {
+            code: KeyCode::Null,
+            modifiers: KeyModifiers::NONE,
+        },
     }
 }
 
@@ -756,10 +1175,17 @@ fn simple_symbols() -> HashMap<FileItems, String> {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct ModeKeybinds {
+    pub Normal: HashMap<String, String>,
+    pub Input: HashMap<String, String>,
+    pub Stacker: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct UserConfig {
     theme: SettingTheme,
     symbols: HashMap<FileItems, String>,
-    user_keybinds: HashMap<String, String>,
+    user_keybinds: ModeKeybinds,
 }
 
 impl UserConfig {
@@ -794,7 +1220,7 @@ impl UserConfig {
         &self.theme
     }
 
-    pub fn keybindings_map(&self) -> &HashMap<String, String> {
+    pub fn keybindings_map(&self) -> &ModeKeybinds {
         &self.user_keybinds
     }
 }
@@ -806,6 +1232,100 @@ fn style_formatter(color: Colors, is_fg: bool, is_bg: bool) -> Style {
         (true, false) => Style::default().fg(color),
         (false, true) => Style::default().bg(color),
         (false, false) => panic!("is_fg or is_bg is always true"),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct KeyCombo {
+    first: UserKeyboad,
+    // second: Option<Box<UserKeyCombo>>,
+    second: Option<UserKeyboad>,
+    has_combo: bool,
+}
+
+impl KeyCombo {
+    pub fn new(first: UserKeyboad, second: Option<UserKeyboad>, has_combo: bool) -> KeyCombo {
+        KeyCombo {
+            first,
+            second,
+            has_combo,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Keybinds {
+    multi_keybinds: HashMap<KeyCombo, String>,
+    single_keybinds: HashMap<KeyCombo, String>,
+    pub matchings: HashMap<KeyCombo, String>,
+}
+
+impl Keybinds {
+    pub fn new() -> Self {
+        Keybinds {
+            single_keybinds: HashMap::new(),
+            multi_keybinds: HashMap::new(),
+            matchings: HashMap::new(),
+        }
+    }
+
+    pub fn get_cmd_string(&self, combo: KeyCombo) -> String {
+        self.matchings.get(&combo).unwrap().to_owned()
+    }
+
+    pub fn make_single_keybinds(
+        &mut self,
+        user_keybinds: HashMap<Vec<UserKeyboad>, String>,
+        i: usize,
+    ) {
+        let single_keys = user_keybinds.into_iter().filter(|(x, _)| x.len() == 1);
+        let mapping_keys: HashMap<KeyCombo, String> = single_keys
+            .map(|(x, s)| {
+                let keyboad = x.get(i).unwrap().to_owned();
+                (KeyCombo::new(keyboad, None, false), s.to_owned())
+            })
+            .collect();
+        self.single_keybinds = mapping_keys;
+    }
+
+    pub fn make_multi_keybinds(
+        &mut self,
+        user_keybinds: HashMap<Vec<UserKeyboad>, String>,
+        i: usize,
+    ) {
+        let multi_keys = user_keybinds.into_iter().filter(|(x, _)| x.len() > i + 1);
+        let mapping_keys: HashMap<KeyCombo, String> = multi_keys
+            .map(|(x, s)| {
+                let first = x.get(i).unwrap().to_owned();
+                let second = x.get(i + 1).unwrap().to_owned();
+                (KeyCombo::new(first, Some(second), true), s.to_owned())
+            })
+            .collect();
+        self.multi_keybinds = mapping_keys;
+    }
+
+    pub fn matching_keybinds_filtering(&mut self, key: UserKeyboad, is_first: bool) -> usize {
+        self.matchings = if is_first {
+            self.multi_keybinds
+                .iter()
+                .filter(|(cmb, _)| cmb.first == key)
+                .map(|(key, cmd)| (key.to_owned(), cmd.to_owned()))
+                .collect::<HashMap<KeyCombo, String>>()
+        } else {
+            self.multi_keybinds
+                .iter()
+                .filter(|(cmb, _)| {
+                    if let Some(second) = cmb.second.to_owned() {
+                        second == key
+                    } else {
+                        false
+                    }
+                })
+                .map(|(key, cmd)| (key.to_owned(), cmd.to_owned()))
+                .collect::<HashMap<KeyCombo, String>>()
+        };
+
+        self.matchings.len()
     }
 }
 
@@ -829,12 +1349,9 @@ pub fn load_user_config_file() -> UserConfig {
 
 #[cfg(test)]
 mod test {
-    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use ron::de;
 
-    use crate::load_config::{mappings_crossterm_keyevent_to_userkeyboad, UserConfig};
-
-    use super::{string_to_keyboard, UserKeyboad};
+    use crate::load_config::UserConfig;
 
     #[test]
     fn can_read_ron_file() {
@@ -850,86 +1367,5 @@ mod test {
         let config = config.unwrap();
         let keybinds = config.keybindings_map();
         println!("{:#?}", keybinds);
-    }
-
-    #[test]
-    fn can_repace_string_to_enum() {
-        let sl = "l".to_string();
-        let el = UserKeyboad::L;
-        assert_eq!(string_to_keyboard(&sl), el);
-        let strings = [
-            "l", "h", "j", "k", "q", "C-h", "C-j", "C-k", "C-l", "S-h", "S-j", "S-k", "S-l", "A-h",
-            "A-j", "A-k", "A-l", "S-n", "S-i",
-        ];
-
-        let enum_keys = [
-            UserKeyboad::L,
-            UserKeyboad::H,
-            UserKeyboad::J,
-            UserKeyboad::K,
-            UserKeyboad::Q,
-            UserKeyboad::CtrlH,
-            UserKeyboad::CtrlJ,
-            UserKeyboad::CtrlK,
-            UserKeyboad::CtrlL,
-            UserKeyboad::ShiftH,
-            UserKeyboad::ShiftJ,
-            UserKeyboad::SHiftK,
-            UserKeyboad::ShiftL,
-            UserKeyboad::AltH,
-            UserKeyboad::AltJ,
-            UserKeyboad::AltK,
-            UserKeyboad::AltL,
-            UserKeyboad::ShiftN,
-            UserKeyboad::ShiftI,
-        ];
-
-        for (s, k) in strings.iter().zip(enum_keys.iter()) {
-            let s = s.to_string();
-            assert_eq!(string_to_keyboard(&s), *k);
-        }
-    }
-
-    #[test]
-    fn can_crosster_keyevent_to_userkyboad() {
-        let key_events = [
-            (
-                KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL),
-                UserKeyboad::CtrlH,
-            ),
-            (
-                KeyEvent::new(KeyCode::Char('j'), KeyModifiers::CONTROL),
-                UserKeyboad::CtrlJ,
-            ),
-            (
-                KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL),
-                UserKeyboad::CtrlK,
-            ),
-            (
-                KeyEvent::new(KeyCode::Char('l'), KeyModifiers::CONTROL),
-                UserKeyboad::CtrlL,
-            ),
-            (
-                KeyEvent::new(KeyCode::Char('H'), KeyModifiers::SHIFT),
-                UserKeyboad::ShiftH,
-            ),
-            (
-                KeyEvent::new(KeyCode::Char('J'), KeyModifiers::SHIFT),
-                UserKeyboad::ShiftJ,
-            ),
-            (
-                KeyEvent::new(KeyCode::Char('K'), KeyModifiers::SHIFT),
-                UserKeyboad::SHiftK,
-            ),
-            (
-                KeyEvent::new(KeyCode::Char('L'), KeyModifiers::SHIFT),
-                UserKeyboad::ShiftL,
-            ),
-        ];
-
-        for (key_event, user_key) in key_events.into_iter() {
-            let ans = mappings_crossterm_keyevent_to_userkeyboad(&key_event);
-            assert_eq!(ans, user_key);
-        }
     }
 }

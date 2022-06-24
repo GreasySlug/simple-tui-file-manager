@@ -20,16 +20,32 @@
         Directory: "▶",
         Select: ">>"
     },
-    user_keybinds: {
-        "h": "move_to_parent_dir",
-        "j": "move_to_next_file_item",
-        "k": "move_to_prev_file_item",
-        "l": "move_to_child_dir",
-        "tab":"next_dirtab",
-        "Backtab":"prev_dirtab",
-        "q" :"quit",
-        "S-i": "input", // experement
-        "escape": "normal",// experiment
-        "m": "make_directory" // TODO: add mode annotation
-    }
+    user_keybinds: ModeKeybinds (
+        Normal : {
+            "h": "move_to_parent_dir",
+            "j": "move_to_next_file_item",
+            "k": "move_to_prev_file_item",
+            "l": "move_to_child_dir",
+            "tab":"next_dirtab",
+            "Backtab":"prev_dirtab",
+            "q" :"quit",
+            "S-i": "input", // experement
+            "S-v": "stacker",
+        },
+        Input: {
+            "tab":"next_dirtab",
+            "Backtab":"prev_dirtab",
+            "q" :"quit",
+            "m": "make_directory", // TODO: add mode annotation
+            "q": "quit",
+            "escape": "normal",// experiment
+        },
+        Stacker: {
+            "tab":"next_dirtab",
+            "Backtab":"prev_dirtab",
+            "q" :"quit",
+            "s-i": "input",
+            "escape": "normal"
+        },
+    )
 )

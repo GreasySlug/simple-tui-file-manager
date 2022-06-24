@@ -2,8 +2,9 @@ use std::collections::{hash_map::Entry, HashMap};
 use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
+use std::time::Duration;
 
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, poll, Event, KeyCode, KeyEvent};
 use tui::backend::Backend;
 use tui::Terminal;
 
@@ -11,8 +12,9 @@ use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 use crate::input_ui::{init_input_area_terminal, run_user_input};
 use crate::load_config::{
-    load_user_config_file, mappings_crossterm_keyevent_to_userkeyboad, string_map_to_user_keyboad,
-    SettingTheme, UserConfig, UserKeyboad,
+    self, load_user_config_file, mappings_crossterm_keyevent_to_userkeyboad,
+    multi_string_map_to_user_keyboad, string_map_to_user_keyboad, KeyCombo, Keybinds, SettingTheme,
+    UserConfig, UserKeyboad,
 };
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
@@ -205,18 +207,43 @@ impl App {
             .position(|x| x.name() == dir_name);
 
         let state_dir = self.peek_selected_statefuldir();
-        state_dir.select_index(dir_pos)
+        state_dir.select_index(dir_pos);
     }
 
-    fn user_keymapings(&self) -> HashMap<UserKeyboad, String> {
+    fn normal_user_keybinds(&self) -> Keybinds {
         let keymap = self.config.keybindings_map();
-        string_map_to_user_keyboad(keymap)
+        let multi_keyconfig = multi_string_map_to_user_keyboad(&keymap.Normal);
+        let mut keybinds = Keybinds::new();
+        keybinds.make_single_keybinds(multi_keyconfig.clone(), 0);
+        keybinds.make_multi_keybinds(multi_keyconfig, 1);
+        keybinds
+    }
+
+    fn input_user_keybinds(&self) -> Keybinds {
+        let keymap = self.config.keybindings_map();
+        let multi_keyconfig = multi_string_map_to_user_keyboad(&keymap.Input);
+        let mut keybinds = Keybinds::new();
+        keybinds.make_single_keybinds(multi_keyconfig.clone(), 0);
+        keybinds.make_multi_keybinds(multi_keyconfig, 1);
+        keybinds
+    }
+
+    fn stacker_user_keybinds(&self) -> Keybinds {
+        let keymap = self.config.keybindings_map();
+        let multi_keyconfig = multi_string_map_to_user_keyboad(&keymap.Stacker);
+        let mut keybinds = Keybinds::new();
+        keybinds.make_single_keybinds(multi_keyconfig.clone(), 0);
+        keybinds.make_multi_keybinds(multi_keyconfig, 1);
+        keybinds
     }
 
     fn run_user_input(&mut self) -> Option<String> {
-        let mut terminal = init_input_area_terminal().unwrap();
+        let terminal = init_input_area_terminal();
+        if terminal.is_err() {
+            return None;
+        }
         let mut name = String::with_capacity(40);
-        if let Ok(()) = run_user_input(&mut terminal, &mut name) {
+        if let Ok(()) = run_user_input(&mut terminal.unwrap(), &mut name) {
             return Some(name);
         }
         None
@@ -224,57 +251,78 @@ impl App {
 }
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    let keymap = app.user_keymapings();
+    let mut multi_normal = app.normal_user_keybinds();
+    let mut multi_input = app.input_user_keybinds();
+    let mut multi_stacker = app.stacker_user_keybinds();
     loop {
-        // let selected_dir = app.peek_selected_statefuldir();
         terminal.draw(|f| ui(f, &mut app))?;
-        if app.mode() == &Mode::Normal {
-            let cmd = keybindings(&keymap)?;
-            match cmd.as_str() {
-                "move_to_parent_dir" => app.move_to_parent_dir(),
-                "move_to_next_file_item" => app.move_to_next_file_item(),
-                "move_to_prev_file_item" => app.move_to_prev_file_item(),
-                "move_to_child_dir" => app.move_to_child_dir(),
-                "next_dirtab" => app.next_dirtab(),
-                "prev_dirtab" => app.prev_dirtab(),
-                "quit" => return Ok(()),
-                "input" => app.shift_to_input_mode(),
-                _ => app.push_command_log("No Comands".to_string()),
-            }
-        } else if app.mode() == &Mode::Input {
-            let cmd = keybindings(&keymap)?;
-            match cmd.as_str() {
-                "next_dirtab" => app.next_dirtab(),
-                "prev_dirtab" => app.prev_dirtab(),
-                // "make directory" => {}
-                // "make file" => app.touch_in_crr_dir(),
-                "quit" => return Ok(()),
-                "normal" => app.shift_to_normal_mode(),
-                "stacker" => app.shift_to_stacker_mode(),
-                _ => app.push_command_log("No Comands".to_string()),
-            }
-        } else if app.mode() == &Mode::Stacker {
-            let cmd = keybindings(&keymap)?;
-            match cmd.as_str() {
-                "next_dirtab" => app.next_dirtab(),
-                "prev_dirtab" => app.prev_dirtab(),
-                "quit" => return Ok(()),
-                "normal" => app.shift_to_normal_mode(),
-                "input" => app.shift_to_input_mode(),
-                _ => app.push_command_log("No Comands".to_string()),
+        // TODO: Consider a more efficient way to declare the name of each command.
+        if let Event::Key(key) = event::read()? {
+            if app.mode() == &Mode::Normal {
+                if let Ok(cmd) = key_matchings(key, &mut multi_normal) {
+                    match cmd.as_str() {
+                        "move_to_parent_dir" => app.move_to_parent_dir(),
+                        "move_to_next_file_item" => app.move_to_next_file_item(),
+                        "move_to_prev_file_item" => app.move_to_prev_file_item(),
+                        "move_to_child_dir" => app.move_to_child_dir(),
+                        "next_dirtab" => app.next_dirtab(),
+                        "prev_dirtab" => app.prev_dirtab(),
+                        "quit" => return Ok(()),
+                        "input" => app.shift_to_input_mode(),
+                        _ => app.push_command_log("No Comands".to_string()),
+                    }
+                }
+            } else if app.mode() == &Mode::Input {
+                if let Ok(cmd) = key_matchings(key, &mut multi_input) {
+                    match cmd.as_str() {
+                        "next_dirtab" => app.next_dirtab(),
+                        "prev_dirtab" => app.prev_dirtab(),
+                        "quit" => return Ok(()),
+                        "normal" => app.shift_to_normal_mode(),
+                        "stacker" => app.shift_to_stacker_mode(),
+                        _ => app.push_command_log("No Comands".to_string()),
+                    }
+                }
+            } else if app.mode() == &Mode::Stacker {
+                if let Ok(cmd) = key_matchings(key, &mut multi_stacker) {
+                    match cmd.as_str() {
+                        "next_dirtab" => app.next_dirtab(),
+                        "prev_dirtab" => app.prev_dirtab(),
+                        "quit" => return Ok(()),
+                        "normal" => app.shift_to_normal_mode(),
+                        "input" => app.shift_to_input_mode(),
+                        _ => app.push_command_log("No Comands".to_string()),
+                    }
+                }
             }
         }
     }
 }
 
-fn keybindings(keymap: &HashMap<UserKeyboad, String>) -> io::Result<String> {
-    loop {
+fn key_matchings(key: KeyEvent, keybinds: &mut load_config::Keybinds) -> io::Result<String> {
+    let first_key = mappings_crossterm_keyevent_to_userkeyboad(&key);
+
+    let matched_key = keybinds.matching_keybinds_filtering(first_key.clone(), true);
+
+    if matched_key == 0 {
+        return Ok(String::with_capacity(0));
+    }
+
+    if matched_key == 1 {
+        let combo = KeyCombo::new(first_key, None, false);
+        keybinds.get_cmd_string(combo);
+    }
+
+    if matched_key > 1 && poll(Duration::from_millis(1000))? {
         if let Event::Key(key) = event::read()? {
-            let key_code = mappings_crossterm_keyevent_to_userkeyboad(&key);
-            let keybinds = keymap.get(&key_code);
-            if let Some(keybind) = keybinds {
-                return Ok(keybind.to_owned());
+            let second_key = mappings_crossterm_keyevent_to_userkeyboad(&key);
+            let second_match_key = keybinds.matching_keybinds_filtering(second_key.clone(), false);
+            if second_match_key == 1 {
+                let combo = KeyCombo::new(second_key, None, false);
+                keybinds.get_cmd_string(combo);
             }
         }
     }
+
+    Ok(String::with_capacity(0))
 }
