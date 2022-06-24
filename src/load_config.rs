@@ -478,6 +478,118 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
             code: KeyCode::Char('z'),
             modifiers: KeyModifiers::NONE,
         },
+        "#" => KeyEvent {
+            code: KeyCode::Char('#'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "!" => KeyEvent {
+            code: KeyCode::Char('!'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "$" => KeyEvent {
+            code: KeyCode::Char('$'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "%" => KeyEvent {
+            code: KeyCode::Char('%'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "&" => KeyEvent {
+            code: KeyCode::Char('&'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "'" => KeyEvent {
+            code: KeyCode::Char('\''),
+            modifiers: KeyModifiers::NONE,
+        },
+        "(" => KeyEvent {
+            code: KeyCode::Char('('),
+            modifiers: KeyModifiers::NONE,
+        },
+        ")" => KeyEvent {
+            code: KeyCode::Char(')'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "-" => KeyEvent {
+            code: KeyCode::Char('-'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "=" => KeyEvent {
+            code: KeyCode::Char('='),
+            modifiers: KeyModifiers::NONE,
+        },
+        "^" => KeyEvent {
+            code: KeyCode::Char('^'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "~" => KeyEvent {
+            code: KeyCode::Char('~'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "\\" => KeyEvent {
+            code: KeyCode::Char('\\'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "|" => KeyEvent {
+            code: KeyCode::Char('|'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "@" => KeyEvent {
+            code: KeyCode::Char('@'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "[" => KeyEvent {
+            code: KeyCode::Char('['),
+            modifiers: KeyModifiers::NONE,
+        },
+        "]" => KeyEvent {
+            code: KeyCode::Char(']'),
+            modifiers: KeyModifiers::NONE,
+        },
+        ";" => KeyEvent {
+            code: KeyCode::Char(';'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "+" => KeyEvent {
+            code: KeyCode::Char('+'),
+            modifiers: KeyModifiers::NONE,
+        },
+        ":" => KeyEvent {
+            code: KeyCode::Char(':'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "*" => KeyEvent {
+            code: KeyCode::Char('*'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "?" => KeyEvent {
+            code: KeyCode::Char('?'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "/" => KeyEvent {
+            code: KeyCode::Char('/'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "," => KeyEvent {
+            code: KeyCode::Char(','),
+            modifiers: KeyModifiers::NONE,
+        },
+        "." => KeyEvent {
+            code: KeyCode::Char('.'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "<" => KeyEvent {
+            code: KeyCode::Char('<'),
+            modifiers: KeyModifiers::NONE,
+        },
+        ">" => KeyEvent {
+            code: KeyCode::Char('>'),
+            modifiers: KeyModifiers::NONE,
+        },
+        "_" => KeyEvent {
+            code: KeyCode::Char('_'),
+            modifiers: KeyModifiers::NONE,
+        },
         "S-a" => KeyEvent {
             code: KeyCode::Char('A'),
             modifiers: KeyModifiers::SHIFT,
