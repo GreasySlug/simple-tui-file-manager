@@ -77,9 +77,9 @@ pub fn default_vim_movements() -> ModeKeybinds {
     }
 
     ModeKeybinds {
-        Normal: normal,
-        Input: input,
-        Stacker: stacker,
+        normal,
+        input,
+        stacker,
     }
 }
 
@@ -135,9 +135,9 @@ pub fn default_arrow_key() -> ModeKeybinds {
     }
 
     ModeKeybinds {
-        Normal: normal,
-        Input: input,
-        Stacker: stacker,
+        normal,
+        input,
+        stacker,
     }
 }
 
@@ -193,9 +193,9 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
     }
 
     ModeKeybinds {
-        Normal: normal,
-        Input: input,
-        Stacker: stacker,
+        normal,
+        input,
+        stacker,
     }
 }
 
@@ -761,6 +761,117 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct UserKeyCode {
+    first: KeyEvent,
+    second: Option<KeyEvent>,
+    // combo: Vec<KeyEvent>,
+    combo: bool,
+}
+
+impl UserKeyCode {
+    pub fn single_new(first: KeyEvent) -> Self {
+        Self {
+            first,
+            second: None,
+            // coc![],
+            combo: false,
+        }
+    }
+
+    pub fn multi_new(first: KeyEvent, second: KeyEvent) -> Self {
+        Self {
+            first,
+            second: Some(second),
+            // combo,
+            combo: true,
+        }
+    }
+
+    fn has_combo(&self) -> bool {
+        self.combo
+    }
+}
+
+type Keybind = HashMap<UserKeyCode, String>;
+#[derive(Debug, PartialEq, Eq)]
+pub struct UserKeybinds {
+    single: Keybind,
+    multi: Keybind,
+}
+
+impl UserKeybinds {
+    pub fn new() -> Self {
+        Self {
+            single: HashMap::new(),
+            multi: HashMap::new(),
+        }
+    }
+
+    pub fn matching_single_keys(
+        &self,
+        key: &KeyEvent,
+        combo: bool,
+    ) -> Option<HashMap<&UserKeyCode, &String>> {
+        let key = UserKeyCode::single_new(*key);
+
+        if combo {
+            let filtered_keybinds: HashMap<&UserKeyCode, &String> = self
+                .multi
+                .iter()
+                .filter(|(x, _)| **x == key && x.has_combo())
+                .collect();
+            if filtered_keybinds.is_empty() {
+                return None;
+            }
+            Some(filtered_keybinds)
+        } else {
+            let filtered_keybinds: HashMap<&UserKeyCode, &String> =
+                self.single.iter().filter(|(x, _)| **x == key).collect();
+            if filtered_keybinds.is_empty() {
+                return None;
+            }
+            Some(filtered_keybinds)
+        }
+    }
+
+    pub fn single_keybinds(&self) -> Keybind {
+        self.single.clone()
+    }
+
+    pub fn multi_keybinds(&self) -> Keybind {
+        self.multi.clone()
+    }
+
+    pub fn make_single_keybinds(
+        mut self,
+        config_user_keybind: HashMap<Vec<KeyEvent>, String>,
+    ) -> Self {
+        let single: Keybind = config_user_keybind
+            .into_iter()
+            .filter(|(key, _cmd)| key.len() == 1)
+            .map(|(x, c)| (UserKeyCode::single_new(x[0]), c))
+            .collect();
+        self.single = single;
+
+        self
+    }
+
+    pub fn make_multiple_keybinds(
+        mut self,
+        config_user_keybind: HashMap<Vec<KeyEvent>, String>,
+    ) -> Self {
+        let multi: Keybind = config_user_keybind
+            .into_iter()
+            .filter(|(key, _cmd)| key.len() > 1)
+            .map(|(x, c)| (UserKeyCode::multi_new(x[0], x[1]), c))
+            .collect();
+        self.multi = multi;
+
+        self
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct SettingTheme {
     background: Colors,
@@ -939,9 +1050,9 @@ fn simple_symbols() -> HashMap<FileItems, String> {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ModeKeybinds {
-    pub Normal: HashMap<String, String>,
-    pub Input: HashMap<String, String>,
-    pub Stacker: HashMap<String, String>,
+    pub normal: HashMap<String, String>,
+    pub input: HashMap<String, String>,
+    pub stacker: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -983,8 +1094,20 @@ impl UserConfig {
         &self.theme
     }
 
-    pub fn keybindings_map(&self) -> &ModeKeybinds {
-        &self.user_keybinds
+    fn keybindings_map(&self) -> ModeKeybinds {
+        self.user_keybinds.clone()
+    }
+
+    pub fn normal_keybindings_map(&self) -> HashMap<String, String> {
+        self.user_keybinds.normal.clone()
+    }
+
+    pub fn input_keybindings_map(&self) -> HashMap<String, String> {
+        self.user_keybinds.input.clone()
+    }
+
+    pub fn stacker_keybindings_map(&self) -> HashMap<String, String> {
+        self.user_keybinds.stacker.clone()
     }
 }
 

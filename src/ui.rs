@@ -10,7 +10,6 @@ use tui::{
 use crate::{
     application::{App, Mode},
     file_item_list::Kinds,
-    input_ui::init_input_area_terminal,
     load_config::FileItems,
     path_process::pathbuf_to_string_name,
 };
@@ -165,7 +164,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 const BLOCK_ELEMENTS: [&str; 7] = [" ", "▁", "▂", "▃", "▄", "▅", "▆"];
 fn command_display_ui<B: Backend>(
     f: &mut Frame<B>,
-    cmd_hist: &Vec<String>,
+    cmd_hist: &[String],
     cmd_window: Rect,
     cmd_styles: [Style; 3],
     cmd_mode: &Mode,

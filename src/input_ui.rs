@@ -20,7 +20,10 @@ pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout
     Ok(terminal)
 }
 
-pub fn run_user_input<B: Backend>(terminal: &mut Terminal<B>, line: &mut String) -> io::Result<()> {
+pub fn start_user_input<B: Backend>(
+    terminal: &mut Terminal<B>,
+    line: &mut String,
+) -> io::Result<()> {
     terminal.draw(|f| input_area_ui(f, line))?;
     while let Event::Key(KeyEvent { code, .. }) = read().expect("Failed to get user input") {
         match code {

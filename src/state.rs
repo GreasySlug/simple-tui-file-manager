@@ -61,6 +61,14 @@ impl StatefulDirectory {
         }
     }
 
+    pub fn select_bottom(&mut self) {
+        if self.length < 1 {
+            return;
+        }
+
+        self.state.select(Some(self.length - 1));
+    }
+
     pub fn select_top(&mut self) {
         if self.length < 1 {
             return;

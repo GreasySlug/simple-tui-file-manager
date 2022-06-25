@@ -2,19 +2,17 @@ use std::collections::{hash_map::Entry, HashMap};
 use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
-use std::time::Duration;
 
-use crossterm::event::{self, poll, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use tui::backend::Backend;
 use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
-use crate::input_ui::{init_input_area_terminal, run_user_input};
+use crate::input_ui::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
-    self, load_user_config_file, mappings_crossterm_keyevent_to_userkeyboad,
-    multi_string_map_to_user_keyboad, string_map_to_user_keyboad, KeyCombo, Keybinds, SettingTheme,
-    UserConfig, UserKeyboad,
+    load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeyCode,
+    UserKeybinds,
 };
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
@@ -30,6 +28,7 @@ pub enum Mode {
 // TODO: Restrictions without reason, so think cost
 const DRAIN_SIZE: usize = 50;
 const MAX_HIST_SIZE: usize = 500;
+const MAX_FILE_NAME_SIZE: usize = 40;
 
 // TODO: Do I have to load  use config in this struct?
 #[derive(Debug)]
@@ -147,12 +146,6 @@ impl App {
         }
     }
 
-    pub fn push_command_keycode_log(&mut self, command: &KeyCode) {
-        self.limit_command_log();
-        let cmm = format!("{:?}", command);
-        self.command_history.push(cmm);
-    }
-
     pub fn push_command_log(&mut self, command: String) {
         self.limit_command_log();
         self.command_history.push(command);
@@ -210,40 +203,42 @@ impl App {
         state_dir.select_index(dir_pos);
     }
 
-    fn normal_user_keybinds(&self) -> Keybinds {
-        let keymap = self.config.keybindings_map();
-        let multi_keyconfig = multi_string_map_to_user_keyboad(&keymap.Normal);
-        let mut keybinds = Keybinds::new();
-        keybinds.make_single_keybinds(multi_keyconfig.clone(), 0);
-        keybinds.make_multi_keybinds(multi_keyconfig, 1);
-        keybinds
+    fn move_to_top_of_file_item(&mut self) {
+        self.peek_selected_statefuldir().select_top();
     }
 
-    fn input_user_keybinds(&self) -> Keybinds {
-        let keymap = self.config.keybindings_map();
-        let multi_keyconfig = multi_string_map_to_user_keyboad(&keymap.Input);
-        let mut keybinds = Keybinds::new();
-        keybinds.make_single_keybinds(multi_keyconfig.clone(), 0);
-        keybinds.make_multi_keybinds(multi_keyconfig, 1);
-        keybinds
+    fn move_to_bottom_of_file_item(&mut self) {
+        self.peek_selected_statefuldir().select_bottom();
     }
 
-    fn stacker_user_keybinds(&self) -> Keybinds {
-        let keymap = self.config.keybindings_map();
-        let multi_keyconfig = multi_string_map_to_user_keyboad(&keymap.Stacker);
-        let mut keybinds = Keybinds::new();
-        keybinds.make_single_keybinds(multi_keyconfig.clone(), 0);
-        keybinds.make_multi_keybinds(multi_keyconfig, 1);
-        keybinds
+    fn normal_user_keybinds(&self) -> UserKeybinds {
+        let keybind = self.config.normal_keybindings_map();
+        let keymap = multi_string_map_to_user_keyboad(&keybind);
+        UserKeybinds::new()
+            .make_single_keybinds(keymap.clone())
+            .make_multiple_keybinds(keymap)
+    }
+
+    fn input_user_keybinds(&self) -> UserKeybinds {
+        let keybind = self.config.input_keybindings_map();
+        let keymap = multi_string_map_to_user_keyboad(&keybind);
+        UserKeybinds::new()
+            .make_single_keybinds(keymap.clone())
+            .make_multiple_keybinds(keymap)
+    }
+
+    fn stacker_user_keybinds(&self) -> UserKeybinds {
+        let keybind = self.config.stacker_keybindings_map();
+        let keymap = multi_string_map_to_user_keyboad(&keybind);
+        UserKeybinds::new()
+            .make_single_keybinds(keymap.clone())
+            .make_multiple_keybinds(keymap)
     }
 
     fn run_user_input(&mut self) -> Option<String> {
-        let terminal = init_input_area_terminal();
-        if terminal.is_err() {
-            return None;
-        }
-        let mut name = String::with_capacity(40);
-        if let Ok(()) = run_user_input(&mut terminal.unwrap(), &mut name) {
+        let mut terminal = init_input_area_terminal().unwrap();
+        let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
+        if let Ok(()) = start_user_input(&mut terminal, &mut name) {
             return Some(name);
         }
         None
@@ -265,6 +260,8 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "move_to_next_file_item" => app.move_to_next_file_item(),
                         "move_to_prev_file_item" => app.move_to_prev_file_item(),
                         "move_to_child_dir" => app.move_to_child_dir(),
+                        "move_to_top_of_file_item" => app.move_to_top_of_file_item(),
+                        "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
                         "next_dirtab" => app.next_dirtab(),
                         "prev_dirtab" => app.prev_dirtab(),
                         "quit" => return Ok(()),
@@ -299,28 +296,20 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     }
 }
 
-fn key_matchings(key: KeyEvent, keybinds: &mut load_config::Keybinds) -> io::Result<String> {
-    let first_key = mappings_crossterm_keyevent_to_userkeyboad(&key);
-
-    let matched_key = keybinds.matching_keybinds_filtering(first_key.clone(), true);
-
-    if matched_key == 0 {
-        return Ok(String::with_capacity(0));
-    }
-
-    if matched_key == 1 {
-        let combo = KeyCombo::new(first_key, None, false);
-        keybinds.get_cmd_string(combo);
-    }
-
-    if matched_key > 1 && poll(Duration::from_millis(1000))? {
-        if let Event::Key(key) = event::read()? {
-            let second_key = mappings_crossterm_keyevent_to_userkeyboad(&key);
-            let second_match_key = keybinds.matching_keybinds_filtering(second_key.clone(), false);
-            if second_match_key == 1 {
-                let combo = KeyCombo::new(second_key, None, false);
-                keybinds.get_cmd_string(combo);
+fn key_matchings(first: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<String> {
+    if let Some(single) = keybinds.matching_single_keys(&first, false) {
+        if single.is_empty() {
+            if let Some(multi) = keybinds.matching_single_keys(&first, true) {
+                if multi.is_empty() {
+                    return Ok(String::with_capacity(0));
+                } else if let Event::Key(second) = event::read()? {
+                    let cmd = multi.get(&UserKeyCode::multi_new(first, second)).unwrap();
+                    return Ok(cmd.to_string());
+                }
             }
+        } else {
+            let cmd = single.get(&UserKeyCode::single_new(first)).unwrap();
+            return Ok(cmd.to_string());
         }
     }
 
