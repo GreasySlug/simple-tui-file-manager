@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyEvent};
 use tui::backend::Backend;
 use tui::Terminal;
 
@@ -11,8 +11,7 @@ use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 use crate::input_ui::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
-    load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeyCode,
-    UserKeybinds,
+    load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
@@ -146,9 +145,9 @@ impl App {
         }
     }
 
-    pub fn push_command_log(&mut self, command: String) {
+    pub fn push_command_log(&mut self, command: &str) {
         self.limit_command_log();
-        self.command_history.push(command);
+        self.command_history.push(command.to_string());
     }
 
     pub fn command_history(&self) -> &Vec<String> {
@@ -241,6 +240,7 @@ impl App {
         if let Ok(()) = start_user_input(&mut terminal, &mut name) {
             return Some(name);
         }
+        self.push_command_log("Stopped to input");
         None
     }
 }
@@ -266,7 +266,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "prev_dirtab" => app.prev_dirtab(),
                         "quit" => return Ok(()),
                         "input" => app.shift_to_input_mode(),
-                        _ => app.push_command_log(format!("{:?} {:?}", key.code, key.modifiers)),
+                        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
                     }
                 }
             } else if app.mode() == &Mode::Input {
@@ -277,7 +277,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "quit" => return Ok(()),
                         "normal" => app.shift_to_normal_mode(),
                         "stacker" => app.shift_to_stacker_mode(),
-                        _ => app.push_command_log(format!("{:?} {:?}", key.code, key.modifiers)),
+                        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
                     }
                 }
             } else if app.mode() == &Mode::Stacker {
@@ -288,7 +288,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "quit" => return Ok(()),
                         "normal" => app.shift_to_normal_mode(),
                         "input" => app.shift_to_input_mode(),
-                        _ => app.push_command_log(format!("{:?} {:?}", key.code, key.modifiers)),
+                        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
                     }
                 }
             }
