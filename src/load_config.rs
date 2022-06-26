@@ -442,6 +442,66 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
             code: KeyCode::Char('_'),
             modifiers: KeyModifiers::NONE,
         },
+        "escape" => KeyEvent {
+            code: KeyCode::Esc,
+            modifiers: KeyModifiers::NONE,
+        },
+        "tab" => KeyEvent {
+            code: KeyCode::Tab,
+            modifiers: KeyModifiers::NONE,
+        },
+        "S-tab" => KeyEvent {
+            code: KeyCode::BackTab,
+            modifiers: KeyModifiers::SHIFT,
+        },
+        "f1" => KeyEvent {
+            code: KeyCode::F(1),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f2" => KeyEvent {
+            code: KeyCode::F(2),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f3" => KeyEvent {
+            code: KeyCode::F(3),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f4" => KeyEvent {
+            code: KeyCode::F(4),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f5" => KeyEvent {
+            code: KeyCode::F(5),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f6" => KeyEvent {
+            code: KeyCode::F(6),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f7" => KeyEvent {
+            code: KeyCode::F(7),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f8" => KeyEvent {
+            code: KeyCode::F(8),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f9" => KeyEvent {
+            code: KeyCode::F(9),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f10" => KeyEvent {
+            code: KeyCode::F(10),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f11" => KeyEvent {
+            code: KeyCode::F(11),
+            modifiers: KeyModifiers::NONE,
+        },
+        "f12" => KeyEvent {
+            code: KeyCode::F(12),
+            modifiers: KeyModifiers::NONE,
+        },
         "S-a" => KeyEvent {
             code: KeyCode::Char('A'),
             modifiers: KeyModifiers::SHIFT,

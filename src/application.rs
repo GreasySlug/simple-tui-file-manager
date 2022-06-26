@@ -255,41 +255,24 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
         if let Event::Key(key) = event::read()? {
             if app.mode() == &Mode::Normal {
                 if let Ok(cmd) = key_matchings(key, &mut multi_normal) {
-                    match cmd.as_str() {
-                        "move_to_parent_dir" => app.move_to_parent_dir(),
-                        "move_to_next_file_item" => app.move_to_next_file_item(),
-                        "move_to_prev_file_item" => app.move_to_prev_file_item(),
-                        "move_to_child_dir" => app.move_to_child_dir(),
-                        "move_to_top_of_file_item" => app.move_to_top_of_file_item(),
-                        "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
-                        "next_dirtab" => app.next_dirtab(),
-                        "prev_dirtab" => app.prev_dirtab(),
-                        "quit" => return Ok(()),
-                        "input" => app.shift_to_input_mode(),
-                        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
+                    if cmd == "quit" {
+                        return Ok(());
                     }
+                    run_commands(&mut app, cmd, &key);
                 }
             } else if app.mode() == &Mode::Input {
                 if let Ok(cmd) = key_matchings(key, &mut multi_input) {
-                    match cmd.as_str() {
-                        "next_dirtab" => app.next_dirtab(),
-                        "prev_dirtab" => app.prev_dirtab(),
-                        "quit" => return Ok(()),
-                        "normal" => app.shift_to_normal_mode(),
-                        "stacker" => app.shift_to_stacker_mode(),
-                        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
+                    if cmd == "quit" {
+                        return Ok(());
                     }
+                    run_commands(&mut app, cmd, &key);
                 }
             } else if app.mode() == &Mode::Stacker {
                 if let Ok(cmd) = key_matchings(key, &mut multi_stacker) {
-                    match cmd.as_str() {
-                        "next_dirtab" => app.next_dirtab(),
-                        "prev_dirtab" => app.prev_dirtab(),
-                        "quit" => return Ok(()),
-                        "normal" => app.shift_to_normal_mode(),
-                        "input" => app.shift_to_input_mode(),
-                        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
+                    if cmd == "quit" {
+                        return Ok(());
                     }
+                    run_commands(&mut app, cmd, &key);
                 }
             }
         }
@@ -312,4 +295,21 @@ fn key_matchings(first: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<Str
     }
 
     Ok(String::with_capacity(0))
+}
+
+fn run_commands(app: &mut App, cmd: String, key: &KeyEvent) {
+    match cmd.as_str() {
+        "move_to_parent_dir" => app.move_to_parent_dir(),
+        "move_to_next_file_item" => app.move_to_next_file_item(),
+        "move_to_prev_file_item" => app.move_to_prev_file_item(),
+        "move_to_child_dir" => app.move_to_child_dir(),
+        "move_to_top_of_file_item" => app.move_to_top_of_file_item(),
+        "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
+        "next_dirtab" => app.next_dirtab(),
+        "prev_dirtab" => app.prev_dirtab(),
+        "input" => app.shift_to_input_mode(),
+        "normal" => app.shift_to_normal_mode(),
+        "stacker" => app.shift_to_stacker_mode(),
+        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
+    }
 }

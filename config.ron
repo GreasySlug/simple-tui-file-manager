@@ -29,23 +29,29 @@
             "g g": "move_to_top_of_file_item",
             "S-g": "move_to_bottom_of_file_item",
             "tab":"next_dirtab",
-            "Backtab":"prev_dirtab",
+            "S-tab":"prev_dirtab",
             "q" :"quit",
             "S-i": "input", // experement
             "S-v": "stacker",
         },
         input: {
+            "h": "move_to_parent_dir",
+            "j": "move_to_next_file_item",
+            "k": "move_to_prev_file_item",
+            "l": "move_to_child_dir",
             "tab":"next_dirtab",
             "Backtab":"prev_dirtab",
             "q" :"quit",
             "m": "make_directory", // TODO: add mode annotation
-            "q": "quit",
-            "escape": "normal",// experiment
+            "j j": "normal",// experiment
         },
         stacker: {
+            "h": "move_to_parent_dir",
+            "j": "move_to_next_file_item",
+            "k": "move_to_prev_file_item",
+            "l": "move_to_child_dir",
             "tab":"next_dirtab",
             "Backtab":"prev_dirtab",
-            "q" :"quit",
             "s-i": "input",
             "escape": "normal"
         },
