@@ -10,8 +10,8 @@ use tui::{
 use crate::{
     application::{App, Mode},
     file_item_list::Kinds,
-    input_ui::input_ui,
     load_config::FileItems,
+    path_process::pathbuf_to_string_name,
 };
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
@@ -24,26 +24,25 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let dir_block_style = app.theme().boader_style();
     let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
 
+    // possible to toggle tab and command window
     let main_windows_constrains = [
         Constraint::Length(3), // tab
         Constraint::Min(0),    // directory
         Constraint::Length(3), // command
     ]
     .as_ref();
-
     let size = f.size();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(main_windows_constrains)
         .split(size);
 
-    let index = {
+    let (index, file_items) = {
         let state = app.peek_selected_statefuldir();
-        state.state_table().selected().unwrap()
-    };
-    let file_items = {
-        let state = app.peek_selected_statefuldir();
-        state.file_items_vec().len()
+        (
+            state.state_table().selected().unwrap_or(0),
+            state.file_items_vec().len(),
+        )
     };
 
     let rate = index as f32 / file_items as f32;
@@ -92,7 +91,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             f.render_widget(tabs, chunks[0]);
         }
         Mode::Input => {
-            input_ui(f, chunks[0]).unwrap();
+            let block = Block::default()
+                .borders(Borders::ALL)
+                .border_style(background_style);
+            f.render_widget(block, chunks[0]);
         }
         Mode::Stacker => todo!(),
     }
@@ -103,9 +105,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let dir_symbol = app.symbols(&FileItems::Directory);
     let select_symbol = app.symbols(&FileItems::Select);
 
-    let dir = app.peek_selected_statefuldir();
-    let current_dir_path = dir.crr_dir_name();
-    let file_item_iter = dir.file_items_vec();
+    let current_dir_path = pathbuf_to_string_name(app.crr_dir_path());
+    let file_item_iter = app.crr_file_items();
 
     let file_items_list = file_item_iter.iter().map(|file_item| {
         let name = file_item.name();
@@ -156,13 +157,14 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .highlight_style(selecting_style)
         .highlight_symbol(&select_symbol);
 
+    let dir = app.peek_selected_statefuldir();
     f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
 }
 
 const BLOCK_ELEMENTS: [&str; 7] = [" ", "▁", "▂", "▃", "▄", "▅", "▆"];
 fn command_display_ui<B: Backend>(
     f: &mut Frame<B>,
-    cmd_hist: Vec<String>,
+    cmd_hist: &[String],
     cmd_window: Rect,
     cmd_styles: [Style; 3],
     cmd_mode: &Mode,

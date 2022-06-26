@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::file_item_list::directory_item::Directory;
 use crate::file_item_list::file_item::FileItem;
@@ -24,6 +24,14 @@ impl StatefulDirectory {
         }
     }
 
+    pub fn directory(&self) -> &Directory {
+        &self.directory
+    }
+
+    pub fn dir_path(&self) -> &Path {
+        self.directory.pathbuf()
+    }
+
     pub fn crr_dir_parent_path(&self) -> &PathBuf {
         self.directory.parent()
     }
@@ -33,8 +41,8 @@ impl StatefulDirectory {
         pathbuf_to_string_name(path)
     }
 
-    pub fn file_items_vec(&self) -> Vec<FileItem> {
-        self.file_items.clone()
+    pub fn file_items_vec(&self) -> &Vec<FileItem> {
+        &self.file_items
     }
 
     pub fn state_table(&self) -> TableState {
@@ -51,6 +59,14 @@ impl StatefulDirectory {
         } else {
             None
         }
+    }
+
+    pub fn select_bottom(&mut self) {
+        if self.length < 1 {
+            return;
+        }
+
+        self.state.select(Some(self.length - 1));
     }
 
     pub fn select_top(&mut self) {

@@ -1,6 +1,6 @@
 (
     // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
-    // LightRed, LightGeen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
+    // LightRed, LightGreen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
     theme: SettingTheme (
         background: Black,
         header: Magenta, // file name, permission, size, date
@@ -11,8 +11,8 @@
         command: [
             // bg, font
             (White, Black), // normal
-            (Green, White), // imput
-            (Blue,  White), // stacker
+            (LightGreen, White), // imput
+            (LightBlue,  White), // stacker
             ],
     ),
     symbols: {
@@ -20,13 +20,34 @@
         Directory: "▶",
         Select: ">>"
     },
-    user_keybinds: {
-        "h": "move_to_parent_dir",
-        "j": "move_to_next_file_item",
-        "k": "move_to_prev_file_item",
-        "l": "move_to_child_dir",
-        "tab":"next_dirtab",
-        "tabspace":"prev_dirtab",
-        "q" :"quit",
-    }
+    user_keybinds: ModeKeybinds (
+        normal : {
+            "h": "move_to_parent_dir",
+            "j": "move_to_next_file_item",
+            "k": "move_to_prev_file_item",
+            "l": "move_to_child_dir",
+            "g g": "move_to_top_of_file_item",
+            "S-g": "move_to_bottom_of_file_item",
+            "tab":"next_dirtab",
+            "Backtab":"prev_dirtab",
+            "q" :"quit",
+            "S-i": "input", // experement
+            "S-v": "stacker",
+        },
+        input: {
+            "tab":"next_dirtab",
+            "Backtab":"prev_dirtab",
+            "q" :"quit",
+            "m": "make_directory", // TODO: add mode annotation
+            "q": "quit",
+            "escape": "normal",// experiment
+        },
+        stacker: {
+            "tab":"next_dirtab",
+            "Backtab":"prev_dirtab",
+            "q" :"quit",
+            "s-i": "input",
+            "escape": "normal"
+        },
+    )
 )
