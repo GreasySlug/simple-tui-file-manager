@@ -822,43 +822,42 @@ impl UserKeybinds {
         let mut filtered = self
             .single
             .iter()
-            .filter(|(keycode, _cmd)| keycode.first == self.first && keycode.second.is_none());
+            .filter(|(keycode, _cmd)| keycode.first == self.key && keycode.second.is_none());
         if filtered.size_hint().1.unwrap() == 0 {
             None
-        } else {
-            let cmd = filtered.next().unwrap().1;
+        } else if let Some((_, cmd)) = filtered.next() {
             Some(cmd.to_owned())
+        } else {
+            None
         }
     }
 
-    pub fn matching_multi_second_keys(&self) -> Option<String> {
-        let mut filtered = self
-            .single
-            .iter()
-            .filter(|(keycode, _cmd)| keycode.second.is_some())
-            .filter(|(keycode, _)| keycode.second.unwrap() == self.key);
-        if filtered.size_hint().1.unwrap() == 0 {
-            None
-        } else {
-            let cmd = filtered.next().unwrap().1;
-            Some(cmd.to_owned())
-        }
-    }
-
-    pub fn filtering_multi_first_keys(
-        &self,
-        first: KeyEvent,
-    ) -> Option<HashMap<&UserKeyCode, &String>> {
+    pub fn filtering_multi_first_keys(&self) -> Option<HashMap<&UserKeyCode, &String>> {
         let filtered_keybinds: HashMap<&UserKeyCode, &String> = self
             .multi
             .iter()
-            .filter(|(keycode, _cmd)| keycode.first == self.key && keycode.has_combo())
+            .filter(|(keycode, _cmd)| keycode.first == self.key && keycode.second.is_some())
             .collect();
         if filtered_keybinds.is_empty() {
             return None;
         }
 
         Some(filtered_keybinds)
+    }
+
+    pub fn matching_multi_second_keys(&self) -> Option<String> {
+        let mut filtered = self
+            .multi
+            .iter()
+            .filter(|(keycode, _cmd)| keycode.second.is_some())
+            .filter(|(keycode, _)| keycode.second.unwrap() == self.key);
+        if filtered.size_hint().1.unwrap() == 0 {
+            None
+        } else if let Some((_, cmd)) = filtered.next() {
+            Some(cmd.to_owned())
+        } else {
+            None
+        }
     }
 
     pub fn single_keybinds(&self) -> Keybind {

@@ -301,7 +301,7 @@ fn key_matchings(first: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<Str
     if let Some(cmd) = keybind.matching_single_keys() {
         return Ok(cmd);
     }
-    if let Some(filtered_keybinds) = keybind.filtering_multi_first_keys(first) {
+    if let Some(filtered_keybinds) = keybind.filtering_multi_first_keys() {
         if let Event::Key(second) = event::read()? {
             if let Some(cmd) = keybind
                 .set_keyevent_first(second)
