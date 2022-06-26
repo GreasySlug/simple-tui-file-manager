@@ -99,11 +99,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
-                .style(tab_style)
+                .style(app.theme().command_style()[1])
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
-            // f.render_widget(block, chunks[0]);
         }
         Mode::Stacker => {
             let tab_titles: Vec<Spans> = tabs

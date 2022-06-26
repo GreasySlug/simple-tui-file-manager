@@ -10,9 +10,9 @@
         select: Green, // selecting hightlight
         command: [
             // bg, font
-            (White, Black), // normal
-            (LightGreen, White), // imput
-            (LightBlue,  White), // stacker
+            (Black, White), // normal
+            (Black, LightGreen), // imput
+            (Black,  LightBlue), // stacker
             ],
     ),
     symbols: {
@@ -43,6 +43,7 @@
             "S-tab":"prev_dirtab",
             "q" :"quit",
             "m": "make_directory", // TODO: add mode annotation
+            "i": "run_user_input",
             "escape": "normal",// experiment
         },
         stacker: {
