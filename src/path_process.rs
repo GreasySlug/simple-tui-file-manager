@@ -79,11 +79,11 @@ pub fn get_home_directory_path() -> Option<PathBuf> {
     }
 }
 
-pub fn create_dir_by_relpath(app: &mut App, relpath: impl AsRef<Path>) -> io::Result<()> {
+pub fn join_to_crr_dir(app: &mut App, relpath: impl AsRef<Path>) -> PathBuf {
     let fullpath = app
         .peek_selected_statefuldir()
         .directory()
         .pathbuf()
         .join(relpath);
-    std::fs::create_dir_all(fullpath)
+    fullpath
 }

@@ -13,7 +13,7 @@ use crate::input_ui::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
-use crate::path_process::pathbuf_to_string_name;
+use crate::path_process::{pathbuf_to_string_name, join_to_crr_dir};
 use crate::state::StatefulDirectory;
 use crate::ui::ui;
 
@@ -210,6 +210,36 @@ impl App {
         self.peek_selected_statefuldir().select_bottom();
     }
 
+    fn make_directory(&mut self) {
+        let relpath = self.run_user_input().unwrap();
+        let path = join_to_crr_dir(self, &relpath);
+        
+        if path.is_dir() {
+            self.push_command_log("The directory already exists");
+            return;
+        }
+                
+        let res = std::fs::create_dir_all(&path);
+        match res {
+            Ok(()) => {
+                let index = self.peeking_selected_statefuldir().state_table().selected();
+
+                let mut updated = StatefulDirectory::new(self.crr_dir_path().to_path_buf());
+                updated.sort_by_kinds();
+                updated.select_index(index);
+                *self.peek_selected_statefuldir() = updated;
+            },
+            Err(error) => {
+                let message = match error.kind() {
+                    io::ErrorKind::PermissionDenied => "Permission denied",
+                    io::ErrorKind::NotFound => "Not Found",
+                    _ => unreachable!(),
+                };
+                self.push_command_log(message);
+            },
+        }
+    }
+
     fn normal_user_keybinds(&self) -> UserKeybinds {
         let keybind = self.config.normal_keybindings_map();
         let keymap = multi_string_map_to_user_keyboad(&keybind);
@@ -307,6 +337,7 @@ fn run_commands(app: &mut App, cmd: String, key: &KeyEvent) {
         "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
         "next_dirtab" => app.next_dirtab(),
         "prev_dirtab" => app.prev_dirtab(),
+        "make_directory" => app.make_directory(),
         "input" => app.shift_to_input_mode(),
         "normal" => app.shift_to_normal_mode(),
         "stacker" => app.shift_to_stacker_mode(),
