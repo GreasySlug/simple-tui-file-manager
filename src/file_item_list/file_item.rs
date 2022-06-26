@@ -90,6 +90,10 @@ impl FileItem {
         self.kinds.clone()
     }
 
+    pub fn extension(&self) -> Option<&Extension> {
+        self.extension.as_ref()
+    }
+
     pub fn get_file_item_size(&self) -> String {
         let size = self.meta.len();
         calc_file_item_size(size)

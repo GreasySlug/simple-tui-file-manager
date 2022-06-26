@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use crossterm::event::{self, Event, KeyEvent};
 use tui::backend::Backend;
-use tui::Terminal;
+use tui::{terminal, Terminal};
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
@@ -13,7 +13,7 @@ use crate::input_ui::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
-use crate::path_process::{pathbuf_to_string_name, join_to_crr_dir};
+use crate::path_process::{join_to_crr_dir, pathbuf_to_string_name};
 use crate::state::StatefulDirectory;
 use crate::ui::ui;
 
@@ -38,6 +38,7 @@ pub struct App {
     command_history: Vec<String>,
     mode: Mode,
     config: UserConfig,
+    be_cleaned: bool,
 }
 
 impl App {
@@ -49,7 +50,16 @@ impl App {
             command_history: Vec::new(),
             mode: Mode::Normal,
             config: load_user_config_file(),
+            be_cleaned: false,
         }
+    }
+
+    fn to_be_clear(&mut self) {
+        self.be_cleaned = true;
+    }
+
+    fn be_cleaned(&mut self) {
+        self.be_cleaned = false;
     }
 
     pub fn mode(&self) -> &Mode {
@@ -213,12 +223,12 @@ impl App {
     fn make_directory(&mut self) {
         let relpath = self.run_user_input().unwrap();
         let path = join_to_crr_dir(self, &relpath);
-        
+
         if path.is_dir() {
             self.push_command_log("The directory already exists");
             return;
         }
-                
+
         let res = std::fs::create_dir_all(&path);
         match res {
             Ok(()) => {
@@ -228,7 +238,7 @@ impl App {
                 updated.sort_by_kinds();
                 updated.select_index(index);
                 *self.peek_selected_statefuldir() = updated;
-            },
+            }
             Err(error) => {
                 let message = match error.kind() {
                     io::ErrorKind::PermissionDenied => "Permission denied",
@@ -236,7 +246,7 @@ impl App {
                     _ => unreachable!(),
                 };
                 self.push_command_log(message);
-            },
+            }
         }
     }
 
@@ -267,9 +277,14 @@ impl App {
     fn run_user_input(&mut self) -> Option<String> {
         let mut terminal = init_input_area_terminal().unwrap();
         let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
-        if let Ok(()) = start_user_input(&mut terminal, &mut name) {
+        if let Ok(()) = start_user_input(&mut terminal, &mut name, self.theme()) {
+            self.to_be_clear();
+            if name.is_empty() {
+                return None;
+            }
             return Some(name);
         }
+        self.to_be_clear();
         self.push_command_log("Stopped to input");
         None
     }
@@ -305,6 +320,10 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                     run_commands(&mut app, cmd, &key);
                 }
             }
+        }
+        if app.be_cleaned {
+            terminal.clear()?;
+            app.be_cleaned();
         }
     }
 }

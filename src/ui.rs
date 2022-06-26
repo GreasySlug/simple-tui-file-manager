@@ -9,7 +9,7 @@ use tui::{
 
 use crate::{
     application::{App, Mode},
-    file_item_list::Kinds,
+    file_item_list::{file_item, Kinds},
     load_config::FileItems,
     path_process::pathbuf_to_string_name,
 };
@@ -59,17 +59,18 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let tabs = app.dirtab();
     let mode = app.mode();
 
-    let header_titles = ["", "", "name", "permission", "size", "date"]
+    let header_titles = ["", "", "name", "extension", "permission", "size", "date"]
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
 
     let header_constraints = [
-        Constraint::Length(1),  //  margin
-        Constraint::Length(2),  // file item's icon
-        Constraint::Length(20), // file name
-        Constraint::Length(10), // permission
-        Constraint::Length(10), // size
-        Constraint::Length(10), // date
+        Constraint::Length(1),      //  margin
+        Constraint::Length(2),      // file item's icon
+        Constraint::Percentage(30), // file name
+        Constraint::Length(8),      // file extension
+        Constraint::Length(10),     // permission
+        Constraint::Length(10),     // size
+        Constraint::Length(10),     // date
     ];
 
     let background_window = Block::default().style(background_style);
@@ -113,7 +114,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
-                .style(tab_style)
+                .style(app.theme().command_style()[2])
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
@@ -138,26 +139,39 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         };
         let size = file_item.get_file_item_size();
         let date = file_item.get_created_date_and_time();
-        let lines = if file_item.kinds() == Kinds::Directory(true)
+        let mut lines = vec![
+            Span::raw(" "),
+            Span::raw(name),
+            Span::raw(perm),
+            Span::raw(size),
+            Span::raw(date),
+        ];
+
+        if file_item.kinds() == Kinds::Directory(true)
             || file_item.kinds() == Kinds::Directory(false)
         {
-            vec![
-                Span::raw(" "),
-                Span::styled(&dir_symbol, dir_style),
-                Span::styled(name, dir_style),
-                Span::raw(perm),
-                Span::raw(size),
-                Span::raw(date),
-            ]
+            lines.insert(1, Span::styled(&dir_symbol, dir_style));
         } else {
-            vec![
-                Span::raw(" "),
-                Span::styled(&file_symbol, file_style),
-                Span::styled(name, file_style),
-                Span::raw(perm),
-                Span::raw(size),
-                Span::raw(date),
-            ]
+            lines.insert(1, Span::styled(&file_symbol, file_style));
+        };
+
+        match file_item.extension() {
+            Some(ex) => match ex {
+                file_item::Extension::C => lines.insert(3, Span::raw("C")),
+                file_item::Extension::CPlusPlus => lines.insert(3, Span::raw("C++")),
+                file_item::Extension::CSharp => lines.insert(3, Span::raw("C#")),
+                file_item::Extension::Go => lines.insert(3, Span::raw("Go")),
+                file_item::Extension::Java => lines.insert(3, Span::raw("Java")),
+                file_item::Extension::JavaScript => lines.insert(3, Span::raw("JS")),
+                file_item::Extension::Markdown => lines.insert(3, Span::raw("MD")),
+                file_item::Extension::Rust => lines.insert(3, Span::raw("Rust")),
+                file_item::Extension::Ruby => lines.insert(3, Span::raw("Ruby")),
+                file_item::Extension::Python => lines.insert(3, Span::raw("Py")),
+                file_item::Extension::Perl => lines.insert(3, Span::raw("Perl")),
+                file_item::Extension::Toml => lines.insert(3, Span::raw("Toml")),
+                file_item::Extension::Unknwon => lines.insert(3, Span::raw("n/a")),
+            },
+            None => lines.insert(2, Span::raw("N/A")),
         };
         Row::new(lines)
     });

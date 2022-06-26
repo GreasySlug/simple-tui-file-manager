@@ -1042,8 +1042,8 @@ impl SettingTheme {
         let user_color = self.command.clone();
         let mut styles: [Style; 3] = [Style::default(); 3];
         for (i, (bg, fg)) in user_color.into_iter().enumerate() {
-            let bg = style_formatter(bg, true, false);
-            let fg = style_formatter(fg, false, true);
+            let fg = style_formatter(fg, true, false);
+            let bg = style_formatter(bg, false, true);
             styles[i] = bg.patch(fg);
         }
         styles
