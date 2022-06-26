@@ -40,10 +40,10 @@
             "k": "move_to_prev_file_item",
             "l": "move_to_child_dir",
             "tab":"next_dirtab",
-            "Backtab":"prev_dirtab",
+            "S-tab":"prev_dirtab",
             "q" :"quit",
             "m": "make_directory", // TODO: add mode annotation
-            "j j": "normal",// experiment
+            "escape": "normal",// experiment
         },
         stacker: {
             "h": "move_to_parent_dir",
@@ -51,8 +51,8 @@
             "k": "move_to_prev_file_item",
             "l": "move_to_child_dir",
             "tab":"next_dirtab",
-            "Backtab":"prev_dirtab",
-            "s-i": "input",
+            "S-tab":"prev_dirtab",
+            "S-i": "input",
             "escape": "normal"
         },
     )
