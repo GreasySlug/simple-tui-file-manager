@@ -266,7 +266,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "prev_dirtab" => app.prev_dirtab(),
                         "quit" => return Ok(()),
                         "input" => app.shift_to_input_mode(),
-                        _ => app.push_command_log("No Comands".to_string()),
+                        _ => app.push_command_log(format!("{:?}", key.code)),
                     }
                 }
             } else if app.mode() == &Mode::Input {
@@ -297,19 +297,18 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
 }
 
 fn key_matchings(first: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<String> {
-    if let Some(single) = keybinds.matching_single_keys(&first, false) {
-        if single.is_empty() {
-            if let Some(multi) = keybinds.matching_single_keys(&first, true) {
-                if multi.is_empty() {
-                    return Ok(String::with_capacity(0));
-                } else if let Event::Key(second) = event::read()? {
-                    let cmd = multi.get(&UserKeyCode::multi_new(first, second)).unwrap();
-                    return Ok(cmd.to_string());
-                }
+    let keybind = keybinds.set_keyevent_first(first);
+    if let Some(cmd) = keybind.matching_single_keys() {
+        return Ok(cmd);
+    }
+    if let Some(filtered_keybinds) = keybind.filtering_multi_first_keys(first) {
+        if let Event::Key(second) = event::read()? {
+            if let Some(cmd) = keybind
+                .set_keyevent_first(second)
+                .matching_multi_second_keys()
+            {
+                return Ok(cmd);
             }
-        } else {
-            let cmd = single.get(&UserKeyCode::single_new(first)).unwrap();
-            return Ok(cmd.to_string());
         }
     }
 

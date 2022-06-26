@@ -798,6 +798,7 @@ type Keybind = HashMap<UserKeyCode, String>;
 pub struct UserKeybinds {
     single: Keybind,
     multi: Keybind,
+    key: KeyEvent,
 }
 
 impl UserKeybinds {
@@ -805,34 +806,59 @@ impl UserKeybinds {
         Self {
             single: HashMap::new(),
             multi: HashMap::new(),
+            key: KeyEvent {
+                code: KeyCode::Null,
+                modifiers: KeyModifiers::NONE,
+            },
         }
     }
 
-    pub fn matching_single_keys(
-        &self,
-        key: &KeyEvent,
-        combo: bool,
-    ) -> Option<HashMap<&UserKeyCode, &String>> {
-        let key = UserKeyCode::single_new(*key);
+    pub fn set_keyevent_first(&mut self, key: KeyEvent) -> &mut Self {
+        self.key = key;
+        self
+    }
 
-        if combo {
-            let filtered_keybinds: HashMap<&UserKeyCode, &String> = self
-                .multi
-                .iter()
-                .filter(|(x, _)| **x == key && x.has_combo())
-                .collect();
-            if filtered_keybinds.is_empty() {
-                return None;
-            }
-            Some(filtered_keybinds)
+    pub fn matching_single_keys(&self) -> Option<String> {
+        let mut filtered = self
+            .single
+            .iter()
+            .filter(|(keycode, _cmd)| keycode.first == self.first && keycode.second.is_none());
+        if filtered.size_hint().1.unwrap() == 0 {
+            None
         } else {
-            let filtered_keybinds: HashMap<&UserKeyCode, &String> =
-                self.single.iter().filter(|(x, _)| **x == key).collect();
-            if filtered_keybinds.is_empty() {
-                return None;
-            }
-            Some(filtered_keybinds)
+            let cmd = filtered.next().unwrap().1;
+            Some(cmd.to_owned())
         }
+    }
+
+    pub fn matching_multi_second_keys(&self) -> Option<String> {
+        let mut filtered = self
+            .single
+            .iter()
+            .filter(|(keycode, _cmd)| keycode.second.is_some())
+            .filter(|(keycode, _)| keycode.second.unwrap() == self.key);
+        if filtered.size_hint().1.unwrap() == 0 {
+            None
+        } else {
+            let cmd = filtered.next().unwrap().1;
+            Some(cmd.to_owned())
+        }
+    }
+
+    pub fn filtering_multi_first_keys(
+        &self,
+        first: KeyEvent,
+    ) -> Option<HashMap<&UserKeyCode, &String>> {
+        let filtered_keybinds: HashMap<&UserKeyCode, &String> = self
+            .multi
+            .iter()
+            .filter(|(keycode, _cmd)| keycode.first == self.key && keycode.has_combo())
+            .collect();
+        if filtered_keybinds.is_empty() {
+            return None;
+        }
+
+        Some(filtered_keybinds)
     }
 
     pub fn single_keybinds(&self) -> Keybind {
