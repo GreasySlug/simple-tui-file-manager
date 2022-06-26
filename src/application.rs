@@ -297,16 +297,15 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
 }
 
 fn key_matchings(first: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<String> {
-    let keybind = keybinds.set_keyevent_first(first);
-    if let Some(cmd) = keybind.matching_single_keys() {
+    keybinds.set_keyevent(first);
+    if let Some(cmd) = keybinds.matching_single_keys() {
         return Ok(cmd);
     }
-    if let Some(filtered_keybinds) = keybind.filtering_multi_first_keys() {
+    keybinds.filtering_multi_first_keys();
+    if keybinds.has_keycomb() {
         if let Event::Key(second) = event::read()? {
-            if let Some(cmd) = keybind
-                .set_keyevent_first(second)
-                .matching_multi_second_keys()
-            {
+            keybinds.set_keyevent(second);
+            if let Some(cmd) = keybinds.matching_multi_second_keys() {
                 return Ok(cmd);
             }
         }

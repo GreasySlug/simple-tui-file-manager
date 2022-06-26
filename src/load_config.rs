@@ -763,8 +763,8 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct UserKeyCode {
-    first: KeyEvent,
-    second: Option<KeyEvent>,
+    pub first: KeyEvent,
+    pub second: Option<KeyEvent>,
     // combo: Vec<KeyEvent>,
     combo: bool,
 }
@@ -787,10 +787,6 @@ impl UserKeyCode {
             combo: true,
         }
     }
-
-    fn has_combo(&self) -> bool {
-        self.combo
-    }
 }
 
 type Keybind = HashMap<UserKeyCode, String>;
@@ -798,6 +794,7 @@ type Keybind = HashMap<UserKeyCode, String>;
 pub struct UserKeybinds {
     single: Keybind,
     multi: Keybind,
+    filtered_multi: Option<Keybind>,
     key: KeyEvent,
 }
 
@@ -806,6 +803,7 @@ impl UserKeybinds {
         Self {
             single: HashMap::new(),
             multi: HashMap::new(),
+            filtered_multi: None,
             key: KeyEvent {
                 code: KeyCode::Null,
                 modifiers: KeyModifiers::NONE,
@@ -813,9 +811,8 @@ impl UserKeybinds {
         }
     }
 
-    pub fn set_keyevent_first(&mut self, key: KeyEvent) -> &mut Self {
+    pub fn set_keyevent(&mut self, key: KeyEvent) {
         self.key = key;
-        self
     }
 
     pub fn matching_single_keys(&self) -> Option<String> {
@@ -832,40 +829,38 @@ impl UserKeybinds {
         }
     }
 
-    pub fn filtering_multi_first_keys(&self) -> Option<HashMap<&UserKeyCode, &String>> {
-        let filtered_keybinds: HashMap<&UserKeyCode, &String> = self
+    pub fn filtering_multi_first_keys(&mut self) {
+        let filtered_keybinds: HashMap<UserKeyCode, String> = self
             .multi
             .iter()
             .filter(|(keycode, _cmd)| keycode.first == self.key && keycode.second.is_some())
+            .map(|(key, cmd)| (key.to_owned(), cmd.to_owned()))
             .collect();
         if filtered_keybinds.is_empty() {
-            return None;
+            return;
         }
 
-        Some(filtered_keybinds)
+        self.filtered_multi = Some(filtered_keybinds);
     }
 
     pub fn matching_multi_second_keys(&self) -> Option<String> {
-        let mut filtered = self
-            .multi
+        self.filtered_multi.as_ref()?;
+
+        if let Some((_, cmb_cmd)) = self
+            .filtered_multi
+            .as_ref()
+            .unwrap()
             .iter()
-            .filter(|(keycode, _cmd)| keycode.second.is_some())
-            .filter(|(keycode, _)| keycode.second.unwrap() == self.key);
-        if filtered.size_hint().1.unwrap() == 0 {
-            None
-        } else if let Some((_, cmd)) = filtered.next() {
-            Some(cmd.to_owned())
-        } else {
-            None
+            .find(|(keycode, _)| keycode.second.is_some() && keycode.second.unwrap() == self.key)
+        {
+            return Some(cmb_cmd.to_owned());
         }
+
+        None
     }
 
-    pub fn single_keybinds(&self) -> Keybind {
-        self.single.clone()
-    }
-
-    pub fn multi_keybinds(&self) -> Keybind {
-        self.multi.clone()
+    pub fn has_keycomb(&self) -> bool {
+        self.filtered_multi.is_some()
     }
 
     pub fn make_single_keybinds(
