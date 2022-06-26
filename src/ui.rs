@@ -101,14 +101,24 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 .select(app.tab_index())
                 .style(tab_style)
                 .highlight_style(tab_highlight_style);
-            let block = Block::default()
-                .borders(Borders::ALL)
-                .border_style(background_style);
 
             f.render_widget(tabs, chunks[0]);
             // f.render_widget(block, chunks[0]);
         }
-        Mode::Stacker => todo!(),
+        Mode::Stacker => {
+            let tab_titles: Vec<Spans> = tabs
+                .iter()
+                .map(|t| Spans::from(vec![Span::raw(t)]))
+                .collect();
+
+            let tabs = Tabs::new(tab_titles)
+                .block(Block::default().borders(Borders::ALL).title("Tabs"))
+                .select(app.tab_index())
+                .style(tab_style)
+                .highlight_style(tab_highlight_style);
+
+            f.render_widget(tabs, chunks[0]);
+        }
     }
     // TODO: Display and hide the header and each element with bool
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
