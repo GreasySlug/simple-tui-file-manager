@@ -266,7 +266,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "prev_dirtab" => app.prev_dirtab(),
                         "quit" => return Ok(()),
                         "input" => app.shift_to_input_mode(),
-                        _ => app.push_command_log(format!("{:?}", key.code)),
+                        _ => app.push_command_log(format!("{:?} {:?}", key.code, key.modifiers)),
                     }
                 }
             } else if app.mode() == &Mode::Input {
@@ -277,7 +277,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "quit" => return Ok(()),
                         "normal" => app.shift_to_normal_mode(),
                         "stacker" => app.shift_to_stacker_mode(),
-                        _ => app.push_command_log("No Comands".to_string()),
+                        _ => app.push_command_log(format!("{:?} {:?}", key.code, key.modifiers)),
                     }
                 }
             } else if app.mode() == &Mode::Stacker {
@@ -288,7 +288,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                         "quit" => return Ok(()),
                         "normal" => app.shift_to_normal_mode(),
                         "input" => app.shift_to_input_mode(),
-                        _ => app.push_command_log("No Comands".to_string()),
+                        _ => app.push_command_log(format!("{:?} {:?}", key.code, key.modifiers)),
                     }
                 }
             }
