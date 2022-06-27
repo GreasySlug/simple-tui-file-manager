@@ -1,5 +1,4 @@
 use std::env::current_dir;
-use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -39,7 +38,7 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
     files_item
 }
 
-pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
+pub fn make_a_info_file_from_dirpath(file_path: &Path) -> FileItem {
     let file_name = pathbuf_to_string_name(file_path);
     let meta = file_path.metadata().expect("Failed to get metadata");
     let kinds = Kinds::classifiy_kinds(file_path, &meta);

@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use serde::Deserialize;
+use std::{collections::HashMap, fs::File};
 use tui::style::{Color, Style};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -197,15 +196,6 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
         input,
         stacker,
     }
-}
-
-pub fn string_map_to_user_keyboad(keybinds: &HashMap<String, String>) -> HashMap<KeyEvent, String> {
-    let mut keybind: HashMap<KeyEvent, String> = HashMap::new();
-    for (key, cmd) in keybinds.iter() {
-        let user_keyboad = string_to_keyevent(key);
-        keybind.insert(user_keyboad, cmd.to_string());
-    }
-    keybind
 }
 
 pub fn multi_string_map_to_user_keyboad(
@@ -1186,7 +1176,7 @@ pub fn load_user_config_file() -> UserConfig {
     // Each Windows, Mac(Linux)
     // Consider specifying PATH in each OS
     let path = "config.ron";
-    match std::fs::File::open(path) {
+    match File::open(path) {
         Ok(f) => {
             let config: Result<UserConfig, ron::de::Error> = ron::de::from_reader(f);
             if let Ok(config) = config {

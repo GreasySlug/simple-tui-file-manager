@@ -1,9 +1,8 @@
-use std::io::{self, Stdout};
-
 use crossterm::{
     event::{read, Event, KeyCode, KeyEvent},
     execute,
 };
+use std::io::{self, Stdout};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
@@ -14,6 +13,7 @@ use tui::{
 
 use crate::load_config::SettingTheme;
 
+#[inline]
 pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
     let mut stdout = io::stdout();
     execute!(stdout)?;
@@ -22,6 +22,7 @@ pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout
     Ok(terminal)
 }
 
+const FILENAME_CAPACITY: usize = 50;
 pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<()> {
     let mut terminal = init_input_area_terminal().expect("Failed to make input terminal...");
     let input_style = theme.command_style(1).unwrap(); // input color index is 1
@@ -29,7 +30,11 @@ pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<(
     while let Event::Key(KeyEvent { code, .. }) = read().expect("Failed to get user input") {
         match code {
             KeyCode::Enter => break,
-            KeyCode::Char(c) => line.push(c),
+            KeyCode::Char(c) => {
+                if line.len() < FILENAME_CAPACITY {
+                    line.push(c);
+                }
+            }
             KeyCode::Backspace => {
                 line.pop();
             }

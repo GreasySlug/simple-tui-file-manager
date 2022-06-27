@@ -223,6 +223,7 @@ impl App {
 
     fn make_directory(&mut self) {
         let relpath = self.run_user_input().expect("Failed to make teraminal...");
+        // TODO: replpathが空やディレクトリ名に使えない文字がある時には早期リターン
         let path = join_to_crr_dir(self, &relpath);
 
         if path.is_dir() {
@@ -235,6 +236,8 @@ impl App {
             Ok(()) => {
                 let index = self.peeking_selected_statefuldir().state_table().selected();
 
+                // TODO: newで作り直すのはコストが高い時がある(個数が多い時Homeなど)
+                //  → 追加したディレクトリだけFileItem化してディレクトリに追加する
                 let mut updated = StatefulDirectory::new(self.crr_dir_path().to_path_buf());
                 updated.sort_by_kinds();
                 updated.select_index(index);
