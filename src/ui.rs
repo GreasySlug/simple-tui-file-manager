@@ -50,7 +50,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         f,
         app.command_history(),
         chunks[2],
-        app.theme().command_style(),
+        app.theme().command_styles(),
         app.mode(),
         rate,
     );
@@ -100,7 +100,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
-                .style(app.theme().command_style()[1])
+                .style(app.theme().command_style(1).unwrap())
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
@@ -114,7 +114,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
-                .style(app.theme().command_style()[2])
+                .style(app.theme().command_style(2).unwrap())
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);

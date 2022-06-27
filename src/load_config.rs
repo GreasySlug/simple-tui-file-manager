@@ -1014,34 +1014,34 @@ impl SettingTheme {
     }
 
     pub fn file_style(&self) -> Style {
-        let user_color = self.file_item.clone();
+        let user_color = &self.file_item;
         style_formatter(user_color, true, false)
     }
 
     pub fn dir_style(&self) -> Style {
-        let user_color = self.directory.clone();
+        let user_color = &self.directory;
         style_formatter(user_color, true, false)
     }
 
     pub fn select_style(&self) -> Style {
-        let user_color = self.select.clone();
+        let user_color = &self.select;
         style_formatter(user_color, true, false)
     }
 
     pub fn header_style(&self) -> Style {
-        let user_color = self.header.clone();
+        let user_color = &self.header;
         style_formatter(user_color, true, false)
     }
 
     pub fn boader_style(&self) -> Style {
-        let user_color = self.boader.clone();
+        let user_color = &self.boader;
         style_formatter(user_color, true, false)
     }
 
-    pub fn command_style(&self) -> [Style; 3] {
-        let user_color = self.command.clone();
+    pub fn command_styles(&self) -> [Style; 3] {
+        let user_color = &self.command;
         let mut styles: [Style; 3] = [Style::default(); 3];
-        for (i, (bg, fg)) in user_color.into_iter().enumerate() {
+        for (i, (bg, fg)) in user_color.iter().enumerate() {
             let fg = style_formatter(fg, true, false);
             let bg = style_formatter(bg, false, true);
             styles[i] = bg.patch(fg);
@@ -1049,13 +1049,22 @@ impl SettingTheme {
         styles
     }
 
+    pub fn command_style(&self, i: usize) -> Option<Style> {
+        if let Some(command_color) = &self.command.get(i) {
+            let fg = style_formatter(&command_color.0, true, false);
+            let bg = style_formatter(&command_color.1, false, true);
+            return Some(fg.patch(bg));
+        }
+        None
+    }
+
     pub fn background_style(&self) -> Style {
-        let user_color = self.background.clone();
+        let user_color = &self.background;
         style_formatter(user_color, false, true)
     }
 }
 
-fn color_translator(color: Colors) -> Option<Color> {
+fn color_translator(color: &Colors) -> Option<Color> {
     let c = match color {
         Colors::White => Color::White,
         Colors::Black => Color::Black,
@@ -1073,7 +1082,7 @@ fn color_translator(color: Colors) -> Option<Color> {
         Colors::LightMagenta => Color::LightMagenta,
         Colors::LightYellow => Color::LightYellow,
         Colors::LightCyan => Color::LightCyan,
-        Colors::Rgb(r, g, b) => Color::Rgb(r, g, b),
+        Colors::Rgb(r, g, b) => Color::Rgb(*r, *g, *b),
         _ => Color::Reset,
     };
     Some(c)
@@ -1191,7 +1200,7 @@ impl UserConfig {
     }
 }
 
-fn style_formatter(color: Colors, is_fg: bool, is_bg: bool) -> Style {
+fn style_formatter(color: &Colors, is_fg: bool, is_bg: bool) -> Style {
     let color = color_translator(color).unwrap();
     match (is_fg, is_bg) {
         (true, true) => panic!("is_fg and is_bg is not always true"), // review required
