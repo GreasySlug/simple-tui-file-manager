@@ -1,28 +1,23 @@
+pub mod command_ui;
+pub mod directory_ui;
 pub mod input_ui;
 
 use tui::{
     backend::Backend,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
+    layout::{Constraint, Direction, Layout},
+    style::Modifier,
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Tabs},
+    widgets::{Block, Borders, Tabs},
     Frame,
 };
 
-use crate::{
-    application::{App, Mode},
-    file_item_list::{file_item, Kinds},
-    load_config::FileItems,
-    path_process::pathbuf_to_string_name,
-};
+use crate::application::{App, Mode};
+
+use self::command_ui::command_ui;
+use self::directory_ui::directory_ui;
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    let file_style = app.theme().file_style();
-    let dir_style = app.theme().dir_style();
-    let selecting_style = app.theme().select_style().add_modifier(Modifier::BOLD);
-    let header_style = app.theme().header_style();
     let background_style = app.theme().background_style();
-    let dir_block_style = app.theme().boader_style();
     let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
 
     // possible to toggle tab and command window
@@ -47,7 +42,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     };
 
     let rate = index as f32 / file_items as f32;
-    command_display_ui(
+    command_ui(
         f,
         app.command_history(),
         chunks[2],
@@ -59,20 +54,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     // let index = app.tab_index();
     let tabs = app.dirtab();
     let mode = app.mode();
-
-    let header_titles = ["", "", "name", "extension", "permission", "size", "date"]
-        .iter()
-        .map(|h| Cell::from(*h).style(header_style));
-
-    let header_constraints = [
-        Constraint::Length(1),      //  margin
-        Constraint::Length(2),      // file item's icon
-        Constraint::Percentage(30), // file name
-        Constraint::Length(8),      // file extension
-        Constraint::Length(10),     // permission
-        Constraint::Length(10),     // size
-        Constraint::Length(10),     // date
-    ];
 
     let background_window = Block::default().style(background_style);
     f.render_widget(background_window, size);
@@ -110,138 +91,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             f.render_widget(tabs, chunks[0]);
         }
     }
-    // TODO: Display and hide the header and each element with bool
-    let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
-    let file_symbol = app.symbols(&FileItems::File);
-    let dir_symbol = app.symbols(&FileItems::Directory);
-    let select_symbol = app.symbols(&FileItems::Select);
-
-    let current_dir_path = pathbuf_to_string_name(app.crr_dir_path());
-    let file_item_iter = app.crr_file_items();
-
-    let file_items_list = file_item_iter.iter().map(|file_item| {
-        let name = file_item.name();
-        let perm = if file_item.get_permission() {
-            format!("{:>4}", "r")
-        } else {
-            format!("{:>4}", "rx")
-        };
-        let size = file_item.get_file_item_size();
-        let date = file_item.get_created_date_and_time();
-        let mut lines = vec![
-            Span::raw(" "),
-            Span::raw(name),
-            Span::raw(perm),
-            Span::raw(size),
-            Span::raw(date),
-        ];
-
-        if file_item.kinds() == Kinds::Directory(true)
-            || file_item.kinds() == Kinds::Directory(false)
-        {
-            lines.insert(1, Span::styled(&dir_symbol, dir_style));
-        } else {
-            lines.insert(1, Span::styled(&file_symbol, file_style));
-        };
-
-        match file_item.extension() {
-            Some(ex) => match ex {
-                file_item::Extension::C => lines.insert(3, Span::raw("C")),
-                file_item::Extension::CPlusPlus => lines.insert(3, Span::raw("C++")),
-                file_item::Extension::CSharp => lines.insert(3, Span::raw("C#")),
-                file_item::Extension::Go => lines.insert(3, Span::raw("Go")),
-                file_item::Extension::Java => lines.insert(3, Span::raw("Java")),
-                file_item::Extension::JavaScript => lines.insert(3, Span::raw("JS")),
-                file_item::Extension::Markdown => lines.insert(3, Span::raw("MD")),
-                file_item::Extension::Rust => lines.insert(3, Span::raw("Rust")),
-                file_item::Extension::Ruby => lines.insert(3, Span::raw("Ruby")),
-                file_item::Extension::Python => lines.insert(3, Span::raw("Py")),
-                file_item::Extension::Perl => lines.insert(3, Span::raw("Perl")),
-                file_item::Extension::Toml => lines.insert(3, Span::raw("Toml")),
-                file_item::Extension::Unknwon => lines.insert(3, Span::raw("n/a")),
-            },
-            None => lines.insert(2, Span::raw("N/A")),
-        };
-        Row::new(lines)
-    });
-
-    let directory_window = Layout::default()
-        .constraints([Constraint::Percentage(100)])
-        .split(chunks[1]);
-
-    let items = Table::new(file_items_list)
-        .header(header_cells)
-        .widths(&header_constraints)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(dir_block_style)
-                .title(current_dir_path),
-        )
-        .highlight_style(selecting_style)
-        .highlight_symbol(&select_symbol);
-
-    let dir = app.peek_selected_statefuldir();
-    f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
-}
-
-const BLOCK_ELEMENTS: [&str; 7] = [" ", "▁", "▂", "▃", "▄", "▅", "▆"];
-fn command_display_ui<B: Backend>(
-    f: &mut Frame<B>,
-    cmd_hist: &[String],
-    cmd_window: Rect,
-    cmd_styles: [Style; 3],
-    cmd_mode: &Mode,
-    rate: f32,
-) {
-    let cmd_style = match cmd_mode {
-        Mode::Normal => cmd_styles[0],
-        Mode::Input => cmd_styles[1],
-        Mode::Stacker => cmd_styles[2],
-    };
-    let cmd_background = Block::default()
-        .style(cmd_style)
-        .borders(Borders::ALL)
-        .border_type(BorderType::Double);
-    f.render_widget(cmd_background, cmd_window);
-
-    let block = Block::default();
-
-    let cmd_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Length(8),
-            Constraint::Percentage(60),
-            Constraint::Min(20),
-        ])
-        .margin(1)
-        .split(cmd_window);
-
-    let uni_block = BLOCK_ELEMENTS[(rate * BLOCK_ELEMENTS.len() as f32) as usize];
-    let right_block = format!("{}% : {}", (rate * 100_f32) as usize, uni_block);
-    let uni_block = Paragraph::new(right_block)
-        .block(block.clone())
-        .alignment(Alignment::Right);
-    f.render_widget(uni_block, cmd_layout[2]);
-
-    if let Some(cmd) = cmd_hist.last() {
-        let para = Paragraph::new(cmd.clone())
-            .block(block.clone())
-            .style(cmd_style);
-        f.render_widget(para, cmd_layout[1]);
-    } else {
-        f.render_widget(Block::default().style(cmd_style), cmd_layout[1]);
-    }
-
-    let mode_str = match cmd_mode {
-        Mode::Normal => "Normal",
-        Mode::Input => "Input",
-        Mode::Stacker => "Stacker",
-    };
-
-    let mode_str = Paragraph::new(mode_str)
-        .block(block)
-        .alignment(Alignment::Left);
-    f.render_widget(mode_str, cmd_layout[0]);
+    directory_ui(f, app, chunks[1]);
 }
