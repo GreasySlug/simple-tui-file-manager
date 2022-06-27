@@ -9,7 +9,7 @@ use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
-use crate::input_ui;
+
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
@@ -55,7 +55,7 @@ impl App {
         }
     }
 
-    fn to_be_clear(&mut self) {
+    fn be_clear(&mut self) {
         self.be_cleaned = true;
     }
 
@@ -279,18 +279,20 @@ impl App {
         // let mut terminal = init_input_area_terminal().unwrap();
         let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
         if let Ok(()) = start_user_input(&mut name, self.theme()) {
-            self.to_be_clear();
+            self.be_clear();
             if name.is_empty() {
                 return None;
             }
             return Some(name);
         }
-        self.to_be_clear();
+        self.be_clear();
         self.push_command_log("Stopped to input");
         None
     }
 }
 
+// ユーザーからの入力を受け取りコマンドかどうかを判断
+// モードごとに異なるコマンドを受け付けることが可能
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     let mut multi_normal = app.normal_user_keybinds();
     let mut multi_input = app.input_user_keybinds();
@@ -304,21 +306,21 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                     if cmd == "quit" {
                         return Ok(());
                     }
-                    run_commands(&mut app, cmd, &key);
+                    run_commands(&mut app, &cmd, &key);
                 }
             } else if app.mode() == &Mode::Input {
                 if let Ok(cmd) = key_matchings(key, &mut multi_input) {
                     if cmd == "quit" {
                         return Ok(());
                     }
-                    run_commands(&mut app, cmd, &key);
+                    run_commands(&mut app, &cmd, &key);
                 }
             } else if app.mode() == &Mode::Stacker {
                 if let Ok(cmd) = key_matchings(key, &mut multi_stacker) {
                     if cmd == "quit" {
                         return Ok(());
                     }
-                    run_commands(&mut app, cmd, &key);
+                    run_commands(&mut app, &cmd, &key);
                 }
             }
         }
@@ -329,12 +331,16 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     }
 }
 
-fn key_matchings(first: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<String> {
-    keybinds.set_keyevent(first);
+fn key_matchings(key: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<String> {
+    keybinds.set_keyevent(key);
+    // コンボがないキーでのマッチング
     if let Some(cmd) = keybinds.matching_single_keys() {
         return Ok(cmd);
     }
+
+    // keyコンボがあるキーのみのフィルタターを作成
     keybinds.filtering_multi_first_keys();
+    // コンボがあるキーでのマッチング
     if keybinds.has_keycomb() {
         if let Event::Key(second) = event::read()? {
             keybinds.set_keyevent(second);
@@ -347,8 +353,8 @@ fn key_matchings(first: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<Str
     Ok(String::with_capacity(0))
 }
 
-fn run_commands(app: &mut App, cmd: String, key: &KeyEvent) {
-    match cmd.as_str() {
+fn run_commands(app: &mut App, cmd: &str, key: &KeyEvent) {
+    match cmd {
         "move_to_parent_dir" => app.move_to_parent_dir(),
         "move_to_next_file_item" => app.move_to_next_file_item(),
         "move_to_prev_file_item" => app.move_to_prev_file_item(),

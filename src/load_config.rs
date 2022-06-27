@@ -1088,30 +1088,6 @@ fn color_translator(color: &Colors) -> Option<Color> {
     Some(c)
 }
 
-fn tui_color_transformer(color: Color) -> Colors {
-    match color {
-        Color::Reset => Colors::Rgb(0, 0, 0),
-        Color::Black => Colors::Black,
-        Color::Red => Colors::Red,
-        Color::Green => Colors::Green,
-        Color::Yellow => Colors::Yellow,
-        Color::Blue => Colors::Blue,
-        Color::Magenta => Colors::Magenta,
-        Color::Cyan => Colors::Cyan,
-        Color::Gray => Colors::Gray,
-        Color::DarkGray => Colors::DarkGray,
-        Color::LightRed => Colors::LightRed,
-        Color::LightGreen => Colors::LightGreen,
-        Color::LightYellow => Colors::LightYellow,
-        Color::LightBlue => Colors::LightBlue,
-        Color::LightMagenta => Colors::LightMagenta,
-        Color::LightCyan => Colors::LightCyan,
-        Color::White => Colors::White,
-        Color::Rgb(r, g, b) => Colors::Rgb(r, g, b),
-        Color::Indexed(_) => Colors::Rgb(255, 255, 255),
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Hash)]
 pub enum FileItems {
     File,
@@ -1183,10 +1159,6 @@ impl UserConfig {
         &self.theme
     }
 
-    fn keybindings_map(&self) -> ModeKeybinds {
-        self.user_keybinds.clone()
-    }
-
     pub fn normal_keybindings_map(&self) -> HashMap<String, String> {
         self.user_keybinds.normal.clone()
     }
@@ -1246,7 +1218,7 @@ mod test {
         }
         assert!(config.is_ok());
         let config = config.unwrap();
-        let keybinds = config.keybindings_map();
+        let keybinds = config.input_keybindings_map();
         println!("{:#?}", keybinds);
     }
 }
