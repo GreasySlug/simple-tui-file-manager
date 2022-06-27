@@ -5,16 +5,17 @@ use std::path::PathBuf;
 
 use crossterm::event::{self, Event, KeyEvent};
 use tui::backend::Backend;
-use tui::{terminal, Terminal};
+use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
-use crate::input_ui::{init_input_area_terminal, start_user_input};
+use crate::input_ui;
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
 use crate::path_process::{join_to_crr_dir, pathbuf_to_string_name};
 use crate::state::StatefulDirectory;
+use crate::ui::input_ui::start_user_input;
 use crate::ui::ui;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -221,7 +222,7 @@ impl App {
     }
 
     fn make_directory(&mut self) {
-        let relpath = self.run_user_input().unwrap();
+        let relpath = self.run_user_input().expect("Failed to make teraminal...");
         let path = join_to_crr_dir(self, &relpath);
 
         if path.is_dir() {
@@ -275,9 +276,9 @@ impl App {
     }
 
     fn run_user_input(&mut self) -> Option<String> {
-        let mut terminal = init_input_area_terminal().unwrap();
+        // let mut terminal = init_input_area_terminal().unwrap();
         let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
-        if let Ok(()) = start_user_input(&mut terminal, &mut name, self.theme()) {
+        if let Ok(()) = start_user_input(&mut name, self.theme()) {
             self.to_be_clear();
             if name.is_empty() {
                 return None;

@@ -1,3 +1,5 @@
+pub mod input_ui;
+
 use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -20,7 +22,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let selecting_style = app.theme().select_style().add_modifier(Modifier::BOLD);
     let header_style = app.theme().header_style();
     let background_style = app.theme().background_style();
-    let tab_style = app.theme().boader_style();
     let dir_block_style = app.theme().boader_style();
     let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
 
@@ -76,27 +77,21 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let background_window = Block::default().style(background_style);
     f.render_widget(background_window, size);
 
+    let tab_titles: Vec<Spans> = tabs
+        .iter()
+        .map(|t| Spans::from(vec![Span::raw(t)]))
+        .collect();
     match mode {
         Mode::Normal => {
-            let tab_titles: Vec<Spans> = tabs
-                .iter()
-                .map(|t| Spans::from(vec![Span::raw(t)]))
-                .collect();
-
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
-                .style(tab_style)
+                .style(app.theme().command_style(0).unwrap())
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
         }
         Mode::Input => {
-            let tab_titles: Vec<Spans> = tabs
-                .iter()
-                .map(|t| Spans::from(vec![Span::raw(t)]))
-                .collect();
-
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
@@ -106,11 +101,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             f.render_widget(tabs, chunks[0]);
         }
         Mode::Stacker => {
-            let tab_titles: Vec<Spans> = tabs
-                .iter()
-                .map(|t| Spans::from(vec![Span::raw(t)]))
-                .collect();
-
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
