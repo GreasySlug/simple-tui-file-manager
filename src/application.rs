@@ -46,6 +46,13 @@ impl StackerVec {
         }
     }
 
+    pub fn update_length(&mut self) {
+        self.length = self.stack.len();
+        if self.length > 1 {
+            self.state.select(Some(self.length - 1));
+        }
+    }
+
     pub fn stacker(&self) -> &Vec<PathBuf> {
         &self.stack
     }
@@ -366,10 +373,12 @@ impl App {
 
     fn stacker_push_back(&mut self, path: PathBuf) {
         self.stacker.stack.push(path);
+        self.stacker.update_length();
     }
 
     fn stacker_pop_back(&mut self) {
         self.stacker.stack.pop();
+        self.stacker.update_length();
     }
 
     pub fn stacker_contains(&self, path: &PathBuf) -> bool {
@@ -388,7 +397,9 @@ impl App {
         if let Some(i) = dir_state.selected() {
             if let Some(item) = dir.file_items_vec().get(i) {
                 let path = item.path().to_path_buf();
-                self.stacker_push_back(path);
+                if !self.stacker_contains(&path) {
+                    self.stacker_push_back(path);
+                }
             }
         }
     }
@@ -420,6 +431,53 @@ impl App {
 
     fn previous_stacker_item(&mut self) {
         self.stacker.previous_stacker_item();
+    }
+
+    fn try_to_delete_all_in_stcker(&mut self) {
+        let mut messages = Vec::new();
+        for path in self.stacker.stack.iter_mut() {
+            let kinds = if path.is_dir() {
+                Kinds::Directory(true)
+            } else {
+                Kinds::File(true)
+            };
+            let result = match kinds {
+                Kinds::File(_) => std::fs::remove_file(path),
+                Kinds::Directory(_) => std::fs::remove_dir(path),
+            };
+
+            // remove from directory in path
+            match result {
+                Ok(_) => {}
+                Err(err) => {
+                    let mss = match err.kind() {
+                        io::ErrorKind::NotFound => "Not Found",
+                        io::ErrorKind::PermissionDenied => "Permission Denied",
+                        // io::ErrorKind::IsADirectory => "It's a Directory",
+                        _ => "",
+                    };
+                    messages.push(mss);
+                }
+            }
+        }
+
+        // self.push_command_log();
+    }
+
+    ///. ** User Carefully ** ///
+    fn _delete_all(&mut self, path: PathBuf) {
+        match std::fs::remove_dir_all(path) {
+            Ok(_) => {}
+            Err(err) => {
+                let mss = match err.kind() {
+                    io::ErrorKind::NotFound => "Not Found",
+                    io::ErrorKind::PermissionDenied => "Permission Denied",
+                    // io::ErrorKind::IsADirectory => "It's a Directory",
+                    _ => "",
+                };
+                self.push_command_log(mss);
+            }
+        }
     }
 }
 
@@ -511,4 +569,5 @@ fn run_commands(app: &mut App, cmd: &str) {
         "stacker_pop_back" => app.stacker_pop_back(),
         _ => {}
     }
+    app.push_command_log(cmd);
 }
