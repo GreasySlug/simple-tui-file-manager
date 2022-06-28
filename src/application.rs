@@ -307,8 +307,8 @@ impl App {
             Ok(()) => {
                 let index = self.selected_statefuldir_ref().state_table().selected();
 
-                // TODO: newで作り直すのはコストが高い時がある(個数が多い時Homeなど)
-                //  → 追加したディレクトリだけFileItem化してディレクトリに追加する
+                // TODO: it is sometimes expensive to instante this struct (e.g. Home directory)
+                // only a created directory is added to this directory
                 let mut updated = StatefulDirectory::new(self.crr_dir_path().to_path_buf());
                 updated.sort_by_kinds();
                 updated.select_index(index);
@@ -423,8 +423,8 @@ impl App {
     }
 }
 
-// ユーザーからの入力を受け取りコマンドかどうかを判断
-// モードごとに異なるコマンドを受け付けることが可能
+// receives input from the user and determines if a command
+// it is possible to receive different commands each modes
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     let mut multi_normal = app.normal_user_keybinds();
     let mut multi_input = app.input_user_keybinds();
@@ -432,28 +432,26 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
         // TODO: Consider a more efficient way to declare the name of each command.
-        if let Event::Key(key) = event::read()? {
-            if app.mode() == &Mode::Normal {
-                if let Ok(cmd) = key_matchings(key, &mut multi_normal) {
-                    if cmd == "quit" {
-                        return Ok(());
-                    }
-                    run_commands(&mut app, &cmd, &key);
+        if app.mode() == &Mode::Normal {
+            if let Ok(cmd) = key_matchings(&mut multi_normal) {
+                if cmd == "quit" {
+                    return Ok(());
                 }
-            } else if app.mode() == &Mode::Input {
-                if let Ok(cmd) = key_matchings(key, &mut multi_input) {
-                    if cmd == "quit" {
-                        return Ok(());
-                    }
-                    run_commands(&mut app, &cmd, &key);
+                run_commands(&mut app, &cmd);
+            }
+        } else if app.mode() == &Mode::Input {
+            if let Ok(cmd) = key_matchings(&mut multi_input) {
+                if cmd == "quit" {
+                    return Ok(());
                 }
-            } else if app.mode() == &Mode::Stacker {
-                if let Ok(cmd) = key_matchings(key, &mut multi_stacker) {
-                    if cmd == "quit" {
-                        return Ok(());
-                    }
-                    run_commands(&mut app, &cmd, &key);
+                run_commands(&mut app, &cmd);
+            }
+        } else if app.mode() == &Mode::Stacker {
+            if let Ok(cmd) = key_matchings(&mut multi_stacker) {
+                if cmd == "quit" {
+                    return Ok(());
                 }
+                run_commands(&mut app, &cmd);
             }
         }
         if app.be_cleaned {
@@ -463,21 +461,21 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     }
 }
 
-fn key_matchings(key: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<String> {
-    keybinds.set_keyevent(key);
-    // コンボがないキーでのマッチング
-    if let Some(cmd) = keybinds.matching_single_keys() {
-        return Ok(cmd);
-    }
+fn key_matchings(keybinds: &mut UserKeybinds) -> io::Result<String> {
+    if let Event::Key(key) = event::read()? {
+        keybinds.set_keyevent(key);
+        // matching a key bindings without combo
+        if let Some(cmd) = keybinds.matching_single_keys() {
+            return Ok(cmd);
+        }
 
-    // keyコンボがあるキーのみのフィルタターを作成
-    keybinds.filtering_multi_first_keys();
-    // コンボがあるキーでのマッチング
-    if keybinds.has_keycomb() {
-        if let Event::Key(second) = event::read()? {
-            keybinds.set_keyevent(second);
-            if let Some(cmd) = keybinds.matching_multi_second_keys() {
-                return Ok(cmd);
+        keybinds.filtering_multi_first_keys();
+        if keybinds.has_keycomb() {
+            if let Event::Key(second) = event::read()? {
+                keybinds.set_keyevent(second);
+                if let Some(cmd) = keybinds.matching_multi_second_keys() {
+                    return Ok(cmd);
+                }
             }
         }
     }
@@ -485,7 +483,7 @@ fn key_matchings(key: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<Strin
     Ok(String::with_capacity(0))
 }
 
-fn run_commands(app: &mut App, cmd: &str, key: &KeyEvent) {
+fn run_commands(app: &mut App, cmd: &str) {
     match cmd {
         // comman commands
         "move_to_parent_dir" => app.move_to_parent_dir(),
@@ -511,6 +509,6 @@ fn run_commands(app: &mut App, cmd: &str, key: &KeyEvent) {
         "next_stacker_file_item" => app.next_stacker_item(),
         "prev_stacker_file_item" => app.previous_stacker_item(),
         "stacker_pop_back" => app.stacker_pop_back(),
-        _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
+        _ => {}
     }
 }
