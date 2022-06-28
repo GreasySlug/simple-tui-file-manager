@@ -1,9 +1,9 @@
 use tui::{
     backend::Backend,
-    layout::{Constraint, Layout, Rect},
-    style::Modifier,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, Cell, Row, Table},
+    widgets::{Block, Borders, Cell, List, ListItem, Row, Table},
     Frame,
 };
 
@@ -12,10 +12,10 @@ use crate::{
     file_item_list::{file_item, Kinds},
     load_config::FileItems,
     path_process::pathbuf_to_string_name,
+    state,
 };
 
-pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: Rect) {
-    // TODO: Display and hide the header and each element with bool
+pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window: Rect) {
     let header_style = app.theme().header_style();
     let header_titles = ["", "", "name", "extension", "permission", "size", "date"]
         .iter()
@@ -84,7 +84,11 @@ pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: R
             },
             None => lines.insert(2, Span::raw("N/A")),
         };
-        Row::new(lines)
+        if app.stacker_contains(&file_item.path().to_path_buf()) {
+            Row::new(lines).style(Style::default().add_modifier(Modifier::UNDERLINED))
+        } else {
+            Row::new(lines)
+        }
     });
 
     let directory_window = Layout::default()
@@ -106,5 +110,41 @@ pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: R
         .highlight_symbol(&select_symbol);
 
     let dir = app.selected_statefuldir_ref();
-    f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
+
+    let layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(directory_window[0]);
+
+    f.render_stateful_widget(items, layout[0], &mut dir.state_table());
+
+    stacking_item_ui(f, app, layout[1]);
+}
+
+pub fn stacking_item_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, stack_window: Rect) {
+    let select_symbol = app.symbols(&FileItems::Select);
+    let select_file_style = app.theme().file_style();
+    let select_style = app.theme().select_style();
+    let dir_block_style = app.theme().boader_style();
+    let items = app.stacker_items();
+    let state_items: Vec<ListItem> = items
+        .stacker()
+        .iter()
+        .map(|path| {
+            let path_name = pathbuf_to_string_name(path);
+            let span = Span::styled(path_name, select_file_style);
+            ListItem::new(span)
+        })
+        .collect();
+
+    let list_item = List::new(state_items)
+        .highlight_style(select_style)
+        .highlight_symbol(&select_symbol)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(dir_block_style),
+        );
+
+    f.render_stateful_widget(list_item, stack_window, items.state())
 }

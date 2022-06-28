@@ -597,107 +597,107 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
             modifiers: KeyModifiers::SHIFT,
         },
         "C-a" => KeyEvent {
-            code: KeyCode::Char('A'),
+            code: KeyCode::Char('a'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-b" => KeyEvent {
-            code: KeyCode::Char('B'),
+            code: KeyCode::Char('b'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-c" => KeyEvent {
-            code: KeyCode::Char('C'),
+            code: KeyCode::Char('c'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-d" => KeyEvent {
-            code: KeyCode::Char('D'),
+            code: KeyCode::Char('d'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-e" => KeyEvent {
-            code: KeyCode::Char('E'),
+            code: KeyCode::Char('e'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-f" => KeyEvent {
-            code: KeyCode::Char('F'),
+            code: KeyCode::Char('f'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-g" => KeyEvent {
-            code: KeyCode::Char('G'),
+            code: KeyCode::Char('g'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-h" => KeyEvent {
-            code: KeyCode::Char('H'),
+            code: KeyCode::Char('h'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-i" => KeyEvent {
-            code: KeyCode::Char('I'),
+            code: KeyCode::Char('i'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-j" => KeyEvent {
-            code: KeyCode::Char('J'),
+            code: KeyCode::Char('j'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-k" => KeyEvent {
-            code: KeyCode::Char('K'),
+            code: KeyCode::Char('k'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-l" => KeyEvent {
-            code: KeyCode::Char('L'),
+            code: KeyCode::Char('l'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-m" => KeyEvent {
-            code: KeyCode::Char('M'),
+            code: KeyCode::Char('m'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-n" => KeyEvent {
-            code: KeyCode::Char('N'),
+            code: KeyCode::Char('n'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-o" => KeyEvent {
-            code: KeyCode::Char('O'),
+            code: KeyCode::Char('o'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-p" => KeyEvent {
-            code: KeyCode::Char('P'),
+            code: KeyCode::Char('p'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-q" => KeyEvent {
-            code: KeyCode::Char('Q'),
+            code: KeyCode::Char('q'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-r" => KeyEvent {
-            code: KeyCode::Char('R'),
+            code: KeyCode::Char('r'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-s" => KeyEvent {
-            code: KeyCode::Char('S'),
+            code: KeyCode::Char('s'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-t" => KeyEvent {
-            code: KeyCode::Char('T'),
+            code: KeyCode::Char('t'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-u" => KeyEvent {
-            code: KeyCode::Char('U'),
+            code: KeyCode::Char('u'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-v" => KeyEvent {
-            code: KeyCode::Char('V'),
+            code: KeyCode::Char('v'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-w" => KeyEvent {
-            code: KeyCode::Char('W'),
+            code: KeyCode::Char('w'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-x" => KeyEvent {
-            code: KeyCode::Char('X'),
+            code: KeyCode::Char('x'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-y" => KeyEvent {
-            code: KeyCode::Char('Y'),
+            code: KeyCode::Char('y'),
             modifiers: KeyModifiers::CONTROL,
         },
         "C-z" => KeyEvent {
-            code: KeyCode::Char('Z'),
+            code: KeyCode::Char('z'),
             modifiers: KeyModifiers::CONTROL,
         },
         "A-a" => KeyEvent {
@@ -1041,8 +1041,8 @@ impl SettingTheme {
 
     pub fn command_style(&self, i: usize) -> Option<Style> {
         if let Some(command_color) = &self.command.get(i) {
-            let fg = style_formatter(&command_color.0, true, false);
-            let bg = style_formatter(&command_color.1, false, true);
+            let fg = style_formatter(&command_color.1, true, false);
+            let bg = style_formatter(&command_color.0, false, true);
             return Some(fg.patch(bg));
         }
         None
@@ -1208,7 +1208,7 @@ mod test {
         }
         assert!(config.is_ok());
         let config = config.unwrap();
-        let keybinds = config.input_keybindings_map();
+        let keybinds = config.stacker_keybindings_map();
         println!("{:#?}", keybinds);
     }
 }

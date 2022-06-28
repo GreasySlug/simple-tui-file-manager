@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 use crossterm::event::{self, Event, KeyEvent};
 use tui::backend::Backend;
+use tui::widgets::ListState;
 use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
@@ -30,13 +31,78 @@ const DRAIN_SIZE: usize = 50;
 const MAX_HIST_SIZE: usize = 500;
 const MAX_FILE_NAME_SIZE: usize = 40;
 
+pub struct StackerVec {
+    state: ListState,
+    stack: Vec<PathBuf>,
+    length: usize,
+}
+
+impl StackerVec {
+    fn new() -> StackerVec {
+        StackerVec {
+            state: ListState::default(),
+            stack: Vec::new(),
+            length: 0,
+        }
+    }
+
+    pub fn stacker(&self) -> &Vec<PathBuf> {
+        &self.stack
+    }
+
+    pub fn state(&mut self) -> &mut ListState {
+        &mut self.state
+    }
+
+    pub fn next_stacker_item(&mut self) {
+        if self.length < 1 {
+            return;
+        }
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i >= self.stack.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    pub fn previous_stacker_item(&mut self) {
+        if self.length < 1 {
+            return;
+        }
+        let i = match self.state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.stack.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.state.select(Some(i));
+    }
+
+    pub fn select_top(&mut self) {
+        if self.length < 1 {
+            return;
+        }
+        self.state.select(Some(0));
+    }
+}
+
 // TODO: Do I have to load  use config in this struct?
-#[derive(Debug)]
 pub struct App {
     directory_tabs: Vec<String>,
     tab_index: usize,
     dir_map: HashMap<String, StatefulDirectory>,
     command_history: Vec<String>,
+    stacker: StackerVec,
     mode: Mode,
     config: UserConfig,
     be_cleaned: bool,
@@ -49,6 +115,7 @@ impl App {
             tab_index: 0,
             dir_map: HashMap::new(),
             command_history: Vec::new(),
+            stacker: StackerVec::new(),
             mode: Mode::Normal,
             config: load_user_config_file(),
             be_cleaned: false,
@@ -67,24 +134,28 @@ impl App {
         &self.mode
     }
 
+    pub fn stacker_items(&mut self) -> &mut StackerVec {
+        &mut self.stacker
+    }
+
     // The current directory should be selected, so that tab and hashmap must existe.
-    pub fn peek_selected_statefuldir(&mut self) -> &mut StatefulDirectory {
+    pub fn selected_statefuldir_mut(&mut self) -> &mut StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
         self.dir_map.get_mut(selected_tab).unwrap()
     }
 
-    pub fn peeking_selected_statefuldir(&self) -> &StatefulDirectory {
+    pub fn selected_statefuldir_ref(&self) -> &StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
         self.dir_map.get(selected_tab).unwrap()
     }
 
     pub fn crr_dir_path(&self) -> &std::path::Path {
-        let selected_stateful_dir = self.peeking_selected_statefuldir();
+        let selected_stateful_dir = self.selected_statefuldir_ref();
         selected_stateful_dir.dir_path()
     }
 
     pub fn crr_file_items(&self) -> &Vec<FileItem> {
-        let stateful_dir = self.peeking_selected_statefuldir();
+        let stateful_dir = self.selected_statefuldir_ref();
         stateful_dir.file_items_vec()
     }
 
@@ -122,11 +193,11 @@ impl App {
     }
 
     pub fn move_to_next_file_item(&mut self) {
-        self.peek_selected_statefuldir().select_next();
+        self.selected_statefuldir_mut().select_next();
     }
 
     pub fn move_to_prev_file_item(&mut self) {
-        self.peek_selected_statefuldir().select_previous();
+        self.selected_statefuldir_mut().select_previous();
     }
 
     pub fn shift_to_input_mode(&mut self) {
@@ -175,7 +246,7 @@ impl App {
     }
 
     pub fn move_to_child_dir(&mut self) {
-        let select_dir = self.peek_selected_statefuldir();
+        let select_dir = self.selected_statefuldir_mut();
         if let Some(file_item) = select_dir.selecting_file_item() {
             match Kinds::classifiy_kinds(file_item.path(), file_item.meta()) {
                 Kinds::Directory(_) => {
@@ -192,7 +263,7 @@ impl App {
     }
 
     pub fn move_to_parent_dir(&mut self) {
-        let selected_dir = self.peek_selected_statefuldir();
+        let selected_dir = self.selected_statefuldir_mut();
         let dir_name = selected_dir.crr_dir_name();
         let parent_path = selected_dir.crr_dir_parent_path().clone();
         let parent_dir_name = pathbuf_to_string_name(&parent_path);
@@ -203,22 +274,22 @@ impl App {
 
         // select the position of crr dir name or select top
         let dir_pos = self
-            .peek_selected_statefuldir()
+            .selected_statefuldir_mut()
             .file_items_vec()
             .iter()
             // .inspect(|x| println!("{:?}", x.name() == dir_name))
             .position(|x| x.name() == dir_name);
 
-        let state_dir = self.peek_selected_statefuldir();
+        let state_dir = self.selected_statefuldir_mut();
         state_dir.select_index(dir_pos);
     }
 
     fn move_to_top_of_file_item(&mut self) {
-        self.peek_selected_statefuldir().select_top();
+        self.selected_statefuldir_mut().select_top();
     }
 
     fn move_to_bottom_of_file_item(&mut self) {
-        self.peek_selected_statefuldir().select_bottom();
+        self.selected_statefuldir_mut().select_bottom();
     }
 
     fn make_directory(&mut self) {
@@ -234,14 +305,14 @@ impl App {
         let res = std::fs::create_dir_all(&path);
         match res {
             Ok(()) => {
-                let index = self.peeking_selected_statefuldir().state_table().selected();
+                let index = self.selected_statefuldir_ref().state_table().selected();
 
                 // TODO: newで作り直すのはコストが高い時がある(個数が多い時Homeなど)
                 //  → 追加したディレクトリだけFileItem化してディレクトリに追加する
                 let mut updated = StatefulDirectory::new(self.crr_dir_path().to_path_buf());
                 updated.sort_by_kinds();
                 updated.select_index(index);
-                *self.peek_selected_statefuldir() = updated;
+                *self.selected_statefuldir_mut() = updated;
             }
             Err(error) => {
                 let message = match error.kind() {
@@ -291,6 +362,64 @@ impl App {
         self.be_clear();
         self.push_command_log("Stopped to input");
         None
+    }
+
+    fn stacker_push_back(&mut self, path: PathBuf) {
+        self.stacker.stack.push(path);
+    }
+
+    fn stacker_pop_back(&mut self) {
+        self.stacker.stack.pop();
+    }
+
+    pub fn stacker_contains(&self, path: &PathBuf) -> bool {
+        self.stacker.stack.contains(path)
+    }
+
+    fn stacker_remove_match_to_path(&mut self, path: &PathBuf) {
+        if let Some(i) = self.stacker.stack.iter().position(|p| p == path) {
+            self.stacker.stack.remove(i);
+        }
+    }
+
+    fn select_crr_file_item(&mut self) {
+        let dir = self.selected_statefuldir_ref();
+        let dir_state = dir.state_table();
+        if let Some(i) = dir_state.selected() {
+            if let Some(item) = dir.file_items_vec().get(i) {
+                let path = item.path().to_path_buf();
+                self.stacker_push_back(path);
+            }
+        }
+    }
+
+    fn unselect_crr_file_item(&mut self) {
+        let dir = self.selected_statefuldir_ref();
+        let dir_state = dir.state_table();
+        if let Some(i) = dir_state.selected() {
+            if let Some(item) = dir.file_items_vec().get(i) {
+                let path = item.path().to_path_buf();
+                if self.stacker_contains(&path) {
+                    self.stacker_remove_match_to_path(&path);
+                }
+            }
+        }
+    }
+
+    fn select_all_file_items(&mut self) {
+        let dir = self.selected_statefuldir_mut();
+        for item in dir.file_items_vec().to_owned() {
+            let path = item.path().to_path_buf();
+            self.stacker_push_back(path);
+        }
+    }
+
+    fn next_stacker_item(&mut self) {
+        self.stacker.next_stacker_item();
+    }
+
+    fn previous_stacker_item(&mut self) {
+        self.stacker.previous_stacker_item();
     }
 }
 
@@ -358,6 +487,7 @@ fn key_matchings(key: KeyEvent, keybinds: &mut UserKeybinds) -> io::Result<Strin
 
 fn run_commands(app: &mut App, cmd: &str, key: &KeyEvent) {
     match cmd {
+        // comman commands
         "move_to_parent_dir" => app.move_to_parent_dir(),
         "move_to_next_file_item" => app.move_to_next_file_item(),
         "move_to_prev_file_item" => app.move_to_prev_file_item(),
@@ -366,10 +496,21 @@ fn run_commands(app: &mut App, cmd: &str, key: &KeyEvent) {
         "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
         "next_dirtab" => app.next_dirtab(),
         "prev_dirtab" => app.prev_dirtab(),
-        "make_directory" => app.make_directory(),
-        "input" => app.shift_to_input_mode(),
         "normal" => app.shift_to_normal_mode(),
+        "input" => app.shift_to_input_mode(),
         "stacker" => app.shift_to_stacker_mode(),
+        // normal commands
+
+        // input commands
+        "make_directory" => app.make_directory(),
+
+        // stacker commands
+        "select_current_file_item" => app.select_crr_file_item(),
+        "unselect_current_file_item" => app.unselect_crr_file_item(),
+        "select_all_file_items" => app.select_all_file_items(),
+        "next_stacker_file_item" => app.next_stacker_item(),
+        "prev_stacker_file_item" => app.previous_stacker_item(),
+        "stacker_pop_back" => app.stacker_pop_back(),
         _ => app.push_command_log(&format!("{:?} {:?}", key.code, key.modifiers)),
     }
 }

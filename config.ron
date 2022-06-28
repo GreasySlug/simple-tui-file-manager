@@ -54,6 +54,12 @@
             "tab":"next_dirtab",
             "S-tab":"prev_dirtab",
             "S-i": "input",
+            "s": "select_current_file_item",
+            "u": "stacker_pop_back",
+            "S-s": "unselect_current_file_item",
+            "C-n": "next_stacker_file_item",
+            "C-p": "prev_stacker_file_item",
+            "C-a": "select_all_file_items",
             "escape": "normal"
         },
     )

@@ -22,6 +22,7 @@ pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout
     Ok(terminal)
 }
 
+// 可能であればカーソル移動を追加する
 const FILENAME_CAPACITY: usize = 50;
 pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<()> {
     let mut terminal = init_input_area_terminal().expect("Failed to make input terminal...");

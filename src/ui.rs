@@ -1,6 +1,7 @@
 pub mod command_ui;
 pub mod directory_ui;
 pub mod input_ui;
+pub mod stacker_ui;
 
 use tui::{
     backend::Backend,
@@ -15,8 +16,9 @@ use crate::application::{App, Mode};
 
 use self::command_ui::command_ui;
 use self::directory_ui::directory_ui;
+use self::stacker_ui::stacker_ui;
 
-pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn ui<'a, B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let background_style = app.theme().background_style();
     let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
 
@@ -34,7 +36,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .split(size);
 
     let (index, file_items) = {
-        let state = app.peek_selected_statefuldir();
+        let state = app.selected_statefuldir_ref();
         (
             state.state_table().selected().unwrap_or(0),
             state.file_items_vec().len(),
@@ -71,6 +73,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
+            directory_ui(f, app, chunks[1]);
         }
         Mode::Input => {
             let tabs = Tabs::new(tab_titles)
@@ -89,8 +92,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
+            stacker_ui(f, app, chunks[1]);
         }
     }
-
-    directory_ui(f, app, chunks[1]);
 }

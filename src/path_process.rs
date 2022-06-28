@@ -80,7 +80,7 @@ pub fn get_home_directory_path() -> Option<PathBuf> {
 
 pub fn join_to_crr_dir(app: &mut App, relpath: impl AsRef<Path>) -> PathBuf {
     let fullpath = app
-        .peek_selected_statefuldir()
+        .selected_statefuldir_mut()
         .directory()
         .pathbuf()
         .join(relpath);
