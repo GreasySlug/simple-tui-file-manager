@@ -3,13 +3,12 @@ use crossterm::{
     execute,
 };
 use std::io::{self, Stdout};
-use tui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
-    style::Style,
-    widgets::{Block, Borders, Clear, Paragraph},
-    Frame, Terminal,
-};
+use tui::backend::{Backend, CrosstermBackend};
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::Style;
+use tui::widgets::{Block, Borders, Clear, Paragraph};
+use tui::Frame;
+use tui::Terminal;
 
 use crate::load_config::SettingTheme;
 
@@ -47,7 +46,32 @@ pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<(
         }
         terminal.draw(|f| input_area_ui(f, line, input_style))?;
     }
+
+    line.trim().to_string();
+
+    if is_valid_file_name(line) {
+        line.clear();
+    }
     Ok(())
+}
+
+// https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.InvalidData
+// TODO: more comprehensive
+const CHARS_CANNOT_BE_USED: [char; 9] = ['\\', '|', '<', '>', '*', ':', '?', '\"', '\''];
+fn is_valid_file_name(line: &str) -> bool {
+    for c in CHARS_CANNOT_BE_USED.into_iter() {
+        if line.find(c).is_none() {
+            return false;
+        }
+    }
+    if line.len() == 1 {
+        return !(line.contains('/')
+            || line.contains('\'')
+            || line.contains('\"')
+            || line.contains('.'));
+    }
+
+    true
 }
 
 pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str, input_style: Style) {
@@ -64,4 +88,25 @@ pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str, input_style: Styl
 
     let para = Paragraph::new(line).block(block);
     f.render_widget(para, input_area);
+}
+
+#[cfg(test)]
+mod test {
+    use crate::ui::input_ui::is_valid_file_name;
+
+    #[test]
+    fn check_invalid_file_name() {
+        let file_names = ["*", "\\", "|", ".", ":", "<", ">", " "];
+        for name in file_names.into_iter() {
+            assert!(!is_valid_file_name(name));
+        }
+
+        let file_names = [
+            "file*", "*name", "name|", "|name", "name.", ".name", "name:", ":name", "name<",
+            "<name", "name>", ">name", "", " name", "name ",
+        ];
+        for name in file_names.into_iter() {
+            assert!(!is_valid_file_name(name));
+        }
+    }
 }

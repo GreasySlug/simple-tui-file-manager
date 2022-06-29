@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
 
-use crossterm::event::{self, Event, KeyEvent};
+use crossterm::event::{self, Event};
 use tui::backend::Backend;
 use tui::widgets::ListState;
 use tui::Terminal;
@@ -301,7 +301,9 @@ impl App {
 
     fn make_directory(&mut self) {
         let relpath = self.run_user_input().expect("Failed to make teraminal...");
-        // TODO: replpathが空やディレクトリ名に使えない文字がある時には早期リターン
+        if relpath.is_empty() {
+            return;
+        }
         let path = join_to_crr_dir(self, &relpath);
 
         if path.is_dir() {
@@ -357,7 +359,6 @@ impl App {
     }
 
     fn run_user_input(&mut self) -> Option<String> {
-        // let mut terminal = init_input_area_terminal().unwrap();
         let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
         if let Ok(()) = start_user_input(&mut name, self.theme()) {
             self.be_clear();
@@ -373,7 +374,9 @@ impl App {
 
     fn stacker_push_back(&mut self, path: PathBuf) {
         self.stacker.stack.push(path);
-        self.stacker.update_length();
+        if self.stacker.state.selected().is_none() {
+            self.stacker.update_length();
+        }
     }
 
     fn stacker_pop_back(&mut self) {
@@ -446,7 +449,6 @@ impl App {
                 Kinds::Directory(_) => std::fs::remove_dir(path),
             };
 
-            // remove from directory in path
             match result {
                 Ok(_) => {}
                 Err(err) => {
