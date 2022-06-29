@@ -47,8 +47,6 @@ pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<(
         terminal.draw(|f| input_area_ui(f, line, input_style))?;
     }
 
-    line.trim().to_string();
-
     if is_valid_file_name(line) {
         line.clear();
     }
@@ -57,7 +55,7 @@ pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<(
 
 // https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.InvalidData
 // TODO: more comprehensive
-const CHARS_CANNOT_BE_USED: [char; 9] = ['\\', '|', '<', '>', '*', ':', '?', '\"', '\''];
+const CHARS_CANNOT_BE_USED: [char; 10] = ['\\', '|', '<', '>', '*', ':', '?', '\"', '\'', '/'];
 fn is_valid_file_name(line: &str) -> bool {
     for c in CHARS_CANNOT_BE_USED.into_iter() {
         if line.find(c).is_none() {
@@ -96,8 +94,8 @@ mod test {
 
     #[test]
     fn check_invalid_file_name() {
-        let file_names = ["*", "\\", "|", ".", ":", "<", ">", " "];
-        for name in file_names.into_iter() {
+        let char_file_names = ["*", "\\", "|", ".", ":", "<", ">", " ", "/"];
+        for name in char_file_names.into_iter() {
             assert!(!is_valid_file_name(name));
         }
 
