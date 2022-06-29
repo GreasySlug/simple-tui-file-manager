@@ -3,14 +3,12 @@ pub mod directory_ui;
 pub mod input_ui;
 pub mod stacker_ui;
 
-use tui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    style::Modifier,
-    text::{Span, Spans},
-    widgets::{Block, Borders, Tabs},
-    Frame,
-};
+use tui::backend::Backend;
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::Modifier;
+use tui::text::{Span, Spans};
+use tui::widgets::{Block, Borders, Tabs};
+use tui::Frame;
 
 use crate::application::{App, Mode};
 

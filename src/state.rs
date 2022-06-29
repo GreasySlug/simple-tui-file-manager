@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::file_item_list::directory_item::Directory;
 use crate::file_item_list::file_item::FileItem;
-use crate::path_process::{make_info_files_from_dirpath, pathbuf_to_string_name};
+use crate::path_process::{make_file_items_from_dirpath, pathbuf_to_string_name};
 use tui::widgets::TableState;
 
 #[derive(Debug, Clone)]
@@ -15,13 +15,18 @@ pub struct StatefulDirectory {
 
 impl StatefulDirectory {
     pub fn new(dir_path: PathBuf) -> StatefulDirectory {
-        let file_items = make_info_files_from_dirpath(&dir_path);
+        let file_items = make_file_items_from_dirpath(&dir_path);
         StatefulDirectory {
             directory: Directory::new(dir_path),
             state: TableState::default(),
             length: file_items.len(),
             file_items,
         }
+    }
+
+    pub fn push_file_item_and_sort(&mut self, item: FileItem) {
+        self.file_items.push(item);
+        self.sort_by_kinds();
     }
 
     pub fn directory(&self) -> &Directory {
