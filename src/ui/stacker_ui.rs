@@ -12,7 +12,6 @@ use crate::{
     file_item_list::{file_item, Kinds},
     load_config::FileItems,
     path_process::pathbuf_to_string_name,
-    state,
 };
 
 pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window: Rect) {

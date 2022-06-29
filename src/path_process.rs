@@ -15,7 +15,7 @@ pub fn pathbuf_to_string_name(path: &Path) -> String {
     "root".to_string()
 }
 
-pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
+pub fn make_file_items_from_dirpath(path: &Path) -> Vec<FileItem> {
     let mut files_item: Vec<FileItem> = Vec::new();
 
     if let Ok(dir) = path.read_dir() {
@@ -38,7 +38,7 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
     files_item
 }
 
-pub fn make_a_info_file_from_dirpath(file_path: &Path) -> FileItem {
+pub fn make_a_file_item_from_dirpath(file_path: &Path) -> FileItem {
     let file_name = pathbuf_to_string_name(file_path);
     let meta = file_path.metadata().expect("Failed to get metadata");
     let kinds = Kinds::classifiy_kinds(file_path, &meta);

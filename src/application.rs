@@ -484,33 +484,23 @@ impl App {
 // receives input from the user and determines if a command
 // it is possible to receive different commands each modes
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    let mut multi_normal = app.normal_user_keybinds();
-    let mut multi_input = app.input_user_keybinds();
-    let mut multi_stacker = app.stacker_user_keybinds();
+    let mut normal = app.normal_user_keybinds();
+    let mut input = app.input_user_keybinds();
+    let mut stacker = app.stacker_user_keybinds();
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
         // TODO: Consider a more efficient way to declare the name of each command.
-        if app.mode() == &Mode::Normal {
-            if let Ok(cmd) = key_matchings(&mut multi_normal) {
-                if cmd == "quit" {
-                    return Ok(());
-                }
-                run_commands(&mut app, &cmd);
+        let res = match app.mode() {
+            Mode::Normal => key_matchings(&mut normal),
+            Mode::Input => key_matchings(&mut input),
+            Mode::Stacker => key_matchings(&mut stacker),
+        };
+
+        if let Ok(cmd) = res {
+            if cmd == "quit" {
+                return Ok(());
             }
-        } else if app.mode() == &Mode::Input {
-            if let Ok(cmd) = key_matchings(&mut multi_input) {
-                if cmd == "quit" {
-                    return Ok(());
-                }
-                run_commands(&mut app, &cmd);
-            }
-        } else if app.mode() == &Mode::Stacker {
-            if let Ok(cmd) = key_matchings(&mut multi_stacker) {
-                if cmd == "quit" {
-                    return Ok(());
-                }
-                run_commands(&mut app, &cmd);
-            }
+            run_commands(&mut app, &cmd);
         }
         if app.be_cleaned {
             terminal.clear()?;

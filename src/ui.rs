@@ -18,7 +18,7 @@ use self::command_ui::command_ui;
 use self::directory_ui::directory_ui;
 use self::stacker_ui::stacker_ui;
 
-pub fn ui<'a, B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let background_style = app.theme().background_style();
     let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
 
