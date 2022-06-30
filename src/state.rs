@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::file_item_list::directory_item::Directory;
 use crate::file_item_list::file_item::FileItem;
-use crate::path_process::{make_file_items_from_dirpath, pathbuf_to_string_name};
+use crate::path_process::make_file_items_from_dirpath;
 use tui::widgets::TableState;
 
 #[derive(Debug, Clone)]

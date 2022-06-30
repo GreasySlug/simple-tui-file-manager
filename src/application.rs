@@ -1,7 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::fmt::Debug;
-use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 
 use crossterm::event::{self, Event};
 use tui::backend::Backend;
@@ -14,7 +14,7 @@ use crate::file_item_list::Kinds;
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
-use crate::path_process::{join_to_crr_dir, pathbuf_to_string_name};
+use crate::path_process::{join_to_crr_dir, make_a_file_item_from_dirpath, pathbuf_to_string_name};
 use crate::state::StatefulDirectory;
 use crate::ui::input_ui::start_user_input;
 use crate::ui::ui;
