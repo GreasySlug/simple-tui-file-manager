@@ -81,10 +81,16 @@ pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window:
                 file_item::Extension::Toml => lines.insert(3, Span::raw("Toml")),
                 file_item::Extension::Unknwon => lines.insert(3, Span::raw("n/a")),
             },
-            None => lines.insert(2, Span::raw("N/A")),
+            None => lines.insert(3, Span::raw("N/A")),
         };
         if app.stacker_contains(&file_item.path().to_path_buf()) {
-            Row::new(lines).style(Style::default().add_modifier(Modifier::UNDERLINED))
+            Row::new(lines).style(
+                app.theme().select_style().patch(
+                    Style::default()
+                        .add_modifier(Modifier::BOLD)
+                        .add_modifier(Modifier::ITALIC),
+                ),
+            )
         } else {
             Row::new(lines)
         }
