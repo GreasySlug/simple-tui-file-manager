@@ -50,6 +50,8 @@ impl StackerVec {
         self.length = self.stack.len();
         if self.length > 1 {
             self.state.select(Some(self.length - 1));
+        } else {
+            self.state.select(None);
         }
     }
 
@@ -93,13 +95,6 @@ impl StackerVec {
             None => 0,
         };
         self.state.select(Some(i));
-    }
-
-    pub fn select_top(&mut self) {
-        if self.length < 1 {
-            return;
-        }
-        self.state.select(Some(0));
     }
 }
 
@@ -163,7 +158,7 @@ impl App {
 
     pub fn crr_file_items(&self) -> &Vec<FileItem> {
         let stateful_dir = self.selected_statefuldir_ref();
-        stateful_dir.file_items_vec()
+        stateful_dir.file_items()
     }
 
     pub fn tab_index(&self) -> usize {
@@ -180,10 +175,10 @@ impl App {
             let mut new_stateful_dir = StatefulDirectory::new(dir_path);
 
             // Sorted by name in each of the files and directories
-            new_stateful_dir.sort_by_kinds();
+            new_stateful_dir.sort_file_items_by_kinds();
 
             if !new_stateful_dir.is_selected() {
-                new_stateful_dir.select_top();
+                new_stateful_dir.select_top_file_item();
             }
             item.insert(new_stateful_dir);
         }
@@ -200,18 +195,24 @@ impl App {
     }
 
     pub fn move_to_next_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_next();
+        self.selected_statefuldir_mut().select_next_file_item();
     }
 
     pub fn move_to_prev_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_previous();
+        self.selected_statefuldir_mut().select_previous_file_item();
     }
 
     pub fn shift_to_input_mode(&mut self) {
+        if self.stacker.length > 1 {
+            self.stacker_clear();
+        }
         self.mode = Mode::Input;
     }
 
     pub fn shift_to_normal_mode(&mut self) {
+        if self.stacker.length > 1 {
+            self.stacker_clear();
+        }
         self.mode = Mode::Normal;
     }
 
@@ -254,7 +255,7 @@ impl App {
 
     pub fn move_to_child_dir(&mut self) {
         let select_dir = self.selected_statefuldir_mut();
-        if let Some(file_item) = select_dir.selecting_file_item() {
+        if let Some(file_item) = select_dir.get_selected_file_item() {
             match Kinds::classifiy_kinds(file_item.path(), file_item.meta()) {
                 Kinds::Directory(_) => {
                     let dir_name = pathbuf_to_string_name(file_item.path());
@@ -271,8 +272,8 @@ impl App {
 
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.selected_statefuldir_mut();
-        let dir_name = selected_dir.crr_dir_name();
-        let parent_path = selected_dir.crr_dir_parent_path().clone();
+        let dir_name = selected_dir.dir_name();
+        let parent_path = selected_dir.dir_parent_path().clone();
         let parent_dir_name = pathbuf_to_string_name(&parent_path);
         self.insert_new_statefuldir(parent_path);
         let i = self.tab_index;
@@ -282,21 +283,21 @@ impl App {
         // select the position of crr dir name or select top
         let dir_pos = self
             .selected_statefuldir_mut()
-            .file_items_vec()
+            .file_items()
             .iter()
             // .inspect(|x| println!("{:?}", x.name() == dir_name))
             .position(|x| x.name() == dir_name);
 
         let state_dir = self.selected_statefuldir_mut();
-        state_dir.select_index(dir_pos);
+        state_dir.select_file_item_by_index(dir_pos);
     }
 
     fn move_to_top_of_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_top();
+        self.selected_statefuldir_mut().select_top_file_item();
     }
 
     fn move_to_bottom_of_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_bottom();
+        self.selected_statefuldir_mut().select_bottom_file_item();
     }
 
     fn make_directory(&mut self) {
@@ -311,17 +312,11 @@ impl App {
             return;
         }
 
-        let res = std::fs::create_dir_all(&path);
-        match res {
+        match fs::create_dir_all(&path) {
             Ok(()) => {
-                let index = self.selected_statefuldir_ref().state_table().selected();
-
-                // TODO: it is sometimes expensive to instante this struct (e.g. Home directory)
-                // only a created directory is added to this directory
-                let mut updated = StatefulDirectory::new(self.crr_dir_path().to_path_buf());
-                updated.sort_by_kinds();
-                updated.select_index(index);
-                *self.selected_statefuldir_mut() = updated;
+                let item = make_a_file_item_from_dirpath(&path);
+                self.selected_statefuldir_mut()
+                    .push_file_item_and_sort(item);
             }
             Err(error) => {
                 let message = match error.kind() {
@@ -360,16 +355,21 @@ impl App {
 
     fn run_user_input(&mut self) -> Option<String> {
         let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
-        if let Ok(()) = start_user_input(&mut name, self.theme()) {
-            self.be_clear();
+        let res = start_user_input(&mut name, self.theme());
+        self.be_clear();
+        if let Ok(()) = res {
+            let name = name.trim().to_owned();
             if name.is_empty() {
                 return None;
             }
             return Some(name);
         }
-        self.be_clear();
         self.push_command_log("Stopped to input");
         None
+    }
+
+    fn stacker_clear(&mut self) {
+        self.stacker.stack.clear();
     }
 
     fn stacker_push_back(&mut self, path: PathBuf) {
@@ -398,7 +398,7 @@ impl App {
         let dir = self.selected_statefuldir_ref();
         let dir_state = dir.state_table();
         if let Some(i) = dir_state.selected() {
-            if let Some(item) = dir.file_items_vec().get(i) {
+            if let Some(item) = dir.file_items().get(i) {
                 let path = item.path().to_path_buf();
                 if !self.stacker_contains(&path) {
                     self.stacker_push_back(path);
@@ -411,7 +411,7 @@ impl App {
         let dir = self.selected_statefuldir_ref();
         let dir_state = dir.state_table();
         if let Some(i) = dir_state.selected() {
-            if let Some(item) = dir.file_items_vec().get(i) {
+            if let Some(item) = dir.file_items().get(i) {
                 let path = item.path().to_path_buf();
                 if self.stacker_contains(&path) {
                     self.stacker_remove_match_to_path(&path);
@@ -422,9 +422,11 @@ impl App {
 
     fn select_all_file_items(&mut self) {
         let dir = self.selected_statefuldir_mut();
-        for item in dir.file_items_vec().to_owned() {
+        for item in dir.file_items().to_owned() {
             let path = item.path().to_path_buf();
-            self.stacker_push_back(path);
+            if !self.stacker_contains(&path) {
+                self.stacker_push_back(path);
+            }
         }
     }
 
@@ -503,10 +505,11 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
                 return Ok(());
             }
             run_commands(&mut app, &cmd);
-        }
-        if app.be_cleaned {
-            terminal.clear()?;
-            app.be_cleaned();
+
+            if app.be_cleaned {
+                terminal.clear()?;
+                app.be_cleaned();
+            }
         }
     }
 }

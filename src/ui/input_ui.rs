@@ -47,8 +47,6 @@ pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<(
         terminal.draw(|f| input_area_ui(f, line, input_style))?;
     }
 
-    line.trim().to_string();
-
     if is_valid_file_name(line) {
         line.clear();
     }

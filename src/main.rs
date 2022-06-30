@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let crr_dir_path = current_dir_path();
+    let crr_dir_path = working_dir_path();
     let dir_name = pathbuf_to_string_name(&crr_dir_path);
     let mut app = App::new();
     app.insert_new_statefuldir(crr_dir_path);

@@ -37,7 +37,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let state = app.selected_statefuldir_ref();
         (
             state.state_table().selected().unwrap_or(0),
-            state.file_items_vec().len(),
+            state.file_items().len(),
         )
     };
 

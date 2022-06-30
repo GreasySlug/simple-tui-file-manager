@@ -26,7 +26,7 @@ impl StatefulDirectory {
 
     pub fn push_file_item_and_sort(&mut self, item: FileItem) {
         self.file_items.push(item);
-        self.sort_by_kinds();
+        self.sort_file_items_by_kinds();
     }
 
     pub fn directory(&self) -> &Directory {
@@ -37,16 +37,15 @@ impl StatefulDirectory {
         self.directory.pathbuf()
     }
 
-    pub fn crr_dir_parent_path(&self) -> &PathBuf {
+    pub fn dir_parent_path(&self) -> &PathBuf {
         self.directory.parent()
     }
 
-    pub fn crr_dir_name(&self) -> String {
-        let path = self.directory.pathbuf();
-        pathbuf_to_string_name(path)
+    pub fn dir_name(&self) -> String {
+        self.directory.name().to_owned()
     }
 
-    pub fn file_items_vec(&self) -> &Vec<FileItem> {
+    pub fn file_items(&self) -> &Vec<FileItem> {
         &self.file_items
     }
 
@@ -54,11 +53,11 @@ impl StatefulDirectory {
         self.state.clone()
     }
 
-    pub fn select_index(&mut self, i: Option<usize>) {
+    pub fn select_file_item_by_index(&mut self, i: Option<usize>) {
         self.state.select(i);
     }
 
-    pub fn selecting_file_item(&self) -> Option<&FileItem> {
+    pub fn get_selected_file_item(&self) -> Option<&FileItem> {
         if let Some(i) = self.state.selected() {
             self.file_items.get(i)
         } else {
@@ -66,7 +65,7 @@ impl StatefulDirectory {
         }
     }
 
-    pub fn select_bottom(&mut self) {
+    pub fn select_bottom_file_item(&mut self) {
         if self.length < 1 {
             return;
         }
@@ -74,14 +73,14 @@ impl StatefulDirectory {
         self.state.select(Some(self.length - 1));
     }
 
-    pub fn select_top(&mut self) {
+    pub fn select_top_file_item(&mut self) {
         if self.length < 1 {
             return;
         }
         self.state.select(Some(0));
     }
 
-    pub fn select_next(&mut self) {
+    pub fn select_next_file_item(&mut self) {
         if self.length < 1 {
             return;
         }
@@ -98,7 +97,7 @@ impl StatefulDirectory {
         self.state.select(Some(i));
     }
 
-    pub fn select_previous(&mut self) {
+    pub fn select_previous_file_item(&mut self) {
         if self.length < 1 {
             return;
         }
@@ -119,8 +118,14 @@ impl StatefulDirectory {
         self.state.selected().is_some()
     }
 
-    pub fn sort_by_kinds(&mut self) {
+    pub fn sort_file_items_by_kinds(&mut self) {
         self.file_items
             .sort_by(|a, b| b.kinds().partial_cmp(&a.kinds()).unwrap());
+    }
+
+    pub fn remove_file_item_with_path(&mut self, path: &Path) {
+        if let Some(i) = self.file_items().iter().position(|x| x.path() == path) {
+            self.file_items.remove(i);
+        }
     }
 }

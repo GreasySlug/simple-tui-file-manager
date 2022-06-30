@@ -51,7 +51,7 @@ pub fn make_a_file_item_from_dirpath(file_path: &Path) -> FileItem {
     FileItem::new(file_name, file_path.to_path_buf(), meta, kinds, extension)
 }
 
-pub fn current_dir_path() -> PathBuf {
+pub fn working_dir_path() -> PathBuf {
     match current_dir() {
         Ok(path) => path,
         Err(e) => panic!("Permission denide: {}", e),
