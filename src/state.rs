@@ -128,4 +128,12 @@ impl StatefulDirectory {
             self.file_items.remove(i);
         }
     }
+
+    pub fn contain_file_item(&self, name: &str) -> bool {
+        self.file_items
+            .iter()
+            .filter(|x| x.name_ref() == name)
+            .count()
+            > 0
+    }
 }

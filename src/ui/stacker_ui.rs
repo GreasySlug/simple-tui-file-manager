@@ -131,7 +131,7 @@ pub fn stacking_item_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, stack_windo
     let select_file_style = app.theme().file_style();
     let select_style = app.theme().select_style();
     let dir_block_style = app.theme().boader_style();
-    let items = app.stacker_items();
+    let items = app.stacker_mut();
     let state_items: Vec<ListItem> = items
         .stacker()
         .iter()

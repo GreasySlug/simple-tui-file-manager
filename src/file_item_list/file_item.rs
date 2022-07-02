@@ -86,6 +86,10 @@ impl FileItem {
         self.name.clone()
     }
 
+    pub fn name_ref(&self) -> &str {
+        &self.name
+    }
+
     pub fn kinds(&self) -> Kinds {
         self.kinds.clone()
     }
