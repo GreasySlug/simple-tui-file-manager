@@ -329,6 +329,35 @@ impl App {
         }
     }
 
+    fn make_file(&mut self) {
+        let relpath = self.run_user_input().expect("Failed to make teraminal...");
+        if relpath.is_empty() {
+            return;
+        }
+        let path = join_to_crr_dir(self, &relpath);
+
+        if path.is_dir() {
+            self.push_command_log("The directory already exists");
+            return;
+        }
+
+        match fs::File::create(&path) {
+            Ok(_) => {
+                let item = make_a_file_item_from_dirpath(&path);
+                self.selected_statefuldir_mut()
+                    .push_file_item_and_sort(item);
+            }
+            Err(error) => {
+                let message = match error.kind() {
+                    io::ErrorKind::PermissionDenied => "Permission denied",
+                    io::ErrorKind::NotFound => "Not Found",
+                    _ => unreachable!(),
+                };
+                self.push_command_log(message);
+            }
+        }
+    }
+
     fn normal_user_keybinds(&self) -> UserKeybinds {
         let keybind = self.config.normal_keybindings_map();
         let keymap = multi_string_map_to_user_keyboad(&keybind);
@@ -600,10 +629,12 @@ fn run_commands(app: &mut App, cmd: &str) {
         "input" => app.shift_to_input_mode(),
         "stacker" => app.shift_to_stacker_mode(),
         // normal commands
+        // "add_directory_to_dirtab" => app.add_dir_to_dirtab(),
+        // "display_or_hide_hidden_file" => app.display_or_hide_hedden_file(),
 
         // input commands
         "make_directory" => app.make_directory(),
-        // "make_file" => app.make_file(),
+        "make_file" => app.make_file(),
         // "rename_file_item" => app.rename_file_name(),
         // "search_file_items" => app.search_file_items(),
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
