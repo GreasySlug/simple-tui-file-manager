@@ -136,7 +136,7 @@ impl App {
         &self.mode
     }
 
-    pub fn stacker_items(&mut self) -> &mut StackerVec {
+    pub fn stacker_mut(&mut self) -> &mut StackerVec {
         &mut self.stacker
     }
 
@@ -438,40 +438,48 @@ impl App {
         self.stacker.previous_stacker_item();
     }
 
-    fn try_to_delete_all_in_stcker(&mut self) {
-        let mut messages = Vec::new();
-        for path in self.stacker.stack.iter_mut() {
-            let kinds = if path.is_dir() {
-                Kinds::Directory(true)
-            } else {
-                Kinds::File(true)
-            };
-            let result = match kinds {
-                Kinds::File(_) => std::fs::remove_file(path),
-                Kinds::Directory(_) => std::fs::remove_dir(path),
-            };
+    fn remove_file_item_instance(&mut self, path: &Path) {
+        let stateful_dir = self.selected_statefuldir_mut();
+        stateful_dir.remove_file_item_with_path(path);
+    }
 
-            match result {
-                Ok(_) => {}
-                Err(err) => {
-                    let mss = match err.kind() {
-                        io::ErrorKind::NotFound => "Not Found",
-                        io::ErrorKind::PermissionDenied => "Permission Denied",
-                        // io::ErrorKind::IsADirectory => "It's a Directory",
-                        _ => "",
-                    };
-                    messages.push(mss);
-                }
+    // 完全消去ではなくアプリ内のゴミ箱へ移動させて
+    fn delete_file_item(&mut self, path: &Path) {
+        let result = if path.is_dir() {
+            fs::remove_dir(path)
+        } else {
+            fs::remove_file(path)
+        };
+
+        match result {
+            Ok(_) => {
+                self.remove_file_item_instance(path);
+            }
+            Err(err) => {
+                let mss = match err.kind() {
+                    io::ErrorKind::NotFound => "Not Found",
+                    io::ErrorKind::PermissionDenied => "Permission Denied",
+                    // io::ErrorKind::IsADirectory => "It's a Directory",
+                    _ => "",
+                };
             }
         }
+    }
 
-        // self.push_command_log();
+    // 完全消去ではなくアプリ内のゴミ箱へ移動させて
+    fn delete_all_in_stacker(&mut self) {
+        let stacker = self.stacker.stacker().to_owned();
+        for path in stacker.iter() {
+            self.delete_file_item(path);
+        }
     }
 
     ///. ** User Carefully ** ///
-    fn _delete_all(&mut self, path: PathBuf) {
-        match std::fs::remove_dir_all(path) {
-            Ok(_) => {}
+    fn delete_directory_including_its_contents(&mut self, path: &Path) {
+        match fs::remove_dir_all(path) {
+            Ok(_) => {
+                self.remove_file_item_instance(path);
+            }
             Err(err) => {
                 let mss = match err.kind() {
                     io::ErrorKind::NotFound => "Not Found",
@@ -595,6 +603,10 @@ fn run_commands(app: &mut App, cmd: &str) {
 
         // input commands
         "make_directory" => app.make_directory(),
+        // "make_file" => app.make_file(),
+        // "rename_file_item" => app.rename_file_name(),
+        // "search_file_items" => app.search_file_items(),
+        // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
         "select_current_file_item" => app.select_crr_file_item(),
