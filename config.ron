@@ -56,6 +56,7 @@
             "s": "select_current_file_item",
             "u": "stacker_pop_back",
             "p": "copy_file_item_to_current_directory",
+            "m": "move_file_item_to_current_directory",
             "S-s": "unselect_current_file_item",
             "C-n": "next_stacker_file_item",
             "C-p": "prev_stacker_file_item",

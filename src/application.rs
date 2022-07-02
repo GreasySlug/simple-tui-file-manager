@@ -444,7 +444,7 @@ impl App {
     }
 
     // 完全消去ではなくアプリ内のゴミ箱へ移動させて
-    fn delete_file_item(&mut self, path: &Path) {
+    fn delete_file_item_with_path(&mut self, path: &Path) {
         let result = if path.is_dir() {
             fs::remove_dir(path)
         } else {
@@ -470,7 +470,7 @@ impl App {
     fn delete_all_in_stacker(&mut self) {
         let stacker = self.stacker.stacker().to_owned();
         for path in stacker.iter() {
-            self.delete_file_item(path);
+            self.delete_file_item_with_path(path);
         }
     }
 
@@ -527,6 +527,45 @@ impl App {
                         _ => "",
                     };
                     println!("{}", mss);
+                    self.stacker.stack.push(from_path);
+                }
+            }
+        }
+    }
+
+    fn move_file_item_to_crr_dir(&mut self) {
+        // stacker内の選択中のファイルの名前を取得
+        if self.stacker.length == 0 {
+            return;
+        }
+
+        while let Some(from_path) = self.stacker.stack.pop() {
+            let name = &pathbuf_to_string_name(&from_path);
+            // TODO:ファイル名が移動後のディレクトリ内に存在する場合は上書きをするかどうかを尋ねる
+            if self.dir_contain_file_item(name) {
+                self.stacker.stack.push(from_path);
+                return;
+            }
+            let dir_path = self.crr_dir_path();
+            let to_path = dir_path.join(name);
+            // 移動後のディレクトリ名と選択中のファイル名を結合(上書きと同じ)
+            // コピーを実行
+            let res = fs::copy(&from_path, &to_path);
+            match res {
+                Ok(_n) => {
+                    let item = make_a_file_item_from_dirpath(&to_path);
+                    self.selected_statefuldir_mut()
+                        .push_file_item_and_sort(item);
+                    self.delete_file_item_with_path(&from_path);
+                    self.remove_file_item_instance(&from_path);
+                }
+                Err(e) => {
+                    let mss = match e.kind() {
+                        io::ErrorKind::NotFound => "Not Found",
+                        io::ErrorKind::PermissionDenied => "Permission Denied",
+                        _ => "",
+                    };
+                    println!("Move Command: {}", mss);
                     self.stacker.stack.push(from_path);
                 }
             }
@@ -616,6 +655,7 @@ fn run_commands(app: &mut App, cmd: &str) {
         "prev_stacker_file_item" => app.previous_stacker_item(),
         "stacker_pop_back" => app.stacker_pop_back(),
         "copy_file_item_to_current_directory" => app.copy_file_item_to_crr_dir(),
+        "move_file_item_to_current_directory" => app.move_file_item_to_crr_dir(),
         _ => {}
     }
     app.push_command_log(cmd);
