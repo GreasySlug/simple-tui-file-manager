@@ -640,13 +640,16 @@ fn run_commands(app: &mut App, cmd: &str) {
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
-        "select_current_file_item" => app.select_crr_file_item(),
-        "unselect_current_file_item" => app.unselect_crr_file_item(),
-        "select_all_file_items" => app.select_all_file_items(),
+        "select_current_file_item" => app.stack_crr_file_item(),
+        "unselect_current_file_item" => app.pop_file_item(),
+        "select_dir_recursively" => app.stack_crr_dir_recursively(),
+        "select_all_file_items" => app.stack_all_file_items(),
         "next_stacker_file_item" => app.next_stacker_item(),
         "prev_stacker_file_item" => app.previous_stacker_item(),
         "stacker_pop_back" => app.stacker_pop_back(),
         "copy_file_item_to_current_directory" => app.copy_file_item_to_crr_dir(),
+        "delete_selecting_item" => app.delete_crr_item_in_stacker(),
+        "delete_all_in_stacker" => app.delete_all_in_stacker(),
         _ => {}
     }
     app.push_command_log(cmd);

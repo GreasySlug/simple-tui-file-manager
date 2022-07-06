@@ -22,6 +22,10 @@
     },
     user_keybinds: ModeKeybinds (
         normal : {
+            "q" :"quit",
+            "S-i": "input", // experement
+            "S-v": "stacker",
+
             "h": "move_to_parent_dir",
             "j": "move_to_next_file_item",
             "k": "move_to_prev_file_item",
@@ -30,38 +34,44 @@
             "S-g": "move_to_bottom_of_file_item",
             "tab":"next_dirtab",
             "S-tab":"prev_dirtab",
-            "q" :"quit",
-            "S-i": "input", // experement
-            "S-v": "stacker",
         },
         input: {
-            "h": "move_to_parent_dir",
-            "j": "move_to_next_file_item",
-            "k": "move_to_prev_file_item",
-            "l": "move_to_child_dir",
-            "tab":"next_dirtab",
-            "S-tab":"prev_dirtab",
-            "m": "make_directory", // TODO: add mode annotation
-            "q" :"quit",
+            ": q" :"quit",
             "escape": "normal", // experiment
             "S-v": "stacker",
-        },
-        stacker: {
+
             "h": "move_to_parent_dir",
             "j": "move_to_next_file_item",
             "k": "move_to_prev_file_item",
             "l": "move_to_child_dir",
             "tab":"next_dirtab",
             "S-tab":"prev_dirtab",
-            "s": "select_current_file_item",
-            "u": "stacker_pop_back",
-            "p": "copy_file_item_to_current_directory",
+
+            "m": "make_directory",
+            "i": "make_file",
+        },
+        stacker: {
+            ": q" :"quit",
+            "S-i": "input",
+            "escape": "normal",
+
+            "h": "move_to_parent_dir",
+            "j": "move_to_next_file_item",
+            "k": "move_to_prev_file_item",
+            "l": "move_to_child_dir",
+            "tab":"next_dirtab",
+            "S-tab":"prev_dirtab",
+
             "S-s": "unselect_current_file_item",
             "C-n": "next_stacker_file_item",
             "C-p": "prev_stacker_file_item",
             "C-a": "select_all_file_items",
-            "S-i": "input",
-            "escape": "normal",
+            "s": "select_current_file_item",
+            "C-s": "select_dir_recursively",
+            "u": "stacker_pop_back",
+            "p": "copy_file_item_to_current_directory",
+            "d": "delete_selecting_item",
+            "S-d": "delete_all_in_stacker",
         },
     )
 )
