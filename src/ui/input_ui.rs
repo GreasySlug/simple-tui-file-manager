@@ -12,7 +12,7 @@ use tui::Terminal;
 
 use crate::{application::App, load_config::SettingTheme};
 
-use super::{directory_ui::directory_ui, HEIGHT_OF_UI_LENGTH, HEIGHT_OF_UI_MIN_PERCENTAGE};
+use super::{directory_ui::directory_ui, HEIGHT_OF_UI_ONE_LINE_LENGTH, UI_MIN_PERCENTAGE};
 
 #[inline]
 pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -77,16 +77,17 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     let input_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(HEIGHT_OF_UI_LENGTH),      // tabdir
-            Constraint::Length(HEIGHT_OF_UI_LENGTH),      // input area
-            Constraint::Min(HEIGHT_OF_UI_MIN_PERCENTAGE), // directory
-            Constraint::Length(HEIGHT_OF_UI_LENGTH),      // command area
+            Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // tabdir
+            Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // input area
+            Constraint::Min(UI_MIN_PERCENTAGE),               // directory
+            Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // command area
         ])
         .split(f.size());
 
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(app.theme().command_style(1).unwrap());
+
     f.render_widget(block, input_area[1]);
 
     directory_ui(f, app, input_area[2]);
@@ -96,10 +97,10 @@ pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str, input_style: Styl
     let input_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(HEIGHT_OF_UI_LENGTH),      // tabdir
-            Constraint::Length(HEIGHT_OF_UI_LENGTH),      // input area
-            Constraint::Min(HEIGHT_OF_UI_MIN_PERCENTAGE), // directory
-            Constraint::Length(HEIGHT_OF_UI_LENGTH),      // command area
+            Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // tabdir
+            Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // input area
+            Constraint::Min(UI_MIN_PERCENTAGE),               // directory
+            Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // command area
         ])
         .split(f.size());
 

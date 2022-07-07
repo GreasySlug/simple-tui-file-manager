@@ -5,7 +5,6 @@ use std::{fs, io};
 
 use crossterm::event::{self, Event};
 use tui::backend::Backend;
-use tui::widgets::ListState;
 use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
@@ -15,6 +14,7 @@ use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
 use crate::path_process::{join_to_crr_dir, make_a_file_item_from_dirpath, pathbuf_to_string_name};
+use crate::stacker::StackerVec;
 use crate::state::StatefulDirectory;
 use crate::ui::input_ui::start_user_input;
 use crate::ui::ui;
@@ -467,12 +467,6 @@ impl App {
         self.stacker.previous_stacker_item();
     }
 
-    fn remove_file_item_instance(&mut self, path: &Path) {
-        let stateful_dir = self.selected_statefuldir_mut();
-        stateful_dir.remove_file_item_with_path(path);
-    }
-
-    // 完全消去ではなくアプリ内のゴミ箱へ移動させて
     fn delete_file_item(&mut self, path: &Path) {
         let result = if path.is_dir() {
             fs::remove_dir(path)
@@ -526,22 +520,17 @@ impl App {
     }
 
     fn copy_file_item_to_crr_dir(&mut self) {
-        // stacker内の選択中のファイルの名前を取得
-        if self.stacker.length == 0 {
+        if self.stacker.stacker_is_empty() {
             return;
         }
 
         while let Some(from_path) = self.stacker.stack.pop() {
             let name = &pathbuf_to_string_name(&from_path);
-            // TODO:ファイル名が移動後のディレクトリ内に存在する場合は上書きをするかどうかを尋ねる
-            if self.dir_contain_file_item(name) {
-                self.stacker.stack.push(from_path);
+            if from_path.exists() {
                 return;
             }
             let dir_path = self.crr_dir_path();
             let to_path = dir_path.join(name);
-            // 移動後のディレクトリ名と選択中のファイル名を結合(上書きと同じ)
-            // コピーを実行
             let res = fs::copy(&from_path, &to_path);
             match res {
                 Ok(_n) => {
@@ -553,10 +542,10 @@ impl App {
                     let mss = match e.kind() {
                         io::ErrorKind::NotFound => "Not Found",
                         io::ErrorKind::PermissionDenied => "Permission Denied",
-                        _ => "",
+                        _ => "Duplecate name",
                     };
                     println!("{}", mss);
-                    self.stacker.stack.push(from_path);
+                    self.stacker.stacker_push(from_path);
                 }
             }
         }

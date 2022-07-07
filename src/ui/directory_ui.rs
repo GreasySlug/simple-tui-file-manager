@@ -11,24 +11,28 @@ use crate::{
     application::App,
     file_item_list::{file_item, Kinds},
     load_config::FileItems,
-    path_process::pathbuf_to_string_name,
+};
+
+use super::{
+    HEADER_TITLES, HEIGHT_OF_UI_FILE_LENGTH, HEIGHT_OF_UI_ICON_LENGTH, HEIGHT_OF_UI_INFO_LENGTH,
+    HEIGHT_OF_UI_MARGIN_LENGTH, UI_MIN_PERCENTAGE,
 };
 
 pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: Rect) {
     // TODO: Display and hide the header and each element with bool
     let header_style = app.theme().header_style();
-    let header_titles = ["", "", "name", "extension", "permission", "size", "date"]
+    let header_titles = HEADER_TITLES
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
 
     let header_constraints = [
-        Constraint::Length(1),      //  margin
-        Constraint::Length(2),      // file item's icon
-        Constraint::Percentage(30), // file name
-        Constraint::Length(8),      // file extension
-        Constraint::Length(10),     // permission
-        Constraint::Length(10),     // size
-        Constraint::Length(10),     // date
+        Constraint::Length(HEIGHT_OF_UI_MARGIN_LENGTH), //  margin
+        Constraint::Length(HEIGHT_OF_UI_ICON_LENGTH),   // file item's icon
+        Constraint::Length(HEIGHT_OF_UI_FILE_LENGTH),   // file name
+        Constraint::Min(UI_MIN_PERCENTAGE),             // file extension
+        Constraint::Min(UI_MIN_PERCENTAGE),             // permission
+        Constraint::Length(HEIGHT_OF_UI_INFO_LENGTH),   // size
+        Constraint::Length(HEIGHT_OF_UI_INFO_LENGTH),   // date
     ];
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
