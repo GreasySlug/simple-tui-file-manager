@@ -31,73 +31,6 @@ const DRAIN_SIZE: usize = 50;
 const MAX_HIST_SIZE: usize = 500;
 const MAX_FILE_NAME_SIZE: usize = 40;
 
-pub struct StackerVec {
-    state: ListState,
-    stack: Vec<PathBuf>,
-    length: usize,
-}
-
-impl StackerVec {
-    fn new() -> StackerVec {
-        StackerVec {
-            state: ListState::default(),
-            stack: Vec::new(),
-            length: 0,
-        }
-    }
-
-    pub fn update_length(&mut self) {
-        self.length = self.stack.len();
-        if self.length > 1 {
-            self.state.select(Some(self.length - 1));
-        } else {
-            self.state.select(None);
-        }
-    }
-
-    pub fn stacker(&self) -> &Vec<PathBuf> {
-        &self.stack
-    }
-
-    pub fn state(&mut self) -> &mut ListState {
-        &mut self.state
-    }
-
-    pub fn next_stacker_item(&mut self) {
-        if self.length < 1 {
-            return;
-        }
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.stack.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn previous_stacker_item(&mut self) {
-        if self.length < 1 {
-            return;
-        }
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.stack.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-}
-
 // TODO: Do I have to load  use config in this struct?
 pub struct App {
     directory_tabs: Vec<String>,
@@ -203,14 +136,14 @@ impl App {
     }
 
     pub fn shift_to_input_mode(&mut self) {
-        if self.stacker.length > 1 {
+        if !self.stacker.stacker_is_empty() {
             self.stacker_clear();
         }
         self.mode = Mode::Input;
     }
 
     pub fn shift_to_normal_mode(&mut self) {
-        if self.stacker.length > 1 {
+        if !self.stacker.stacker_is_empty() {
             self.stacker_clear();
         }
         self.mode = Mode::Normal;
@@ -398,63 +331,84 @@ impl App {
     }
 
     fn stacker_clear(&mut self) {
-        self.stacker.stack.clear();
+        self.stacker.clear();
     }
 
     fn stacker_push_back(&mut self, path: PathBuf) {
-        self.stacker.stack.push(path);
-        if self.stacker.state.selected().is_none() {
-            self.stacker.update_length();
-        }
+        self.stacker.stacker_push(path);
+        self.stacker.update_position();
     }
 
     fn stacker_pop_back(&mut self) {
-        self.stacker.stack.pop();
-        self.stacker.update_length();
+        self.stacker.stacker_pop();
+        self.stacker.update_position();
     }
 
     pub fn stacker_contains(&self, path: &PathBuf) -> bool {
-        self.stacker.stack.contains(path)
+        self.stacker.stacker_contains(path)
     }
 
-    fn stacker_remove_match_to_path(&mut self, path: &PathBuf) {
-        if let Some(i) = self.stacker.stack.iter().position(|p| p == path) {
-            self.stacker.stack.remove(i);
-        }
-    }
-
-    fn select_crr_file_item(&mut self) {
-        let dir = self.selected_statefuldir_ref();
-        let dir_state = dir.state_table();
-        if let Some(i) = dir_state.selected() {
-            if let Some(item) = dir.file_items().get(i) {
-                let path = item.path().to_path_buf();
-                if !self.stacker_contains(&path) {
-                    self.stacker_push_back(path);
-                }
+    fn stack_crr_file_item(&mut self) {
+        if let Some(item) = self.selecting_crr_file_item() {
+            let path = item.path().to_path_buf();
+            if !self.stacker_contains(&path) {
+                self.stacker_push_back(path);
             }
         }
     }
 
-    fn unselect_crr_file_item(&mut self) {
-        let dir = self.selected_statefuldir_ref();
-        let dir_state = dir.state_table();
-        if let Some(i) = dir_state.selected() {
-            if let Some(item) = dir.file_items().get(i) {
-                let path = item.path().to_path_buf();
-                if self.stacker_contains(&path) {
-                    self.stacker_remove_match_to_path(&path);
-                }
-            }
-        }
-    }
-
-    fn select_all_file_items(&mut self) {
+    fn stack_all_file_items(&mut self) {
         let dir = self.selected_statefuldir_mut();
         for item in dir.file_items().to_owned() {
             let path = item.path().to_path_buf();
             if !self.stacker_contains(&path) {
                 self.stacker_push_back(path);
+            }
+        }
+    }
+
+    fn stack_dir_recursively(&mut self, path: PathBuf) {
+        if !path.exists() {
+            self.push_command_log("Doesn't exist");
+            return;
+        }
+        if path.is_file() {
+            self.push_command_log("Not Directory");
+            return;
+        }
+
+        if path.read_dir().is_err() {
+            self.push_command_log("Permision denied");
+            return;
+        }
+
+        for entry in path.read_dir().unwrap().flatten() {
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                self.stack_dir_recursively(entry_path.clone())
+            }
+            if self.stacker_contains(&entry_path) {
+                continue;
+            }
+            self.stacker_push_back(entry_path);
+        }
+        self.stacker_push_back(path);
+    }
+
+    fn stack_crr_dir_recursively(&mut self) {
+        if let Some(item) = self.selecting_crr_file_item() {
+            let path = item.path().to_path_buf();
+            if !self.stacker_contains(&path) {
+                self.stack_dir_recursively(path);
+            }
+        }
+    }
+
+    fn pop_file_item(&mut self) {
+        if let Some(item) = self.selecting_crr_file_item() {
+            let path = item.path().to_path_buf();
+            if self.stacker_contains(&path) {
+                self.stacker.stacker_delete_with_path(&path);
             }
         }
     }
@@ -491,9 +445,10 @@ impl App {
 
     // 完全消去ではなくアプリ内のゴミ箱へ移動させて
     fn delete_all_in_stacker(&mut self) {
-        let stacker = self.stacker.stacker().to_owned();
+        let stacker = self.stacker.stacker_ref().to_owned();
         for path in stacker.iter() {
             self.delete_file_item(path);
+            self.stacker.stacker_delete_with_path(path);
         }
     }
 
@@ -524,10 +479,16 @@ impl App {
             return;
         }
 
-        while let Some(from_path) = self.stacker.stack.pop() {
+        while let Some(from_path) = self.stacker.stacker_pop() {
             let name = &pathbuf_to_string_name(&from_path);
             if from_path.exists() {
                 return;
+            }
+
+            // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
+            if self.dir_contain_file_item(name) {
+                self.stacker.stacker_push(from_path);
+                continue;
             }
             let dir_path = self.crr_dir_path();
             let to_path = dir_path.join(name);
