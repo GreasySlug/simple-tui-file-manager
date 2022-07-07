@@ -108,6 +108,8 @@ pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str, input_style: Styl
         .borders(Borders::ALL)
         .border_style(input_style);
 
+    f.set_cursor(input_area[1].x + line.len() as u16 + 1, input_area[1].y + 1);
+
     let para = Paragraph::new(line).block(block);
     f.render_widget(para, input_area[1]);
 }

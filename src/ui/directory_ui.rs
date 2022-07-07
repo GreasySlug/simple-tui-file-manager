@@ -40,7 +40,6 @@ pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: R
     let dir_symbol = app.symbols(&FileItems::Directory);
     let select_symbol = app.symbols(&FileItems::Select);
 
-    let current_dir_path = pathbuf_to_string_name(app.crr_dir_path());
     let file_item_iter = app.crr_file_items();
 
     let file_style = app.theme().file_style();
@@ -103,8 +102,7 @@ pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: R
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .style(dir_block_style)
-                .title(current_dir_path),
+                .style(dir_block_style),
         )
         .highlight_style(selecting_style)
         .highlight_symbol(&select_symbol);
