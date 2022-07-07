@@ -94,6 +94,18 @@ impl App {
         stateful_dir.file_items()
     }
 
+    pub fn selecting_crr_file_item(&self) -> Option<&FileItem> {
+        let stateful_dir = self.selected_statefuldir_ref();
+        if !stateful_dir.is_selected() {
+            return None;
+        }
+        if let Some(i) = stateful_dir.state_table().selected() {
+            return self.crr_file_items().get(i);
+        }
+
+        None
+    }
+
     pub fn tab_index(&self) -> usize {
         self.tab_index
     }
@@ -234,14 +246,15 @@ impl App {
     }
 
     fn make_directory(&mut self) {
-        let relpath = self.run_user_input().expect("Failed to make teraminal...");
-        if relpath.is_empty() {
+        let relpath = self.run_user_input();
+        if relpath.is_none() {
+            self.push_command_log("Failed to make directory");
             return;
         }
-        let path = join_to_crr_dir(self, &relpath);
+        let path = join_to_crr_dir(self, &relpath.unwrap());
 
         if path.is_dir() {
-            self.push_command_log("The directory already exists");
+            self.push_command_log("Duplicate name");
             return;
         }
 
@@ -255,36 +268,100 @@ impl App {
                 let message = match error.kind() {
                     io::ErrorKind::PermissionDenied => "Permission denied",
                     io::ErrorKind::NotFound => "Not Found",
-                    _ => unreachable!(),
+                    _ => "Duplicate name",
                 };
                 self.push_command_log(message);
             }
         }
     }
 
+    fn recurent_path_to_file_item(&self, path: &mut PathBuf) -> FileItem {
+        let dir_path = self.crr_dir_path();
+        loop {
+            let parent_path = path.parent();
+            if parent_path.is_none() || parent_path.unwrap() == dir_path {
+                break;
+            }
+            path.pop();
+        }
+
+        make_a_file_item_from_dirpath(path)
+    }
+
     fn make_file(&mut self) {
-        let relpath = self.run_user_input().expect("Failed to make teraminal...");
-        if relpath.is_empty() {
+        let relpath = self.run_user_input();
+
+        if relpath.is_none() {
+            self.push_command_log("Failed to make file");
             return;
         }
-        let path = join_to_crr_dir(self, &relpath);
+
+        let file_name = relpath.unwrap();
+        if file_name.contains(|c| c == '\\') {
+            let path = join_to_crr_dir(self, file_name);
+            self.make_file_with_dir(&path);
+            return;
+        }
+
+        let mut path = join_to_crr_dir(self, file_name);
 
         if path.is_dir() {
-            self.push_command_log("The directory already exists");
+            self.push_command_log("Duplicate name");
             return;
         }
 
         match fs::File::create(&path) {
             Ok(_) => {
-                let item = make_a_file_item_from_dirpath(&path);
-                self.selected_statefuldir_mut()
-                    .push_file_item_and_sort(item);
+                let item = self.recurent_path_to_file_item(&mut path);
+                let statedir = self.selected_statefuldir_mut();
+                statedir.push_file_item_and_sort(item);
+                if !statedir.is_selected() {
+                    statedir.select_top_file_item();
+                }
             }
             Err(error) => {
                 let message = match error.kind() {
                     io::ErrorKind::PermissionDenied => "Permission denied",
                     io::ErrorKind::NotFound => "Not Found",
-                    _ => unreachable!(),
+                    _ => "Diplicate name",
+                };
+                self.push_command_log(message);
+            }
+        }
+    }
+
+    fn make_file_with_dir(&mut self, path: &Path) {
+        if let Some(parent_path) = path.parent() {
+            self.make_dir_with_path(parent_path);
+            match fs::File::create(path) {
+                Ok(_) => {}
+                Err(error) => {
+                    let message = match error.kind() {
+                        io::ErrorKind::PermissionDenied => "Permission denied",
+                        io::ErrorKind::NotFound => "Not Found",
+                        _ => "Diplicate name",
+                    };
+                    self.push_command_log(message);
+                }
+            }
+        }
+    }
+
+    fn make_dir_with_path(&mut self, path: &Path) {
+        match fs::create_dir_all(path) {
+            Ok(()) => {
+                let item = self.recurent_path_to_file_item(&mut path.to_path_buf());
+                let statedir = self.selected_statefuldir_mut();
+                statedir.push_file_item_and_sort(item);
+                if !statedir.is_selected() {
+                    statedir.select_top_file_item();
+                }
+            }
+            Err(error) => {
+                let message = match error.kind() {
+                    io::ErrorKind::PermissionDenied => "Permission denied",
+                    io::ErrorKind::NotFound => "Not Found",
+                    _ => "Duplicate name",
                 };
                 self.push_command_log(message);
             }
@@ -430,7 +507,8 @@ impl App {
 
         match result {
             Ok(_) => {
-                self.remove_file_item_instance(path);
+                let stateful_dir = self.selected_statefuldir_mut();
+                stateful_dir.remove_file_item_with_path(path);
             }
             Err(err) => {
                 let mss = match err.kind() {
@@ -443,7 +521,26 @@ impl App {
         }
     }
 
-    // 完全消去ではなくアプリ内のゴミ箱へ移動させて
+    fn remove_path_instance(&mut self, path: &Path) {
+        let dir = self.selected_statefuldir_mut();
+        dir.remove_file_item_with_path(path);
+        self.stacker.stacker_delete_with_path(&path.to_path_buf());
+    }
+
+    fn delete_crr_item_in_stacker(&mut self) {
+        let stacker_stete = self.stacker.state_mut();
+        if let Some(i) = stacker_stete.selected() {
+            let path = self.stacker.stacker_remove(i);
+            if path.is_dir() {
+                self.delete_directory_including_its_contents(&path);
+            } else {
+                self.delete_file_item(&path);
+            }
+            self.remove_path_instance(&path);
+        }
+    }
+
+    // Instead of deleting it completely, it is better to move it to the Recycle Bin in the application so that it can be undone, etc.
     fn delete_all_in_stacker(&mut self) {
         let stacker = self.stacker.stacker_ref().to_owned();
         for path in stacker.iter() {
@@ -455,9 +552,7 @@ impl App {
     ///. ** User Carefully ** ///
     fn delete_directory_including_its_contents(&mut self, path: &Path) {
         match fs::remove_dir_all(path) {
-            Ok(_) => {
-                self.remove_file_item_instance(path);
-            }
+            Ok(_) => {}
             Err(err) => {
                 let mss = match err.kind() {
                     io::ErrorKind::NotFound => "Not Found",
