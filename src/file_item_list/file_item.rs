@@ -3,7 +3,9 @@ use chrono::{DateTime, Utc};
 use std::{
     fs::Metadata,
     path::{Path, PathBuf},
+    ops::Range,
 };
+use regex::Regex;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Extension {
@@ -117,6 +119,12 @@ impl FileItem {
 
         let created_time: DateTime<Utc> = time.unwrap().into();
         created_time.format("%F-%R").to_string()
+    }
+
+    pub fn find(&self, pattern: &Regex) -> Option<(&str, Range<usize>)> {
+        pattern.find(&self.name).map(|m| {
+            (m.as_str(), m.range())
+        })
     }
 }
 

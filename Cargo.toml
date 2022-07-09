@@ -11,3 +11,4 @@ tui = "0.18.0"
 chrono = "0.4"
 ron = "0.7"
 serde = { version= "1", features = ["derive"] }
+regex = "1"
