@@ -16,15 +16,24 @@ use self::command_ui::command_ui;
 use self::directory_ui::directory_ui;
 use self::stacker_ui::stacker_ui;
 
+const HEIGHT_OF_UI_ONE_LINE_LENGTH: u16 = 3;
+const UI_MIN_PERCENTAGE: u16 = 0;
+const HEIGHT_OF_UI_INFO_LENGTH: u16 = 10;
+const HEIGHT_OF_UI_FILE_LENGTH: u16 = 10;
+const HEIGHT_OF_UI_ICON_LENGTH: u16 = 2;
+const HEIGHT_OF_UI_MARGIN_LENGTH: u16 = 1;
+
+const HEADER_TITLES: [&str; 7] = ["", "", "name", "extension", "permission", "size", "date"];
+
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let background_style = app.theme().background_style();
     let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
 
     // possible to toggle tab and command window
     let main_windows_constrains = [
-        Constraint::Length(3), // tab
-        Constraint::Min(0),    // directory
-        Constraint::Length(3), // command
+        Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // tab
+        Constraint::Min(UI_MIN_PERCENTAGE),               // directory
+        Constraint::Length(HEIGHT_OF_UI_ONE_LINE_LENGTH), // command
     ]
     .as_ref();
     let size = f.size();
@@ -81,6 +90,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
+            input_ui::ui(f, app);
         }
         Mode::Stacker => {
             let tabs = Tabs::new(tab_titles)
