@@ -594,6 +594,11 @@ fn key_matchings(keybinds: &mut UserKeybinds) -> io::Result<String> {
 
 fn run_commands(app: &mut App, cmd: &str) {
     match cmd {
+        // mode
+        "normal" => app.shift_to_normal_mode(),
+        "input" => app.shift_to_input_mode(),
+        "stacker" => app.shift_to_stacker_mode(),
+
         // comman commands
         "move_to_parent_dir" => app.move_to_parent_dir(),
         "move_to_next_file_item" => app.move_to_next_file_item(),
@@ -603,29 +608,29 @@ fn run_commands(app: &mut App, cmd: &str) {
         "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
         "next_dirtab" => app.next_dirtab(),
         "prev_dirtab" => app.prev_dirtab(),
-        "normal" => app.shift_to_normal_mode(),
-        "input" => app.shift_to_input_mode(),
-        "stacker" => app.shift_to_stacker_mode(),
+
         // normal commands
         // "add_directory_to_dirtab" => app.add_dir_to_dirtab(),
         // "display_or_hide_hidden_file" => app.display_or_hide_hedden_file(),
+        // "use_editor" => app.edit_crr_file_item(),
 
         // input commands
         "make_directory" => app.make_directory(),
         "make_file" => app.make_file(),
+        "edit" => app.user_edit_file_item(),
         // "rename_file_item" => app.rename_file_name(),
         // "search_file_items" => app.search_file_items(),
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
-        "select_current_file_item" => app.stack_crr_file_item(),
-        "unselect_current_file_item" => app.pop_file_item(),
-        "select_dir_recursively" => app.stack_crr_dir_recursively(),
-        "select_all_file_items" => app.stack_all_file_items(),
-        "next_stacker_file_item" => app.next_stacker_item(),
-        "prev_stacker_file_item" => app.previous_stacker_item(),
-        "copy_file_item_to_current_directory" => app.copy_file_item_to_crr_dir(),
-        "move_file_item_to_current_directory" => app.move_file_item_to_crr_dir(),
+        "stacker_select" => app.stack_crr_file_item(),
+        "stacker_unselect" => app.pop_file_item(),
+        "stacker_select_all_recursively" => app.stack_crr_dir_recursively(),
+        "stacker_select_all" => app.stack_all_file_items(),
+        "stacker_next_file_item" => app.next_stacker_item(),
+        "stacker_prev_file_item" => app.previous_stacker_item(),
+        "stacker_paste" => app.stacker_copy_file_item_to_crr_dir(),
+        "stacker_move" => app.move_file_item_to_crr_dir(),
         _ => {}
     }
     app.push_command_log(cmd);

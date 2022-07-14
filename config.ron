@@ -22,6 +22,10 @@
     },
     user_keybinds: ModeKeybinds (
         normal : {
+            "q" :"quit",
+            "S-i": "input", // experement
+            "S-v": "stacker",
+
             "h": "move_to_parent_dir",
             "j": "move_to_next_file_item",
             "k": "move_to_prev_file_item",
@@ -35,6 +39,10 @@
             "S-v": "stacker",
         },
         input: {
+            ": q" :"quit",
+            "esc": "normal", // experiment
+            "S-v": "stacker",
+
             "h": "move_to_parent_dir",
             "j": "move_to_next_file_item",
             "k": "move_to_prev_file_item",
@@ -47,22 +55,29 @@
             "S-v": "stacker",
         },
         stacker: {
-            "h": "move_to_parent_dir",
-            "j": "move_to_next_file_item",
-            "k": "move_to_prev_file_item",
-            "l": "move_to_child_dir",
-            "tab":"next_dirtab",
-            "S-tab":"prev_dirtab",
-            "s": "select_current_file_item",
-            "u": "stacker_pop_back",
-            "p": "copy_file_item_to_current_directory",
-            "m": "move_file_item_to_current_directory",
-            "S-s": "unselect_current_file_item",
-            "C-n": "next_stacker_file_item",
-            "C-p": "prev_stacker_file_item",
-            "C-a": "select_all_file_items",
+            ": q" :"quit",
             "S-i": "input",
-            "escape": "normal",
+            "esc": "normal",
+
+            "h":    "move_to_parent_dir",
+            "j":    "move_to_next_file_item",
+            "k":    "move_to_prev_file_item",
+            "l":    "move_to_child_dir",
+            "tab":  "next_dirtab",
+            "S-tab":"prev_dirtab",
+
+            "C-n": "stacker_next_file_item",
+            "C-p": "stacker_prev_file_item",
+
+            "s":   "stacker_select",
+            "u":   "stacker_unselect",
+            "C-s": "stacker_select_all_recursively",
+            "C-a": "stacker_select_all",
+            "p":   "stacker_paste",
+            "S-p": "stacker_stacking_paste",
+            "m":   "stacker_move",
+            "d":   "stacker_delete",
+            "S-d": "stacker_delete_all",
         },
     )
 )
