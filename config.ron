@@ -20,6 +20,15 @@
         Directory: "▶",
         Select: ">>"
     },
+    user_settings: Settings (
+        editor: "nvim",
+        show_hidden_files: true,
+    ),
+    additional_directories: [
+        "Documents",
+        "Downloads",
+        "Desktop"
+    ],
     user_keybinds: ModeKeybinds (
         normal : {
             "q" :"quit",
@@ -34,9 +43,6 @@
             "S-g": "move_to_bottom_of_file_item",
             "tab":"next_dirtab",
             "S-tab":"prev_dirtab",
-            "q" :"quit",
-            "S-i": "input", // experement
-            "S-v": "stacker",
         },
         input: {
             ": q" :"quit",
@@ -49,10 +55,10 @@
             "l": "move_to_child_dir",
             "tab":"next_dirtab",
             "S-tab":"prev_dirtab",
-            "m": "make_directory", // TODO: add mode annotation
-            "q" :"quit",
-            "escape": "normal", // experiment
-            "S-v": "stacker",
+
+            "m": "make_directory",
+            "i": "make_file",
+            "enter": "edit",
         },
         stacker: {
             ": q" :"quit",

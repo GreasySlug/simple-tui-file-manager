@@ -1,4 +1,5 @@
 use std::env::current_dir;
+use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -58,21 +59,25 @@ pub fn working_dir_path() -> PathBuf {
     }
 }
 
-//  C:\Users\UserNmae
+// C:\Users\UserName\Downloads\
 #[cfg(target_os = "windows")]
-pub fn get_home_directory_path() -> Option<PathBuf> {
-    let home_dir_name = "USERPROFILE";
-    match std::env::var(home_dir_name) {
-        Ok(path) => Some(PathBuf::from(path)),
+pub fn get_user_profile_path(additional_pos: &str) -> Option<PathBuf> {
+    const HOME_DIR_NAME: &str = "USERPROFILE";
+    match std::env::var(HOME_DIR_NAME) {
+        Ok(mut path) => {
+            path.push('\\');
+            path.push_str(additional_pos);
+            Some(PathBuf::from(path))
+        }
         Err(e) => None,
     }
 }
 
 //  /home/userName
 #[cfg(target_os = "linux")]
-pub fn get_home_directory_path() -> Option<PathBuf> {
-    let home_dir = "HOME";
-    match std::env::var(home_dir) {
+pub fn get_user_profile_path() -> Option<PathBuf> {
+    let HOME_DIR: &str = "HOME";
+    match std::env::var(HOME_DIR) {
         Ok(path) => Some(PathBuf::from(path)),
         Err(e) => None,
     }
@@ -85,4 +90,45 @@ pub fn join_to_crr_dir(app: &mut App, relpath: impl AsRef<Path>) -> PathBuf {
         .pathbuf()
         .join(relpath);
     fullpath
+}
+
+// arguments can only take paths
+pub fn user_commands(cmd: &str, args: Vec<&Path>) -> io::Result<()> {
+    if let Ok(mut child) = std::process::Command::new(cmd).args(args).spawn() {
+        child.wait()?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+
+    use crate::path_process::pathbuf_to_string_name;
+
+    #[test]
+    fn pathbuf_to_string_name_test() {
+        let items = [
+            (".git", ".git"),
+            (".config/nvim", "nvim"),
+            (".config/rofi", "rofi"),
+            ("init.vim", "init.vim"),
+        ];
+
+        for (path, name) in items.into_iter() {
+            let path_name = pathbuf_to_string_name(Path::new(path));
+            assert_eq!(path_name, name);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn home_directory_path_test() {
+        use std::env;
+        let key = "HOME";
+        match env::var(key) {
+            Ok(val) => println!("{key}: {val:?}"),
+            Err(e) => println!("couldn't interpret {key}: {e}"),
+        }
+    }
 }

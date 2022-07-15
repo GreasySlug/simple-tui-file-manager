@@ -63,19 +63,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    // current working directory
     let crr_dir_path = working_dir_path();
     let dir_name = pathbuf_to_string_name(&crr_dir_path);
     let mut app = App::new();
     app.insert_new_statefuldir(crr_dir_path);
     app.push_new_dirname_to_dirtab(dir_name);
-
-    // TODO: it is possible to config in ron file
-    // let home_dir_path = get_home_directory_path();
-    // if let Some(path) = home_dir_path {
-    //     let dir_name = pathbuf_to_string_name(&path);
-    //     app.insert_new_statefuldir(path);
-    //     app.push_new_dirname_to_dirtab(dir_name);
-    // }
 
     let res = run_app(&mut terminal, app);
 

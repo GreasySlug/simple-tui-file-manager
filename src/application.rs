@@ -13,7 +13,12 @@ use crate::file_item_list::Kinds;
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
-use crate::path_process::{join_to_crr_dir, make_a_file_item_from_dirpath, pathbuf_to_string_name};
+
+use crate::path_process::{
+    get_user_profile_path, join_to_crr_dir, make_a_file_item_from_dirpath, pathbuf_to_string_name,
+    user_commands,
+};
+
 use crate::stacker::StackerVec;
 use crate::state::StatefulDirectory;
 use crate::ui::input_ui::start_user_input;
@@ -41,6 +46,8 @@ pub struct App {
     mode: Mode,
     config: UserConfig,
     be_cleaned: bool,
+    editor: String,
+    show_hidden_files: bool,
 }
 
 impl App {
@@ -54,6 +61,8 @@ impl App {
             mode: Mode::Normal,
             config: load_user_config_file(),
             be_cleaned: false,
+            editor: String::new(),
+            show_hidden_files: false,
         }
     }
 
@@ -71,6 +80,42 @@ impl App {
 
     pub fn stacker_mut(&mut self) -> &mut StackerVec {
         &mut self.stacker
+    }
+
+    pub fn config(&self) -> &UserConfig {
+        &self.config
+    }
+
+    pub fn show_hidden_files(&self) -> bool {
+        self.show_hidden_files
+    }
+
+    #[cfg(target_os = "windows")]
+    fn user_settings(&mut self) {
+        self.editor = self.config().user_editor();
+        self.show_hidden_files = self.config().show_hidden_files();
+        let config = self.config();
+        let additional_directories = config.additional_directory();
+        for dir in additional_directories.into_iter() {
+            if let Some(path) = get_user_profile_path(&dir) {
+                self.push_new_dirname_to_dirtab(pathbuf_to_string_name(&path));
+                self.insert_new_statefuldir(path);
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    fn user_settings(&mut self) {
+        self.editor = self.config().user_editor();
+        self.show_hidden_files = self.config().show_hidden_files();
+        let config = self.config();
+        let additional_directories = config.additional_directory();
+        for dir in additional_directories.into_iter() {
+            if let Some(path) = get_user_profile_path() {
+                self.push_new_dirname_to_dirtab(pathbuf_to_string_name(&path));
+                self.insert_new_statefuldir(path);
+            }
+        }
     }
 
     // The current directory should be selected, so that tab and hashmap must existe.
@@ -123,9 +168,10 @@ impl App {
     }
 
     pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
+        let is_show = self.show_hidden_files();
         let dir_name = pathbuf_to_string_name(&dir_path);
         if let Entry::Vacant(item) = self.dir_map.entry(dir_name) {
-            let mut new_stateful_dir = StatefulDirectory::new(dir_path);
+            let mut new_stateful_dir = StatefulDirectory::new(dir_path, is_show);
 
             // Sorted by name in each of the files and directories
             new_stateful_dir.sort_file_items_by_kinds();
@@ -252,20 +298,49 @@ impl App {
         self.selected_statefuldir_mut().select_bottom_file_item();
     }
 
+    fn path_to_file_item_recurrently(&mut self, mut path: PathBuf) {
+        loop {
+            let parent_path = path.parent();
+            if let Some(paren_path) = parent_path {
+                // 親ディレクトリが含まれていれば、現在のパスをFileItemのインスタンスを生成しそのディレクトリに追加する
+                let p_item = make_a_file_item_from_dirpath(paren_path);
+                let p_dirname = p_item.name();
+                if self.dirtab_contains_dirname(&p_dirname) {
+                    let item = make_a_file_item_from_dirpath(&path);
+                    if let Some(dirstate) = self.dir_map.get_mut(&p_dirname) {
+                        dirstate.push_file_item_and_sort(item)
+                    }
+                }
+            } else {
+                break;
+            }
+            path.pop();
+        }
+    }
+
+    ///
+    /// In input mode, make directories.
+    ///  ex1) dirname
+    ///  ex2) dirname01/dirname02
+    /// None: File cannot be created.
+    /// ex) sample.txt means a "sample.txt" directory not a file
+    ///
     fn make_directory(&mut self) {
-        let relpath = self.run_user_input().expect("Failed to make teraminal...");
-        if relpath.is_empty() {
+        let relpath = self.run_user_input();
+        if relpath.is_none() {
+            self.push_command_log("Failed to make directory");
             return;
         }
-        let path = join_to_crr_dir(self, &relpath);
+        let path = join_to_crr_dir(self, &relpath.unwrap());
 
         if path.is_dir() {
-            self.push_command_log("The directory already exists");
+            self.push_command_log("Duplicate name");
             return;
         }
 
         match fs::create_dir_all(&path) {
             Ok(()) => {
+                // TODO: bug
                 let item = make_a_file_item_from_dirpath(&path);
                 self.selected_statefuldir_mut()
                     .push_file_item_and_sort(item);
@@ -274,7 +349,75 @@ impl App {
                 let message = match error.kind() {
                     io::ErrorKind::PermissionDenied => "Permission denied",
                     io::ErrorKind::NotFound => "Not Found",
-                    _ => unreachable!(),
+                    _ => "Duplicate name",
+                };
+                self.push_command_log(message);
+            }
+        }
+    }
+
+    fn make_file(&mut self) {
+        let relpath = self.run_user_input();
+
+        if relpath.is_none() {
+            self.push_command_log("Failed to make file");
+            return;
+        }
+
+        let file_name = relpath.unwrap();
+        if file_name.contains(|c| c == '\\') {
+            let path = join_to_crr_dir(self, file_name);
+            self.make_file_with_dir(&path);
+            return;
+        }
+
+        let path = join_to_crr_dir(self, file_name);
+
+        if path.is_dir() {
+            self.push_command_log("Duplicate name");
+            return;
+        }
+
+        match fs::File::create(&path) {
+            Ok(_) => {
+                self.path_to_file_item_recurrently(path);
+            }
+            Err(error) => {
+                let message = match error.kind() {
+                    io::ErrorKind::PermissionDenied => "Permission denied",
+                    io::ErrorKind::NotFound => "Not Found",
+                    _ => "Diplicate name",
+                };
+                self.push_command_log(message);
+            }
+        }
+    }
+
+    fn make_file_with_dir(&mut self, path: &Path) {
+        if let Some(parent_path) = path.parent() {
+            self.make_dir_with_path(parent_path);
+            match fs::File::create(path) {
+                Ok(_) => {}
+                Err(error) => {
+                    let message = match error.kind() {
+                        io::ErrorKind::PermissionDenied => "Permission denied",
+                        io::ErrorKind::NotFound => "Not Found",
+                        _ => "Diplicate name",
+                    };
+                    self.push_command_log(message);
+                }
+            }
+        }
+    }
+
+    fn make_dir_with_path(&mut self, path: &Path) {
+        match fs::create_dir_all(path) {
+            Ok(_) => self.path_to_file_item_recurrently(path.to_owned()),
+            Err(error) => {
+                let message = match error.kind() {
+                    io::ErrorKind::PermissionDenied => "Permission denied",
+                    io::ErrorKind::NotFound => "Not Found",
+                    _ => "Duplicate name",
                 };
                 self.push_command_log(message);
             }
@@ -568,11 +711,30 @@ impl App {
             }
         }
     }
+
+    ///
+    /// open file with user editor, like vim, emacs
+    /// if
+    fn user_edit_file_item(&mut self) {
+        if self.selecting_crr_file_item().is_none() {
+            return;
+        }
+        self.shift_to_normal_mode();
+        if let Some(item) = self.selecting_crr_file_item() {
+            if user_commands(&self.editor, vec![item.path()]).is_err() {
+                self.push_command_log("Failed to edit");
+            }
+        }
+        self.be_clear();
+        self.shift_to_input_mode();
+    }
 }
 
 // receives input from the user and determines if a command
 // it is possible to receive different commands each modes
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+    // TODO: only directory settings exit, but default settings be going to be added.
+    app.user_settings();
     let mut normal = app.normal_user_keybinds();
     let mut input = app.input_user_keybinds();
     let mut stacker = app.stacker_user_keybinds();
