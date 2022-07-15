@@ -5,7 +5,6 @@ use std::{fs, io};
 
 use crossterm::event::{self, Event};
 use tui::backend::Backend;
-use tui::widgets::ListState;
 use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
@@ -95,6 +94,14 @@ impl App {
         stateful_dir.file_items()
     }
 
+    fn dir_contain_name(&self, name: &str) -> bool {
+        self.selected_statefuldir_ref().contain_name(name)
+    }
+
+    fn dirtab_contains_dirname(&self, name: &String) -> bool {
+        self.directory_tabs.contains(name)
+    }
+
     pub fn selecting_crr_file_item(&self) -> Option<&FileItem> {
         let stateful_dir = self.selected_statefuldir_ref();
         if !stateful_dir.is_selected() {
@@ -150,14 +157,14 @@ impl App {
 
     pub fn shift_to_input_mode(&mut self) {
         if !self.stacker.stacker_is_empty() {
-            self.stacker_clear();
+            self.stacker_clear(); // TODO: switch?
         }
         self.mode = Mode::Input;
     }
 
     pub fn shift_to_normal_mode(&mut self) {
         if !self.stacker.stacker_is_empty() {
-            self.stacker_clear();
+            self.stacker_clear(); // TODO: switch?
         }
         self.mode = Mode::Normal;
     }
@@ -319,19 +326,17 @@ impl App {
 
     fn stacker_push_back(&mut self, path: PathBuf) {
         self.stacker.stacker_push(path);
-        self.stacker.update_position();
     }
 
     fn stacker_pop_back(&mut self) -> Option<PathBuf> {
-        let item = self.stacker.stacker_pop();
-        self.stacker.update_position();
-        item
+        self.stacker.stacker_pop()
     }
 
     pub fn stacker_contains(&self, path: &PathBuf) -> bool {
         self.stacker.stacker_contains(path)
     }
 
+    // select
     fn stack_crr_file_item(&mut self) {
         if let Some(item) = self.selecting_crr_file_item() {
             let path = item.path().to_path_buf();
@@ -341,6 +346,7 @@ impl App {
         }
     }
 
+    // select all
     fn stack_all_file_items(&mut self) {
         let dir = self.selected_statefuldir_mut();
         for item in dir.file_items().to_owned() {
@@ -405,12 +411,18 @@ impl App {
         self.stacker.previous_stacker_item();
     }
 
+    // 削除や移動した後の残ったインスタンスを削除するメソッド
     fn remove_file_item_instance(&mut self, path: &Path) {
         let stateful_dir = self.selected_statefuldir_mut();
         stateful_dir.remove_file_item_with_path(path);
     }
 
-    // 完全消去ではなくアプリ内のゴミ箱へ移動させて
+    fn remove_path_in_stacker(&mut self, path: &Path) -> Option<PathBuf> {
+        self.stacker.stacker_remove_by_path(path)
+    }
+
+    // 完全消去ではなくアプリ内のゴミ箱へ移動させて、もとに戻せるようにする
+    // 完全消去と分けてメソッドを作った方が良いかもしれない
     fn delete_file_item_with_path(&mut self, path: &Path) {
         let result = if path.is_dir() {
             fs::remove_dir(path)
@@ -420,7 +432,8 @@ impl App {
 
         match result {
             Ok(_) => {
-                self.remove_file_item_instance(path);
+                let stateful_dir = self.selected_statefuldir_mut();
+                stateful_dir.remove_file_item_with_path(path);
             }
             Err(err) => {
                 let mss = match err.kind() {
@@ -433,20 +446,35 @@ impl App {
         }
     }
 
-    // 完全消去ではなくアプリ内のゴミ箱へ移動させて
+    /// Delete Methods
+    fn delete_crr_item_in_stacker(&mut self) {
+        let stacker_stete = self.stacker.state_mut();
+        if let Some(i) = stacker_stete.selected() {
+            let path = self.stacker.stacker_remove(i);
+            if path.is_dir() {
+                self.delete_directory_including_its_contents(&path);
+            } else {
+                self.delete_crr_item_in_stacker();
+            }
+            self.remove_path_in_stacker(&path);
+        }
+    }
+
+    /// TODO: Instead of deleting it completely, it is better to move it to the Recycle Bin in the application so that it can be undone, etc.
     fn delete_all_in_stacker(&mut self) {
-        let stacker = self.stacker.stacker().to_owned();
+        let stacker = self.stacker.stack_ref().to_owned();
         for path in stacker.iter() {
             self.delete_file_item_with_path(path);
         }
     }
 
+    ///
     ///. ** User Carefully ** ///
+    /// delete directory and its contents
+    ///
     fn delete_directory_including_its_contents(&mut self, path: &Path) {
         match fs::remove_dir_all(path) {
-            Ok(_) => {
-                self.remove_file_item_instance(path);
-            }
+            Ok(_) => {}
             Err(err) => {
                 let mss = match err.kind() {
                     io::ErrorKind::NotFound => "Not Found",
@@ -465,21 +493,26 @@ impl App {
             return;
         }
 
-        while let Some(from_path) = self.stacker.stack.pop() {
+        while let Some(from_path) = self.stacker.stacker_pop() {
             let name = &pathbuf_to_string_name(&from_path);
-            // TODO:ファイル名が移動後のディレクトリ内に存在する場合は上書きをするかどうかを尋ねる
-            if self.dir_contain_file_item(name) {
-                self.stacker.stack.push(from_path);
+            if from_path.exists() {
                 return;
+            }
+
+            // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
+            if self.dir_contain_name(name) {
+                self.stacker.stacker_push(from_path);
+                continue;
             }
             let dir_path = self.crr_dir_path();
             let to_path = dir_path.join(name);
-            // 移動後のディレクトリ名と選択中のファイル名を結合(上書きと同じ)
-            // コピーを実行
             let res = fs::copy(&from_path, &to_path);
             match res {
                 Ok(_n) => {
                     let item = make_a_file_item_from_dirpath(&to_path);
+                    if self.dir_contain_name(item.name_ref()) {
+                        break;
+                    }
                     self.selected_statefuldir_mut()
                         .push_file_item_and_sort(item);
                 }
@@ -487,26 +520,27 @@ impl App {
                     let mss = match e.kind() {
                         io::ErrorKind::NotFound => "Not Found",
                         io::ErrorKind::PermissionDenied => "Permission Denied",
-                        _ => "",
+                        _ => "Duplecate name",
                     };
                     println!("{}", mss);
-                    self.stacker.stack.push(from_path);
+                    self.stacker.stacker_push(from_path);
                 }
             }
         }
     }
 
+    // stacker move methods
     fn move_file_item_to_crr_dir(&mut self) {
-        // stacker内の選択中のファイルの名前を取得
-        if self.stacker.length == 0 {
+        if self.stacker.stacker_is_empty() {
             return;
         }
 
-        while let Some(from_path) = self.stacker.stack.pop() {
+        while let Some(from_path) = self.stacker.remove_selecting_item() {
             let name = &pathbuf_to_string_name(&from_path);
             // TODO:ファイル名が移動後のディレクトリ内に存在する場合は上書きをするかどうかを尋ねる
-            if self.dir_contain_file_item(name) {
-                self.stacker.stack.push(from_path);
+            if self.dir_contain_name(name) {
+                self.stacker_push_back(from_path);
+                self.push_command_log("Duplicate name");
                 return;
             }
             let dir_path = self.crr_dir_path();
