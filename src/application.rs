@@ -200,18 +200,17 @@ impl App {
     }
 
     pub fn move_to_child_dir(&mut self) {
-        let select_dir = self.selected_statefuldir_mut();
-        if let Some(file_item) = select_dir.get_selected_file_item() {
+        if let Some(file_item) = self.selecting_crr_file_item() {
             match Kinds::classifiy_kinds(file_item.path(), file_item.meta()) {
                 Kinds::Directory(_) => {
-                    let dir_name = pathbuf_to_string_name(file_item.path());
+                    let dir_name = file_item.name();
                     let new_dir_path = file_item.path().to_path_buf();
                     self.insert_new_statefuldir(new_dir_path);
                     let i = self.tab_index;
                     let name = self.directory_tabs.get_mut(i);
                     *name.unwrap() = dir_name;
                 }
-                Kinds::File(_) => {}
+                Kinds::File(_) => self.push_command_log("Not directory"),
             }
         }
     }
@@ -219,23 +218,23 @@ impl App {
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.selected_statefuldir_mut();
         let dir_name = selected_dir.dir_name();
-        let parent_path = selected_dir.dir_parent_path().clone();
-        let parent_dir_name = pathbuf_to_string_name(&parent_path);
-        self.insert_new_statefuldir(parent_path);
-        let i = self.tab_index;
-        let name = self.directory_tabs.get_mut(i).unwrap();
-        *name = parent_dir_name;
+        if let Some(parent_path) = self.crr_dir_path().parent() {
+            let parent_dir_name = pathbuf_to_string_name(parent_path);
+            let parent_path = parent_path.to_owned();
+            self.insert_new_statefuldir(parent_path);
+            let i = self.tab_index;
+            let name = self.directory_tabs.get_mut(i).unwrap();
+            *name = parent_dir_name;
 
-        // select the position of crr dir name or select top
-        let dir_pos = self
-            .selected_statefuldir_mut()
-            .file_items()
-            .iter()
-            // .inspect(|x| println!("{:?}", x.name() == dir_name))
-            .position(|x| x.name() == dir_name);
+            // select the position of crr dir name or select top
+            let state_dir = self.selected_statefuldir_mut();
+            let dir_pos = state_dir
+                .file_items()
+                .iter()
+                .position(|x| x.name() == dir_name);
 
-        let state_dir = self.selected_statefuldir_mut();
-        state_dir.select_file_item_by_index(dir_pos);
+            state_dir.select_file_item_by_index(dir_pos);
+        }
     }
 
     fn move_to_top_of_file_item(&mut self) {
@@ -460,13 +459,9 @@ impl App {
         }
     }
 
-    fn dir_contain_file_item(&self, name: &str) -> bool {
-        self.selected_statefuldir_ref().contain_file_item(name)
-    }
-
-    fn copy_file_item_to_crr_dir(&mut self) {
-        // stacker内の選択中のファイルの名前を取得
-        if self.stacker.length == 0 {
+    /// stacker Copy Mehotds
+    fn stacker_copy_file_item_to_crr_dir(&mut self) {
+        if self.stacker.stacker_is_empty() {
             return;
         }
 
