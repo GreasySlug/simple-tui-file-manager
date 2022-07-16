@@ -1,7 +1,9 @@
 use super::Kinds;
 use chrono::{DateTime, Utc};
+use regex::Regex;
 use std::{
     fs::Metadata,
+    ops::Range,
     path::{Path, PathBuf},
 };
 
@@ -121,6 +123,10 @@ impl FileItem {
 
     pub fn is_hidden_item(&self) -> bool {
         self.kinds() == Kinds::File(true) || self.kinds() == Kinds::Directory(true)
+    }
+
+    pub fn find(&self, pattern: &Regex) -> Option<(&str, Range<usize>)> {
+        pattern.find(&self.name).map(|m| (m.as_str(), m.range()))
     }
 }
 
