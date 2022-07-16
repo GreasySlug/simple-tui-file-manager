@@ -118,6 +118,10 @@ impl FileItem {
         let created_time: DateTime<Utc> = time.unwrap().into();
         created_time.format("%F-%R").to_string()
     }
+
+    pub fn is_hidden_item(&self) -> bool {
+        self.kinds() == Kinds::File(true) || self.kinds() == Kinds::Directory(true)
+    }
 }
 
 const UNITS: [&str; 6] = ["B", "KB", "MB", "GB", "TB", "PB"];

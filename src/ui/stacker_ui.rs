@@ -138,7 +138,7 @@ pub fn stacking_item_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, stack_windo
     let dir_block_style = app.theme().boader_style();
     let items = app.stacker_mut();
     let state_items: Vec<ListItem> = items
-        .stacker_ref()
+        .stack_ref()
         .iter()
         .map(|path| {
             let path_name = pathbuf_to_string_name(path);

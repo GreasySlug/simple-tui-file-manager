@@ -2,7 +2,8 @@ use std::path::{Path, PathBuf};
 
 use crate::file_item_list::directory_item::Directory;
 use crate::file_item_list::file_item::FileItem;
-use crate::path_process::make_file_items_from_dirpath;
+use crate::file_item_list::Kinds;
+use crate::path_process::{make_file_items_from_dirpath, pathbuf_to_string_name};
 use tui::widgets::TableState;
 
 #[derive(Debug, Clone)]
@@ -14,8 +15,16 @@ pub struct StatefulDirectory {
 }
 
 impl StatefulDirectory {
-    pub fn new(dir_path: PathBuf) -> StatefulDirectory {
-        let file_items = make_file_items_from_dirpath(&dir_path);
+    pub fn new(dir_path: PathBuf, is_show: bool) -> StatefulDirectory {
+        let file_items = if is_show {
+            make_file_items_from_dirpath(&dir_path)
+        } else {
+            make_file_items_from_dirpath(&dir_path)
+                .into_iter()
+                .filter(|item| item.kinds() != Kinds::File(true))
+                .filter(|item| item.kinds() != Kinds::Directory(true))
+                .collect::<Vec<FileItem>>()
+        };
         StatefulDirectory {
             directory: Directory::new(dir_path),
             state: TableState::default(),
@@ -129,7 +138,22 @@ impl StatefulDirectory {
         }
     }
 
-    pub fn contain_file_item(&self, name: &str) -> bool {
+    pub fn remove_file_itemwith_name(&mut self, name: &str) {
+        if let Some(i) = self
+            .file_items()
+            .iter()
+            .map(|x| pathbuf_to_string_name(x.path()))
+            .position(|n| n.as_str() == name)
+        {
+            self.file_items.remove(i);
+        }
+    }
+
+    pub fn contain_name(&self, name: &str) -> bool {
         self.file_items.iter().any(|x| x.name_ref() == name)
+    }
+
+    pub fn contain_path(&self, path: &Path) -> bool {
+        self.file_items.iter().any(|p| p.path() == path)
     }
 }

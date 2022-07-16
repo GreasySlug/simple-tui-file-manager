@@ -50,7 +50,7 @@ pub fn default_vim_movements() -> ModeKeybinds {
         ("C-l", "move_to_child_dir"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
-        ("escape", "normal"),
+        ("esc", "normal"),
         ("v", "stacker"),
     ]
     .into_iter();
@@ -67,7 +67,7 @@ pub fn default_vim_movements() -> ModeKeybinds {
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
-        ("escape", "normal"),
+        ("esc", "normal"),
         ("v", "stacker"),
     ]
     .into_iter();
@@ -108,7 +108,7 @@ pub fn default_arrow_key() -> ModeKeybinds {
         ("Right", "move_to_child_dir"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
-        ("escape", "normal"),
+        ("esc", "normal"),
         ("v", "stacker"),
     ]
     .into_iter();
@@ -125,7 +125,7 @@ pub fn default_arrow_key() -> ModeKeybinds {
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
-        ("escape", "normal"),
+        ("esc", "normal"),
         ("v", "stacker"),
     ]
     .into_iter();
@@ -166,7 +166,7 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
         ("C-l", "move_to_child_dir"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
-        ("escape", "normal"),
+        ("esc", "normal"),
         ("v", "stacker"),
     ]
     .into_iter();
@@ -183,7 +183,7 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
-        ("escape", "normal"),
+        ("esc", "normal"),
         ("v", "stacker"),
     ]
     .into_iter();
@@ -212,6 +212,56 @@ pub fn multi_string_map_to_user_keyboad(
         }
     }
     keybind
+}
+
+fn char_keyevent_matcher(c: char, modi: KeyModifiers) -> KeyEvent {
+    match modi {
+        KeyModifiers::NONE => KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: KeyModifiers::NONE,
+        },
+        KeyModifiers::SHIFT => KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: KeyModifiers::SHIFT,
+        },
+        KeyModifiers::CONTROL => KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: KeyModifiers::CONTROL,
+        },
+        KeyModifiers::ALT => KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers: KeyModifiers::ALT,
+        },
+        _ => KeyEvent {
+            code: KeyCode::Null,
+            modifiers: KeyModifiers::NONE,
+        },
+    }
+}
+
+fn digit_keyevent_matcher(c: char, m: char, is_f: bool) -> KeyEvent {
+    let modifiers = match m {
+        'S' => KeyModifiers::SHIFT,
+        'C' => KeyModifiers::CONTROL,
+        'A' => KeyModifiers::ALT,
+        _ => KeyModifiers::NONE,
+    };
+
+    if is_f {
+        if let Some(n) = c.to_digit(10) {
+            KeyEvent {
+                code: KeyCode::F(n as u8),
+                modifiers,
+            }
+        } else {
+            panic!("numbers range is 0 to 9 or f0 to f12");
+        }
+    } else {
+        KeyEvent {
+            code: KeyCode::Char(c),
+            modifiers,
+        }
+    }
 }
 
 fn string_to_keyevent(s: &str) -> KeyEvent {
@@ -432,7 +482,7 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
             code: KeyCode::Char('_'),
             modifiers: KeyModifiers::NONE,
         },
-        "escape" => KeyEvent {
+        "esc" | "Esc" => KeyEvent {
             code: KeyCode::Esc,
             modifiers: KeyModifiers::NONE,
         },
@@ -440,57 +490,13 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
             code: KeyCode::Tab,
             modifiers: KeyModifiers::NONE,
         },
+        "return" | "enter" => KeyEvent {
+            code: KeyCode::Enter,
+            modifiers: KeyModifiers::NONE,
+        },
         "S-tab" => KeyEvent {
             code: KeyCode::BackTab,
             modifiers: KeyModifiers::SHIFT,
-        },
-        "f1" => KeyEvent {
-            code: KeyCode::F(1),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f2" => KeyEvent {
-            code: KeyCode::F(2),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f3" => KeyEvent {
-            code: KeyCode::F(3),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f4" => KeyEvent {
-            code: KeyCode::F(4),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f5" => KeyEvent {
-            code: KeyCode::F(5),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f6" => KeyEvent {
-            code: KeyCode::F(6),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f7" => KeyEvent {
-            code: KeyCode::F(7),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f8" => KeyEvent {
-            code: KeyCode::F(8),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f9" => KeyEvent {
-            code: KeyCode::F(9),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f10" => KeyEvent {
-            code: KeyCode::F(10),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f11" => KeyEvent {
-            code: KeyCode::F(11),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f12" => KeyEvent {
-            code: KeyCode::F(12),
-            modifiers: KeyModifiers::NONE,
         },
         "S-a" => KeyEvent {
             code: KeyCode::Char('A'),
@@ -804,10 +810,37 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
             code: KeyCode::Char('Z'),
             modifiers: KeyModifiers::ALT,
         },
-        _ => KeyEvent {
-            code: KeyCode::Null,
-            modifiers: KeyModifiers::NONE,
-        },
+        _ => {
+            let is_num = s.chars().filter(|c| c.is_digit(10)).count() > 0;
+            if !is_num {
+                return KeyEvent {
+                    code: KeyCode::Null,
+                    modifiers: KeyModifiers::NONE,
+                };
+            }
+
+            let split_char: Vec<char> = s.split('-').flat_map(|c| c.chars()).collect();
+
+            let has_f = split_char.iter().find(|c| c == &&'f');
+            let has_shift = split_char.iter().find(|c| c == &&'S');
+            let has_ctrl = split_char.iter().find(|c| c == &&'C');
+            let has_alt = split_char.iter().find(|c| c == &&'A');
+
+            match (has_shift, has_ctrl, has_alt, has_f) {
+                (None, None, None, None) => digit_keyevent_matcher(split_char[0], 'n', false),
+                (Some(&c), None, None, None) => digit_keyevent_matcher(split_char[1], c, false),
+                (None, Some(&c), None, None) => digit_keyevent_matcher(split_char[1], c, false),
+                (None, None, Some(&c), None) => digit_keyevent_matcher(split_char[1], c, false),
+                (None, None, None, Some(_)) => digit_keyevent_matcher(split_char[1], 'n', true),
+                (Some(&c), None, None, Some(_)) => digit_keyevent_matcher(split_char[2], c, true),
+                (None, Some(&c), None, Some(_)) => digit_keyevent_matcher(split_char[2], c, true),
+                (None, None, Some(&c), Some(_)) => digit_keyevent_matcher(split_char[2], c, true),
+                _ => KeyEvent {
+                    code: KeyCode::Null,
+                    modifiers: KeyModifiers::NONE,
+                },
+            }
+        }
     }
 }
 
@@ -1111,10 +1144,43 @@ pub struct ModeKeybinds {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct Settings {
+    editor: String,
+    show_hidden_files: bool,
+}
+
+impl Settings {
+    fn default_vim() -> Self {
+        Self {
+            editor: "vim".to_string(),
+            show_hidden_files: true,
+        }
+    }
+
+    fn default_emacs() -> Self {
+        Self {
+            editor: "emacs".to_string(),
+            show_hidden_files: true,
+        }
+    }
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            editor: "vi".to_string(),
+            show_hidden_files: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct UserConfig {
     theme: SettingTheme,
+    user_settings: Settings,
     symbols: HashMap<FileItems, String>,
     user_keybinds: ModeKeybinds,
+    additional_directories: Vec<String>,
 }
 
 impl UserConfig {
@@ -1122,7 +1188,9 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::dark_theme(),
             symbols: simple_symbols(),
+            user_settings: Settings::default(),
             user_keybinds: default_vim_movements(),
+            additional_directories: vec![],
         }
     }
 
@@ -1130,7 +1198,9 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::dark_blue_theme(),
             symbols: example_symbols(),
+            user_settings: Settings::default_vim(),
             user_keybinds: default_vim_ctrl_movements(),
+            additional_directories: vec![],
         }
     }
 
@@ -1138,7 +1208,9 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::light_theme(),
             symbols: example_symbols(),
+            user_settings: Settings::default_emacs(),
             user_keybinds: default_arrow_key(),
+            additional_directories: vec![],
         }
     }
     pub fn symbols(&self) -> &HashMap<FileItems, String> {
@@ -1159,6 +1231,18 @@ impl UserConfig {
 
     pub fn stacker_keybindings_map(&self) -> HashMap<String, String> {
         self.user_keybinds.stacker.clone()
+    }
+
+    pub fn additional_directory(&self) -> Vec<String> {
+        self.additional_directories.clone()
+    }
+
+    pub fn user_editor(&self) -> String {
+        self.user_settings.editor.clone()
+    }
+
+    pub fn show_hidden_files(&self) -> bool {
+        self.user_settings.show_hidden_files
     }
 }
 

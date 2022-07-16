@@ -13,7 +13,12 @@ use crate::file_item_list::Kinds;
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
-use crate::path_process::{join_to_crr_dir, make_a_file_item_from_dirpath, pathbuf_to_string_name};
+
+use crate::path_process::{
+    get_user_profile_path, join_to_crr_dir, make_a_file_item_from_dirpath, pathbuf_to_string_name,
+    user_commands,
+};
+
 use crate::stacker::StackerVec;
 use crate::state::StatefulDirectory;
 use crate::ui::input_ui::start_user_input;
@@ -41,6 +46,8 @@ pub struct App {
     mode: Mode,
     config: UserConfig,
     be_cleaned: bool,
+    editor: String,
+    show_hidden_files: bool,
 }
 
 impl App {
@@ -54,6 +61,8 @@ impl App {
             mode: Mode::Normal,
             config: load_user_config_file(),
             be_cleaned: false,
+            editor: String::new(),
+            show_hidden_files: false,
         }
     }
 
@@ -71,6 +80,42 @@ impl App {
 
     pub fn stacker_mut(&mut self) -> &mut StackerVec {
         &mut self.stacker
+    }
+
+    pub fn config(&self) -> &UserConfig {
+        &self.config
+    }
+
+    pub fn show_hidden_files(&self) -> bool {
+        self.show_hidden_files
+    }
+
+    #[cfg(target_os = "windows")]
+    fn user_settings(&mut self) {
+        self.editor = self.config().user_editor();
+        self.show_hidden_files = self.config().show_hidden_files();
+        let config = self.config();
+        let additional_directories = config.additional_directory();
+        for dir in additional_directories.into_iter() {
+            if let Some(path) = get_user_profile_path(&dir) {
+                self.push_new_dirname_to_dirtab(pathbuf_to_string_name(&path));
+                self.insert_new_statefuldir(path);
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    fn user_settings(&mut self) {
+        self.editor = self.config().user_editor();
+        self.show_hidden_files = self.config().show_hidden_files();
+        let config = self.config();
+        let additional_directories = config.additional_directory();
+        for dir in additional_directories.into_iter() {
+            if let Some(path) = get_user_profile_path() {
+                self.push_new_dirname_to_dirtab(pathbuf_to_string_name(&path));
+                self.insert_new_statefuldir(path);
+            }
+        }
     }
 
     // The current directory should be selected, so that tab and hashmap must existe.
@@ -94,6 +139,14 @@ impl App {
         stateful_dir.file_items()
     }
 
+    fn dir_contain_name(&self, name: &str) -> bool {
+        self.selected_statefuldir_ref().contain_name(name)
+    }
+
+    fn dirtab_contains_dirname(&self, name: &String) -> bool {
+        self.directory_tabs.contains(name)
+    }
+
     pub fn selecting_crr_file_item(&self) -> Option<&FileItem> {
         let stateful_dir = self.selected_statefuldir_ref();
         if !stateful_dir.is_selected() {
@@ -115,9 +168,10 @@ impl App {
     }
 
     pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
+        let is_show = self.show_hidden_files();
         let dir_name = pathbuf_to_string_name(&dir_path);
         if let Entry::Vacant(item) = self.dir_map.entry(dir_name) {
-            let mut new_stateful_dir = StatefulDirectory::new(dir_path);
+            let mut new_stateful_dir = StatefulDirectory::new(dir_path, is_show);
 
             // Sorted by name in each of the files and directories
             new_stateful_dir.sort_file_items_by_kinds();
@@ -149,14 +203,14 @@ impl App {
 
     pub fn shift_to_input_mode(&mut self) {
         if !self.stacker.stacker_is_empty() {
-            self.stacker_clear();
+            self.stacker_clear(); // TODO: switch?
         }
         self.mode = Mode::Input;
     }
 
     pub fn shift_to_normal_mode(&mut self) {
         if !self.stacker.stacker_is_empty() {
-            self.stacker_clear();
+            self.stacker_clear(); // TODO: switch?
         }
         self.mode = Mode::Normal;
     }
@@ -199,18 +253,17 @@ impl App {
     }
 
     pub fn move_to_child_dir(&mut self) {
-        let select_dir = self.selected_statefuldir_mut();
-        if let Some(file_item) = select_dir.get_selected_file_item() {
+        if let Some(file_item) = self.selecting_crr_file_item() {
             match Kinds::classifiy_kinds(file_item.path(), file_item.meta()) {
                 Kinds::Directory(_) => {
-                    let dir_name = pathbuf_to_string_name(file_item.path());
+                    let dir_name = file_item.name();
                     let new_dir_path = file_item.path().to_path_buf();
                     self.insert_new_statefuldir(new_dir_path);
                     let i = self.tab_index;
                     let name = self.directory_tabs.get_mut(i);
                     *name.unwrap() = dir_name;
                 }
-                Kinds::File(_) => {}
+                Kinds::File(_) => self.push_command_log("Not directory"),
             }
         }
     }
@@ -218,23 +271,23 @@ impl App {
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.selected_statefuldir_mut();
         let dir_name = selected_dir.dir_name();
-        let parent_path = selected_dir.dir_parent_path().clone();
-        let parent_dir_name = pathbuf_to_string_name(&parent_path);
-        self.insert_new_statefuldir(parent_path);
-        let i = self.tab_index;
-        let name = self.directory_tabs.get_mut(i).unwrap();
-        *name = parent_dir_name;
+        if let Some(parent_path) = self.crr_dir_path().parent() {
+            let parent_dir_name = pathbuf_to_string_name(parent_path);
+            let parent_path = parent_path.to_owned();
+            self.insert_new_statefuldir(parent_path);
+            let i = self.tab_index;
+            let name = self.directory_tabs.get_mut(i).unwrap();
+            *name = parent_dir_name;
 
-        // select the position of crr dir name or select top
-        let dir_pos = self
-            .selected_statefuldir_mut()
-            .file_items()
-            .iter()
-            // .inspect(|x| println!("{:?}", x.name() == dir_name))
-            .position(|x| x.name() == dir_name);
+            // select the position of crr dir name or select top
+            let state_dir = self.selected_statefuldir_mut();
+            let dir_pos = state_dir
+                .file_items()
+                .iter()
+                .position(|x| x.name() == dir_name);
 
-        let state_dir = self.selected_statefuldir_mut();
-        state_dir.select_file_item_by_index(dir_pos);
+            state_dir.select_file_item_by_index(dir_pos);
+        }
     }
 
     fn move_to_top_of_file_item(&mut self) {
@@ -245,6 +298,33 @@ impl App {
         self.selected_statefuldir_mut().select_bottom_file_item();
     }
 
+    fn path_to_file_item_recurrently(&mut self, mut path: PathBuf) {
+        loop {
+            let parent_path = path.parent();
+            if let Some(paren_path) = parent_path {
+                // 親ディレクトリが含まれていれば、現在のパスをFileItemのインスタンスを生成しそのディレクトリに追加する
+                let p_item = make_a_file_item_from_dirpath(paren_path);
+                let p_dirname = p_item.name();
+                if self.dirtab_contains_dirname(&p_dirname) {
+                    let item = make_a_file_item_from_dirpath(&path);
+                    if let Some(dirstate) = self.dir_map.get_mut(&p_dirname) {
+                        dirstate.push_file_item_and_sort(item)
+                    }
+                }
+            } else {
+                break;
+            }
+            path.pop();
+        }
+    }
+
+    ///
+    /// In input mode, make directories.
+    ///  ex1) dirname
+    ///  ex2) dirname01/dirname02
+    /// None: File cannot be created.
+    /// ex) sample.txt means a "sample.txt" directory not a file
+    ///
     fn make_directory(&mut self) {
         let relpath = self.run_user_input();
         if relpath.is_none() {
@@ -260,6 +340,7 @@ impl App {
 
         match fs::create_dir_all(&path) {
             Ok(()) => {
+                // TODO: bug
                 let item = make_a_file_item_from_dirpath(&path);
                 self.selected_statefuldir_mut()
                     .push_file_item_and_sort(item);
@@ -273,19 +354,6 @@ impl App {
                 self.push_command_log(message);
             }
         }
-    }
-
-    fn recurent_path_to_file_item(&self, path: &mut PathBuf) -> FileItem {
-        let dir_path = self.crr_dir_path();
-        loop {
-            let parent_path = path.parent();
-            if parent_path.is_none() || parent_path.unwrap() == dir_path {
-                break;
-            }
-            path.pop();
-        }
-
-        make_a_file_item_from_dirpath(path)
     }
 
     fn make_file(&mut self) {
@@ -303,7 +371,7 @@ impl App {
             return;
         }
 
-        let mut path = join_to_crr_dir(self, file_name);
+        let path = join_to_crr_dir(self, file_name);
 
         if path.is_dir() {
             self.push_command_log("Duplicate name");
@@ -312,12 +380,7 @@ impl App {
 
         match fs::File::create(&path) {
             Ok(_) => {
-                let item = self.recurent_path_to_file_item(&mut path);
-                let statedir = self.selected_statefuldir_mut();
-                statedir.push_file_item_and_sort(item);
-                if !statedir.is_selected() {
-                    statedir.select_top_file_item();
-                }
+                self.path_to_file_item_recurrently(path);
             }
             Err(error) => {
                 let message = match error.kind() {
@@ -349,14 +412,7 @@ impl App {
 
     fn make_dir_with_path(&mut self, path: &Path) {
         match fs::create_dir_all(path) {
-            Ok(()) => {
-                let item = self.recurent_path_to_file_item(&mut path.to_path_buf());
-                let statedir = self.selected_statefuldir_mut();
-                statedir.push_file_item_and_sort(item);
-                if !statedir.is_selected() {
-                    statedir.select_top_file_item();
-                }
-            }
+            Ok(_) => self.path_to_file_item_recurrently(path.to_owned()),
             Err(error) => {
                 let message = match error.kind() {
                     io::ErrorKind::PermissionDenied => "Permission denied",
@@ -413,18 +469,17 @@ impl App {
 
     fn stacker_push_back(&mut self, path: PathBuf) {
         self.stacker.stacker_push(path);
-        self.stacker.update_position();
     }
 
-    fn stacker_pop_back(&mut self) {
-        self.stacker.stacker_pop();
-        self.stacker.update_position();
+    fn stacker_pop_back(&mut self) -> Option<PathBuf> {
+        self.stacker.stacker_pop()
     }
 
     pub fn stacker_contains(&self, path: &PathBuf) -> bool {
         self.stacker.stacker_contains(path)
     }
 
+    // select
     fn stack_crr_file_item(&mut self) {
         if let Some(item) = self.selecting_crr_file_item() {
             let path = item.path().to_path_buf();
@@ -434,6 +489,7 @@ impl App {
         }
     }
 
+    // select all
     fn stack_all_file_items(&mut self) {
         let dir = self.selected_statefuldir_mut();
         for item in dir.file_items().to_owned() {
@@ -498,7 +554,19 @@ impl App {
         self.stacker.previous_stacker_item();
     }
 
-    fn delete_file_item(&mut self, path: &Path) {
+    // 削除や移動した後の残ったインスタンスを削除するメソッド
+    fn remove_file_item_instance(&mut self, path: &Path) {
+        let stateful_dir = self.selected_statefuldir_mut();
+        stateful_dir.remove_file_item_with_path(path);
+    }
+
+    fn remove_path_in_stacker(&mut self, path: &Path) -> Option<PathBuf> {
+        self.stacker.stacker_remove_by_path(path)
+    }
+
+    // 完全消去ではなくアプリ内のゴミ箱へ移動させて、もとに戻せるようにする
+    // 完全消去と分けてメソッドを作った方が良いかもしれない
+    fn delete_file_item_with_path(&mut self, path: &Path) {
         let result = if path.is_dir() {
             fs::remove_dir(path)
         } else {
@@ -521,12 +589,7 @@ impl App {
         }
     }
 
-    fn remove_path_instance(&mut self, path: &Path) {
-        let dir = self.selected_statefuldir_mut();
-        dir.remove_file_item_with_path(path);
-        self.stacker.stacker_delete_with_path(&path.to_path_buf());
-    }
-
+    /// Delete Methods
     fn delete_crr_item_in_stacker(&mut self) {
         let stacker_stete = self.stacker.state_mut();
         if let Some(i) = stacker_stete.selected() {
@@ -534,22 +597,24 @@ impl App {
             if path.is_dir() {
                 self.delete_directory_including_its_contents(&path);
             } else {
-                self.delete_file_item(&path);
+                self.delete_crr_item_in_stacker();
             }
-            self.remove_path_instance(&path);
+            self.remove_path_in_stacker(&path);
         }
     }
 
-    // Instead of deleting it completely, it is better to move it to the Recycle Bin in the application so that it can be undone, etc.
+    /// TODO: Instead of deleting it completely, it is better to move it to the Recycle Bin in the application so that it can be undone, etc.
     fn delete_all_in_stacker(&mut self) {
-        let stacker = self.stacker.stacker_ref().to_owned();
+        let stacker = self.stacker.stack_ref().to_owned();
         for path in stacker.iter() {
-            self.delete_file_item(path);
-            self.stacker.stacker_delete_with_path(path);
+            self.delete_file_item_with_path(path);
         }
     }
 
+    ///
     ///. ** User Carefully ** ///
+    /// delete directory and its contents
+    ///
     fn delete_directory_including_its_contents(&mut self, path: &Path) {
         match fs::remove_dir_all(path) {
             Ok(_) => {}
@@ -565,11 +630,8 @@ impl App {
         }
     }
 
-    fn dir_contain_file_item(&self, name: &str) -> bool {
-        self.selected_statefuldir_ref().contain_file_item(name)
-    }
-
-    fn copy_file_item_to_crr_dir(&mut self) {
+    /// stacker Copy Mehotds
+    fn stacker_copy_file_item_to_crr_dir(&mut self) {
         if self.stacker.stacker_is_empty() {
             return;
         }
@@ -581,7 +643,7 @@ impl App {
             }
 
             // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
-            if self.dir_contain_file_item(name) {
+            if self.dir_contain_name(name) {
                 self.stacker.stacker_push(from_path);
                 continue;
             }
@@ -591,6 +653,9 @@ impl App {
             match res {
                 Ok(_n) => {
                     let item = make_a_file_item_from_dirpath(&to_path);
+                    if self.dir_contain_name(item.name_ref()) {
+                        break;
+                    }
                     self.selected_statefuldir_mut()
                         .push_file_item_and_sort(item);
                 }
@@ -606,11 +671,69 @@ impl App {
             }
         }
     }
+
+    // stacker move methods
+    fn move_file_item_to_crr_dir(&mut self) {
+        if self.stacker.stacker_is_empty() {
+            return;
+        }
+
+        while let Some(from_path) = self.stacker.remove_selecting_item() {
+            let name = &pathbuf_to_string_name(&from_path);
+            // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
+            if self.dir_contain_name(name) {
+                self.stacker_push_back(from_path);
+                self.push_command_log("Duplicate name");
+                return;
+            }
+
+            let dir_path = self.crr_dir_path();
+            let to_path = dir_path.join(name);
+            let res = fs::copy(&from_path, &to_path);
+            match res {
+                Ok(_n) => {
+                    let item = make_a_file_item_from_dirpath(&to_path);
+                    self.selected_statefuldir_mut()
+                        .push_file_item_and_sort(item);
+                    self.delete_file_item_with_path(&from_path);
+                    self.remove_file_item_instance(&from_path);
+                }
+                Err(e) => {
+                    let mss = match e.kind() {
+                        io::ErrorKind::NotFound => "Not Found",
+                        io::ErrorKind::PermissionDenied => "Permission Denied",
+                        _ => "Duplecate name",
+                    };
+                    println!("Move Command: {}", mss);
+                    self.stacker.stacker_push(from_path);
+                }
+            }
+        }
+    }
+
+    ///
+    /// open file with user editor, like vim, emacs
+    /// if
+    fn user_edit_file_item(&mut self) {
+        if self.selecting_crr_file_item().is_none() {
+            return;
+        }
+        self.shift_to_normal_mode();
+        if let Some(item) = self.selecting_crr_file_item() {
+            if user_commands(&self.editor, vec![item.path()]).is_err() {
+                self.push_command_log("Failed to edit");
+            }
+        }
+        self.be_clear();
+        self.shift_to_input_mode();
+    }
 }
 
 // receives input from the user and determines if a command
 // it is possible to receive different commands each modes
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+    // TODO: only directory settings exit, but default settings be going to be added.
+    app.user_settings();
     let mut normal = app.normal_user_keybinds();
     let mut input = app.input_user_keybinds();
     let mut stacker = app.stacker_user_keybinds();
@@ -661,6 +784,11 @@ fn key_matchings(keybinds: &mut UserKeybinds) -> io::Result<String> {
 
 fn run_commands(app: &mut App, cmd: &str) {
     match cmd {
+        // mode
+        "normal" => app.shift_to_normal_mode(),
+        "input" => app.shift_to_input_mode(),
+        "stacker" => app.shift_to_stacker_mode(),
+
         // comman commands
         "move_to_parent_dir" => app.move_to_parent_dir(),
         "move_to_next_file_item" => app.move_to_next_file_item(),
@@ -670,31 +798,29 @@ fn run_commands(app: &mut App, cmd: &str) {
         "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
         "next_dirtab" => app.next_dirtab(),
         "prev_dirtab" => app.prev_dirtab(),
-        "normal" => app.shift_to_normal_mode(),
-        "input" => app.shift_to_input_mode(),
-        "stacker" => app.shift_to_stacker_mode(),
+
         // normal commands
         // "add_directory_to_dirtab" => app.add_dir_to_dirtab(),
         // "display_or_hide_hidden_file" => app.display_or_hide_hedden_file(),
+        // "use_editor" => app.edit_crr_file_item(),
 
         // input commands
         "make_directory" => app.make_directory(),
         "make_file" => app.make_file(),
+        "edit" => app.user_edit_file_item(),
         // "rename_file_item" => app.rename_file_name(),
         // "search_file_items" => app.search_file_items(),
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
-        "select_current_file_item" => app.stack_crr_file_item(),
-        "unselect_current_file_item" => app.pop_file_item(),
-        "select_dir_recursively" => app.stack_crr_dir_recursively(),
-        "select_all_file_items" => app.stack_all_file_items(),
-        "next_stacker_file_item" => app.next_stacker_item(),
-        "prev_stacker_file_item" => app.previous_stacker_item(),
-        "stacker_pop_back" => app.stacker_pop_back(),
-        "copy_file_item_to_current_directory" => app.copy_file_item_to_crr_dir(),
-        "delete_selecting_item" => app.delete_crr_item_in_stacker(),
-        "delete_all_in_stacker" => app.delete_all_in_stacker(),
+        "stacker_select" => app.stack_crr_file_item(),
+        "stacker_unselect" => app.pop_file_item(),
+        "stacker_select_all_recursively" => app.stack_crr_dir_recursively(),
+        "stacker_select_all" => app.stack_all_file_items(),
+        "stacker_next_file_item" => app.next_stacker_item(),
+        "stacker_prev_file_item" => app.previous_stacker_item(),
+        "stacker_paste" => app.stacker_copy_file_item_to_crr_dir(),
+        "stacker_move" => app.move_file_item_to_crr_dir(),
         _ => {}
     }
     app.push_command_log(cmd);

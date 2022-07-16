@@ -19,7 +19,7 @@ use self::stacker_ui::stacker_ui;
 const HEIGHT_OF_UI_ONE_LINE_LENGTH: u16 = 3;
 const UI_MIN_PERCENTAGE: u16 = 0;
 const HEIGHT_OF_UI_INFO_LENGTH: u16 = 10;
-const HEIGHT_OF_UI_FILE_LENGTH: u16 = 10;
+const HEIGHT_OF_UI_FILE_LENGTH: u16 = 20;
 const HEIGHT_OF_UI_ICON_LENGTH: u16 = 2;
 const HEIGHT_OF_UI_MARGIN_LENGTH: u16 = 1;
 

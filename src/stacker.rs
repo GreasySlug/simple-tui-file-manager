@@ -1,5 +1,5 @@
+use std::path::Path;
 use std::path::PathBuf;
-
 use tui::widgets::ListState;
 
 pub struct StackerVec {
@@ -49,12 +49,16 @@ impl StackerVec {
         self.state.select(Some(i));
     }
 
+    fn selecting_item_index(&self) -> Option<usize> {
+        self.state.selected()
+    }
+
     pub fn update_position(&mut self) {
         let i = self.stack.len().checked_sub(1);
         self.state.select(i)
     }
 
-    pub fn stacker_ref(&self) -> &Vec<PathBuf> {
+    pub fn stack_ref(&self) -> &Vec<PathBuf> {
         &self.stack
     }
 
@@ -64,20 +68,40 @@ impl StackerVec {
 
     pub fn clear(&mut self) {
         self.stack.clear();
+        self.state.select(None);
     }
 
     pub fn stacker_pop(&mut self) -> Option<PathBuf> {
-        self.stack.pop()
+        let path = self.stack.pop();
+        self.update_position();
+        path
     }
 
     pub fn stacker_push(&mut self, path: PathBuf) {
         self.stack.push(path);
+        self.update_position();
     }
 
     pub fn stacker_remove(&mut self, i: usize) -> PathBuf {
         let path = self.stack.remove(i);
         self.update_position();
         path
+    }
+
+    pub fn remove_selecting_item(&mut self) -> Option<PathBuf> {
+        if let Some(i) = self.selecting_item_index() {
+            let path = self.stack.remove(i);
+            self.update_position();
+            return Some(path);
+        }
+        None
+    }
+
+    pub fn stacker_remove_by_path(&mut self, path: &Path) -> Option<PathBuf> {
+        if let Some(i) = self.stack.iter().position(|x| x.as_path() == path) {
+            return Some(self.stacker_remove(i));
+        }
+        None
     }
 
     pub fn stacker_delete_with_path(&mut self, path: &PathBuf) {
