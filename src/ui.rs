@@ -105,5 +105,16 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             f.render_widget(tabs, chunks[0]);
             stacker_ui(f, app, chunks[1]);
         }
+        Mode::Searcher => {
+            let tabs = Tabs::new(tab_titles)
+                .block(Block::default().borders(Borders::ALL).title("Tabs"))
+                .select(app.tab_index())
+                .style(app.theme().command_style(2).unwrap())
+                .highlight_style(tab_highlight_style);
+
+            f.render_widget(tabs, chunks[0]);
+            input_ui::ui(f, app);
+            // matching_directory_ui(f, app, chunks[1]);
+        }
     }
 }

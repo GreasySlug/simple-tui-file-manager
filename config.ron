@@ -13,6 +13,7 @@
             (Black, White), // normal
             (Black, LightGreen), // imput
             (Black,  LightBlue), // stacker
+            (Black,  LightRed), // searcher
             ],
     ),
     symbols: {
@@ -43,6 +44,7 @@
             "S-g": "move_to_bottom_of_file_item",
             "tab":"next_dirtab",
             "S-tab":"prev_dirtab",
+            "/": "search_file_items",
         },
         input: {
             ": q" :"quit",

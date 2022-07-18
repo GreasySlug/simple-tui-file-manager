@@ -811,7 +811,7 @@ fn string_to_keyevent(s: &str) -> KeyEvent {
             modifiers: KeyModifiers::ALT,
         },
         _ => {
-            let is_num = s.chars().filter(|c| c.is_digit(10)).count() > 0;
+            let is_num = s.chars().filter(|c| c.is_ascii_digit()).count() > 0;
             if !is_num {
                 return KeyEvent {
                     code: KeyCode::Null,
@@ -1000,6 +1000,7 @@ impl SettingTheme {
                 (Colors::Green, Colors::Cyan),
                 (Colors::White, Colors::Blue),
                 (Colors::Magenta, Colors::Red),
+                (Colors::White, Colors::Red),
             ],
         }
     }
@@ -1016,6 +1017,7 @@ impl SettingTheme {
                 (Colors::Blue, Colors::White),
                 (Colors::Green, Colors::White),
                 (Colors::Magenta, Colors::White),
+                (Colors::Green, Colors::White),
             ],
         }
     }
@@ -1032,6 +1034,7 @@ impl SettingTheme {
                 (Colors::Blue, Colors::Black),
                 (Colors::Green, Colors::Blue),
                 (Colors::Magenta, Colors::Blue),
+                (Colors::Green, Colors::Blue),
             ],
         }
     }
@@ -1061,9 +1064,9 @@ impl SettingTheme {
         style_formatter(user_color, true, false)
     }
 
-    pub fn command_styles(&self) -> [Style; 3] {
+    pub fn command_styles(&self) -> [Style; 4] {
         let user_color = &self.command;
-        let mut styles: [Style; 3] = [Style::default(); 3];
+        let mut styles: [Style; 4] = [Style::default(); 4];
         for (i, (bg, fg)) in user_color.iter().enumerate() {
             let fg = style_formatter(fg, true, false);
             let bg = style_formatter(bg, false, true);

@@ -10,10 +10,8 @@ use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
 use tui::Terminal;
 
-use super::{
-    directory_ui::{directory_ui, matching_directory_ui},
-    HEIGHT_OF_UI_ONE_LINE_LENGTH, UI_MIN_PERCENTAGE,
-};
+use super::directory_ui::{directory_ui, matching_directory_ui};
+use super::{HEIGHT_OF_UI_ONE_LINE_LENGTH, UI_MIN_PERCENTAGE};
 use crate::{application::App, load_config::SettingTheme};
 
 #[inline]
@@ -29,7 +27,7 @@ const FILENAME_CAPACITY: usize = 50;
 pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<()> {
     let mut terminal = init_input_area_terminal().expect("Failed to make input terminal...");
     let input_style = theme.command_style(1).unwrap(); // input color index is 1
-    terminal.draw(|f| input_area_ui(f, line, input_style))?;
+    terminal.draw(|f| input_area_ui(f, line, input_style, line.len() as u16))?;
     while let Event::Key(KeyEvent { code, .. }) = read()? {
         match code {
             KeyCode::Enter => break,
@@ -47,7 +45,7 @@ pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<(
             }
             _ => {}
         }
-        terminal.draw(|f| input_area_ui(f, line, input_style))?;
+        terminal.draw(|f| input_area_ui(f, line, input_style, line.len() as u16))?;
     }
 
     if is_invalid_file_name(line) {
@@ -75,7 +73,7 @@ pub fn is_invalid_file_name(line: &str) -> bool {
     true
 }
 
-pub fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let input_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -92,10 +90,14 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
 
     f.render_widget(block, input_area[1]);
 
-    directory_ui(f, app, input_area[2]);
+    if app.mode() == &crate::application::Mode::Searcher {
+        matching_directory_ui(f, app, input_area[2])
+    } else {
+        directory_ui(f, app, input_area[2]);
+    }
 }
 
-pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str, input_style: Style) {
+pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str, input_style: Style, index: u16) {
     let input_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -110,7 +112,7 @@ pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str, input_style: Styl
         .borders(Borders::ALL)
         .border_style(input_style);
 
-    f.set_cursor(input_area[1].x + line.len() as u16 + 1, input_area[1].y + 1);
+    f.set_cursor(input_area[1].x + index + 1, input_area[1].y + 1);
 
     let para = Paragraph::new(line).block(block);
     f.render_widget(para, input_area[1]);

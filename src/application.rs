@@ -1,9 +1,11 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::fmt::Debug;
+use std::io::Result as ioResult;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-use crossterm::event::{self, Event};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use regex::Regex;
 use tui::backend::Backend;
 use tui::Terminal;
 
@@ -21,7 +23,7 @@ use crate::path_process::{
 
 use crate::stacker::StackerVec;
 use crate::state::StatefulDirectory;
-use crate::ui::input_ui::start_user_input;
+use crate::ui::input_ui::{init_input_area_terminal, input_area_ui, start_user_input};
 use crate::ui::ui;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,6 +31,7 @@ pub enum Mode {
     Normal,
     Input,
     Stacker,
+    Searcher,
 }
 
 // TODO: Restrictions without reason, so think cost
@@ -48,6 +51,9 @@ pub struct App {
     be_cleaned: bool,
     editor: String,
     show_hidden_files: bool,
+    // traial
+    re: Option<Regex>,
+    searching_name: String,
 }
 
 impl App {
@@ -63,6 +69,9 @@ impl App {
             be_cleaned: false,
             editor: String::new(),
             show_hidden_files: false,
+            // traial
+            re: None,
+            searching_name: String::new(),
         }
     }
 
@@ -704,7 +713,6 @@ impl App {
                         io::ErrorKind::PermissionDenied => "Permission Denied",
                         _ => "Duplecate name",
                     };
-                    println!("Move Command: {}", mss);
                     self.stacker.stacker_push(from_path);
                 }
             }
@@ -727,11 +735,77 @@ impl App {
         self.be_clear();
         self.shift_to_input_mode();
     }
+
+    fn find_file_items(
+        &mut self,
+        line: &mut String,
+        code: KeyCode,
+        index: &mut usize,
+    ) -> ioResult<()> {
+        match code {
+            KeyCode::Char(c) => {
+                if line.len() < 40 {
+                    line.insert(*index, c);
+                    if index < &mut line.len() {
+                        *index += 1;
+                    }
+                }
+            }
+            KeyCode::Backspace => {
+                line.remove(*index);
+            }
+            KeyCode::Left => {
+                if index > &mut 0 {
+                    *index -= 1;
+                }
+            }
+            KeyCode::Right => {
+                if index < &mut line.len() {
+                    *index += 1;
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    fn search_file_items(&mut self) {
+        self.mode = Mode::Searcher;
+    }
+
+    pub fn new_regex(&mut self) {
+        let lien = self.searhing_name();
+        if lien.is_empty() {
+            self.re = None
+        } else {
+            let re = Regex::new(&self.searhing_name());
+            if let Ok(re) = re {
+                self.re = Some(re);
+            }
+        }
+    }
+
+    pub fn clear_regex(&mut self) {
+        self.re = None;
+    }
+
+    pub fn matching_regex(&self) -> Option<&Regex> {
+        self.re.as_ref()
+    }
+
+    fn searhing_name(&self) -> &String {
+        &self.searching_name
+    }
+
+    fn replace_searching_name(&mut self, s: &str) {
+        self.searching_name = s.to_owned();
+    }
 }
 
 // receives input from the user and determines if a command
 // it is possible to receive different commands each modes
-pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult<()> {
     // TODO: only directory settings exit, but default settings be going to be added.
     app.user_settings();
     let mut normal = app.normal_user_keybinds();
@@ -744,11 +818,24 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
             Mode::Normal => key_matchings(&mut normal),
             Mode::Input => key_matchings(&mut input),
             Mode::Stacker => key_matchings(&mut stacker),
+            Mode::Searcher => {
+                let res = searching_files_by_name(&mut app);
+                if res.as_str() == "stop" {
+                    Ok(String::with_capacity(0))
+                } else {
+                    Ok("searhing".to_string())
+                }
+            }
         };
 
         if let Ok(cmd) = res {
+            let cmd = cmd.as_str();
             if cmd == "quit" {
                 return Ok(());
+            }
+
+            if cmd == "searching" {
+                continue;
             }
             run_commands(&mut app, &cmd);
 
@@ -760,7 +847,67 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     }
 }
 
-fn key_matchings(keybinds: &mut UserKeybinds) -> io::Result<String> {
+//
+fn searching_files_by_name(app: &mut App) -> String {
+    let style = app.config.theme().command_style(1).unwrap();
+    let mut line = app.searhing_name().to_owned();
+    let mut index = line.len();
+    let mut terminal =
+        init_input_area_terminal().expect("Failed to make searching input area terminal...");
+
+    terminal
+        .draw(|f| input_area_ui(f, &line, style, line.len() as u16))
+        .expect("failed to make input area window");
+
+    if let Event::Key(KeyEvent { code, .. }) = event::read().expect("Failed to input") {
+        match code {
+            KeyCode::Enter => {
+                app.mode = Mode::Input;
+                app.clear_regex();
+                return "stop".to_string();
+            }
+            KeyCode::Esc => {
+                app.mode = Mode::Input;
+                line.clear();
+                app.clear_regex();
+                app.searching_name = line;
+                return "stop".to_string();
+            }
+            KeyCode::Char(c) => {
+                if line.len() < 40 {
+                    line.insert(index, c);
+                    if index < line.len() {
+                        index += 1;
+                    }
+                }
+            }
+            KeyCode::Backspace => {
+                if index > 0 {
+                    line.remove(index - 1);
+                    index -= 1;
+                }
+            }
+            KeyCode::Left => {
+                if index > 0 {
+                    index -= 1;
+                }
+            }
+            KeyCode::Right => {
+                if index < line.len() {
+                    index += 1;
+                }
+            }
+            _ => {}
+        }
+        app.replace_searching_name(&line);
+        terminal
+            .draw(|f| input_area_ui(f, &line, style, index as u16))
+            .expect("failed to make input area window");
+    }
+    "continue".to_string()
+}
+
+fn key_matchings(keybinds: &mut UserKeybinds) -> ioResult<String> {
     if let Event::Key(key) = event::read()? {
         keybinds.set_keyevent(key);
         // matching a key bindings without combo
@@ -808,8 +955,8 @@ fn run_commands(app: &mut App, cmd: &str) {
         "make_directory" => app.make_directory(),
         "make_file" => app.make_file(),
         "edit" => app.user_edit_file_item(),
+        "search_file_items" => app.search_file_items(),
         // "rename_file_item" => app.rename_file_name(),
-        // "search_file_items" => app.search_file_items(),
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
@@ -823,5 +970,4 @@ fn run_commands(app: &mut App, cmd: &str) {
         "stacker_move" => app.move_file_item_to_crr_dir(),
         _ => {}
     }
-    app.push_command_log(cmd);
 }

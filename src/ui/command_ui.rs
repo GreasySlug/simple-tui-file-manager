@@ -13,7 +13,7 @@ pub fn command_ui<B: Backend>(
     f: &mut Frame<B>,
     cmd_hist: &[String],
     cmd_window: Rect,
-    cmd_styles: [Style; 3],
+    cmd_styles: [Style; 4],
     cmd_mode: &Mode,
     rate: f32,
 ) {
@@ -21,6 +21,7 @@ pub fn command_ui<B: Backend>(
         Mode::Normal => cmd_styles[0],
         Mode::Input => cmd_styles[1],
         Mode::Stacker => cmd_styles[2],
+        Mode::Searcher => cmd_styles[3],
     };
     let cmd_background = Block::default()
         .style(cmd_style)
@@ -60,6 +61,7 @@ pub fn command_ui<B: Backend>(
         Mode::Normal => "Normal",
         Mode::Input => "Input",
         Mode::Stacker => "Stacker",
+        Mode::Searcher => "searcher",
     };
 
     let mode_str = Paragraph::new(mode_str)
