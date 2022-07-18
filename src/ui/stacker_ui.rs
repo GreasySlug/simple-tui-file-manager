@@ -8,31 +8,27 @@ use tui::{
 };
 
 use crate::{
-    application::App,
-    file_item_list::{file_item, Kinds},
-    load_config::FileItems,
+    application::App, file_item_list::Kinds, load_config::FileItems,
     path_process::pathbuf_to_string_name,
 };
 
 use super::{
-    HEADER_TITLES, HEIGHT_OF_UI_FILE_LENGTH, HEIGHT_OF_UI_ICON_LENGTH, HEIGHT_OF_UI_INFO_LENGTH,
-    HEIGHT_OF_UI_MARGIN_LENGTH, UI_MIN_PERCENTAGE,
+    FILE_LENGTH, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, NEW_HEADER_TITLES, PERMISION_LENGTH,
 };
 
 pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window: Rect) {
     let header_style = app.theme().header_style();
-    let header_titles = HEADER_TITLES
+    let header_titles = NEW_HEADER_TITLES
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
 
     let header_constraints = [
-        Constraint::Length(HEIGHT_OF_UI_MARGIN_LENGTH), //  margin
-        Constraint::Length(HEIGHT_OF_UI_ICON_LENGTH),   // file item's icon
-        Constraint::Length(HEIGHT_OF_UI_FILE_LENGTH),   // file name
-        Constraint::Min(UI_MIN_PERCENTAGE),             // file extension
-        Constraint::Min(UI_MIN_PERCENTAGE),             // permission
-        Constraint::Length(HEIGHT_OF_UI_INFO_LENGTH),   // size
-        Constraint::Length(HEIGHT_OF_UI_INFO_LENGTH),   // date
+        Constraint::Length(PERMISION_LENGTH), // permission
+        Constraint::Length(INFO_LENGTH),      // size
+        Constraint::Length(INFO_LENGTH),      // date
+        Constraint::Length(MARGIN_LENGTH),    //  margin
+        Constraint::Length(ICON_LENGTH),      // file item's icon
+        Constraint::Length(FILE_LENGTH),      // file name
     ];
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
@@ -55,39 +51,21 @@ pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window:
         let size = file_item.get_file_item_size();
         let date = file_item.get_created_date_and_time();
         let mut lines = vec![
-            Span::raw(" "),
-            Span::raw(name),
             Span::raw(perm),
             Span::raw(size),
             Span::raw(date),
+            Span::raw(" "),
+            Span::raw(name),
         ];
 
         if file_item.kinds() == Kinds::Directory(true)
             || file_item.kinds() == Kinds::Directory(false)
         {
-            lines.insert(1, Span::styled(&dir_symbol, dir_style));
+            lines.insert(4, Span::styled(&dir_symbol, dir_style));
         } else {
-            lines.insert(1, Span::styled(&file_symbol, file_style));
+            lines.insert(4, Span::styled(&file_symbol, file_style));
         };
 
-        match file_item.extension() {
-            Some(ex) => match ex {
-                file_item::Extension::C => lines.insert(3, Span::raw("C")),
-                file_item::Extension::CPlusPlus => lines.insert(3, Span::raw("C++")),
-                file_item::Extension::CSharp => lines.insert(3, Span::raw("C#")),
-                file_item::Extension::Go => lines.insert(3, Span::raw("Go")),
-                file_item::Extension::Java => lines.insert(3, Span::raw("Java")),
-                file_item::Extension::JavaScript => lines.insert(3, Span::raw("JS")),
-                file_item::Extension::Markdown => lines.insert(3, Span::raw("MD")),
-                file_item::Extension::Rust => lines.insert(3, Span::raw("Rust")),
-                file_item::Extension::Ruby => lines.insert(3, Span::raw("Ruby")),
-                file_item::Extension::Python => lines.insert(3, Span::raw("Py")),
-                file_item::Extension::Perl => lines.insert(3, Span::raw("Perl")),
-                file_item::Extension::Toml => lines.insert(3, Span::raw("Toml")),
-                file_item::Extension::Unknwon => lines.insert(3, Span::raw("n/a")),
-            },
-            None => lines.insert(3, Span::raw("N/A")),
-        };
         if app.stacker_contains(&file_item.path().to_path_buf()) {
             Row::new(lines).style(
                 app.theme().select_style().patch(

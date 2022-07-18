@@ -18,12 +18,13 @@ use self::stacker_ui::stacker_ui;
 
 const HEIGHT_OF_UI_ONE_LINE_LENGTH: u16 = 3;
 const UI_MIN_PERCENTAGE: u16 = 0;
-const HEIGHT_OF_UI_INFO_LENGTH: u16 = 10;
-const HEIGHT_OF_UI_FILE_LENGTH: u16 = 20;
-const HEIGHT_OF_UI_ICON_LENGTH: u16 = 2;
-const HEIGHT_OF_UI_MARGIN_LENGTH: u16 = 1;
 
-const HEADER_TITLES: [&str; 7] = ["", "", "name", "extension", "permission", "size", "date"];
+const INFO_LENGTH: u16 = 10;
+const FILE_LENGTH: u16 = 40;
+const ICON_LENGTH: u16 = 4;
+const MARGIN_LENGTH: u16 = 2;
+const PERMISION_LENGTH: u16 = 4;
+const NEW_HEADER_TITLES: [&str; 6] = ["perm", "size", "date", "", "", "name"];
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let background_style = app.theme().background_style();
@@ -71,6 +72,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .iter()
         .map(|t| Spans::from(vec![Span::raw(t)]))
         .collect();
+
+    // Put above command_ui inside
     match mode {
         Mode::Normal => {
             let tabs = Tabs::new(tab_titles)

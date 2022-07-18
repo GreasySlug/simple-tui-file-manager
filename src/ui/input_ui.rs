@@ -10,9 +10,11 @@ use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
 use tui::Terminal;
 
+use super::{
+    directory_ui::{directory_ui, matching_directory_ui},
+    HEIGHT_OF_UI_ONE_LINE_LENGTH, UI_MIN_PERCENTAGE,
+};
 use crate::{application::App, load_config::SettingTheme};
-
-use super::{directory_ui::directory_ui, HEIGHT_OF_UI_ONE_LINE_LENGTH, UI_MIN_PERCENTAGE};
 
 #[inline]
 pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -56,8 +58,8 @@ pub fn start_user_input(line: &mut String, theme: &SettingTheme) -> io::Result<(
 
 // https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.InvalidData
 // TODO: more comprehensive
-const CHARS_CANNOT_BE_USED: [char; 10] = ['\\', '|', '<', '>', '*', ':', '?', '\"', '\'', '/'];
-fn is_invalid_file_name(line: &str) -> bool {
+pub fn is_invalid_file_name(line: &str) -> bool {
+    const CHARS_CANNOT_BE_USED: [char; 10] = ['\\', '|', '<', '>', '*', ':', '?', '\"', '\'', '/'];
     for c in CHARS_CANNOT_BE_USED.into_iter() {
         if line.find(c).is_none() {
             return false;
