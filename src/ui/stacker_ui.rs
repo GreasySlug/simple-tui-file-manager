@@ -99,11 +99,19 @@ pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window:
 
     let dir = app.selected_statefuldir_ref();
 
-    let layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(directory_window[0]);
-
+    let (term_col, _) = crossterm::terminal::size().expect("failed to get terminal size...");
+    // Determine just the right size
+    let layout = if term_col < 100 {
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(directory_window[0])
+    } else {
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(directory_window[0])
+    };
     f.render_stateful_widget(items, layout[0], &mut dir.state_table());
 
     stacking_item_ui(f, app, layout[1]);
