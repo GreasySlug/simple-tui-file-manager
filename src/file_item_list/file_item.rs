@@ -121,8 +121,12 @@ impl FileItem {
         created_time.format("%F-%R").to_string()
     }
 
-    pub fn is_hidden_item(&self) -> bool {
-        self.kinds() == Kinds::File(true) || self.kinds() == Kinds::Directory(true)
+    pub fn is_hidden_file(&self) -> bool {
+        self.kinds() == Kinds::File(true)
+    }
+
+    pub fn is_hidden_dir(&self) -> bool {
+        self.kinds() == Kinds::Directory(true)
     }
 
     pub fn find(&self, pattern: &Regex) -> Option<(&str, Range<usize>)> {

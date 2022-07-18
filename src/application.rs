@@ -480,26 +480,35 @@ impl App {
         self.stacker.stacker_push(path);
     }
 
-    fn stacker_pop_back(&mut self) -> Option<PathBuf> {
-        self.stacker.stacker_pop()
-    }
-
-    pub fn stacker_contains(&self, path: &PathBuf) -> bool {
-        self.stacker.stacker_contains(path)
-    }
-
-    // select
-    fn stack_crr_file_item(&mut self) {
-        if let Some(item) = self.selecting_crr_file_item() {
-            let path = item.path().to_path_buf();
-            if !self.stacker_contains(&path) {
-                self.stacker_push_back(path);
+    ///
+    /// If the item is not selected, select it
+    /// if the item is selected, select it
+    ///
+    fn stacker_handle_selecter(&mut self) {
+        let item = self.selected_statefuldir_ref().get_selected_file_item();
+        if let Some(item) = item {
+            if self.stacker_contains(item.path()) {
+                self.stacker.remove_selecting_item();
+            } else {
+                let path = item.path();
+                if !self.stacker_contains(&path) {
+                    self.stacker_push_back(path.to_path_buf());
+                }
             }
         }
     }
 
+    // unselect latest
+    fn stacker_deselected(&mut self) {
+        self.stacker.stacker_pop();
+    }
+
+    pub fn stacker_contains(&self, path: &Path) -> bool {
+        self.stacker.stacker_contains(path)
+    }
+
     // select all
-    fn stack_all_file_items(&mut self) {
+    fn stacker_all_file_items(&mut self) {
         let dir = self.selected_statefuldir_mut();
         for item in dir.file_items().to_owned() {
             let path = item.path().to_path_buf();
@@ -509,7 +518,7 @@ impl App {
         }
     }
 
-    fn stack_dir_recursively(&mut self, path: PathBuf) {
+    fn stacker_push_dir_recursively(&mut self, path: PathBuf) {
         if !path.exists() {
             self.push_command_log("Doesn't exist");
             return;
@@ -527,7 +536,7 @@ impl App {
         for entry in path.read_dir().unwrap().flatten() {
             let entry_path = entry.path();
             if entry_path.is_dir() {
-                self.stack_dir_recursively(entry_path.clone())
+                self.stacker_push_dir_recursively(entry_path.clone())
             }
             if self.stacker_contains(&entry_path) {
                 continue;
@@ -537,11 +546,11 @@ impl App {
         self.stacker_push_back(path);
     }
 
-    fn stack_crr_dir_recursively(&mut self) {
+    fn stacker_crr_dir_recursively(&mut self) {
         if let Some(item) = self.selecting_crr_file_item() {
             let path = item.path().to_path_buf();
             if !self.stacker_contains(&path) {
-                self.stack_dir_recursively(path);
+                self.stacker_push_dir_recursively(path);
             }
         }
     }
@@ -555,11 +564,11 @@ impl App {
         }
     }
 
-    fn next_stacker_item(&mut self) {
+    fn stacker_next_item(&mut self) {
         self.stacker.next_stacker_item();
     }
 
-    fn previous_stacker_item(&mut self) {
+    fn stacker_previous_item(&mut self) {
         self.stacker.previous_stacker_item();
     }
 
@@ -604,7 +613,7 @@ impl App {
         if let Some(i) = stacker_stete.selected() {
             let path = self.stacker.stacker_remove(i);
             if path.is_dir() {
-                self.delete_directory_including_its_contents(&path);
+                self.stacker_delete_directory_including_its_contents(&path);
             } else {
                 self.delete_crr_item_in_stacker();
             }
@@ -624,7 +633,7 @@ impl App {
     ///. ** User Carefully ** ///
     /// delete directory and its contents
     ///
-    fn delete_directory_including_its_contents(&mut self, path: &Path) {
+    fn stacker_delete_directory_including_its_contents(&mut self, path: &Path) {
         match fs::remove_dir_all(path) {
             Ok(_) => {}
             Err(err) => {
@@ -682,7 +691,7 @@ impl App {
     }
 
     // stacker move methods
-    fn move_file_item_to_crr_dir(&mut self) {
+    fn stcker_move_file_item_to_crr_dir(&mut self) {
         if self.stacker.stacker_is_empty() {
             return;
         }
@@ -736,40 +745,6 @@ impl App {
         self.shift_to_input_mode();
     }
 
-    fn find_file_items(
-        &mut self,
-        line: &mut String,
-        code: KeyCode,
-        index: &mut usize,
-    ) -> ioResult<()> {
-        match code {
-            KeyCode::Char(c) => {
-                if line.len() < 40 {
-                    line.insert(*index, c);
-                    if index < &mut line.len() {
-                        *index += 1;
-                    }
-                }
-            }
-            KeyCode::Backspace => {
-                line.remove(*index);
-            }
-            KeyCode::Left => {
-                if index > &mut 0 {
-                    *index -= 1;
-                }
-            }
-            KeyCode::Right => {
-                if index < &mut line.len() {
-                    *index += 1;
-                }
-            }
-            _ => {}
-        }
-
-        Ok(())
-    }
-
     fn search_file_items(&mut self) {
         self.mode = Mode::Searcher;
     }
@@ -779,7 +754,7 @@ impl App {
         if lien.is_empty() {
             self.re = None
         } else {
-            let re = Regex::new(&self.searhing_name());
+            let re = Regex::new(self.searhing_name());
             if let Ok(re) = re {
                 self.re = Some(re);
             }
@@ -960,14 +935,15 @@ fn run_commands(app: &mut App, cmd: &str) {
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
-        "stacker_select" => app.stack_crr_file_item(),
-        "stacker_unselect" => app.pop_file_item(),
-        "stacker_select_all_recursively" => app.stack_crr_dir_recursively(),
-        "stacker_select_all" => app.stack_all_file_items(),
-        "stacker_next_file_item" => app.next_stacker_item(),
-        "stacker_prev_file_item" => app.previous_stacker_item(),
+        "stacker_toggle_select" => app.stacker_handle_selecter(),
+        // "stacker_unselect" => app.handle_selecter(),
+        "stacker_pop" => app.stacker_deselected(),
+        "stacker_select_all_recursively" => app.stacker_crr_dir_recursively(),
+        "stacker_select_all" => app.stacker_all_file_items(),
+        "stacker_next_file_item" => app.stacker_next_item(),
+        "stacker_prev_file_item" => app.stacker_previous_item(),
         "stacker_paste" => app.stacker_copy_file_item_to_crr_dir(),
-        "stacker_move" => app.move_file_item_to_crr_dir(),
+        "stacker_move" => app.stcker_move_file_item_to_crr_dir(),
         _ => {}
     }
 }
