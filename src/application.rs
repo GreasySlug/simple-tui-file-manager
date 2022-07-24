@@ -801,10 +801,6 @@ impl App {
         self.searcher.init_index();
     }
 
-    pub fn make_seacher_vector(&mut self, v: Vec<FileItem>) -> Vec<FileItem> {
-        self.searcher.make_filter_vec(v)
-    }
-
     pub fn searcher_state(&mut self) -> &mut TableState {
         self.searcher.state()
     }
@@ -813,7 +809,7 @@ impl App {
         self.searcher.remove_file_path()
     }
 
-    fn searcher_move_to_child(&mut self) {
+    fn searcher_move_to_child_dir(&mut self) {
         if let Some(path) = self.remove_file_path_searcher() {
             if let Ok(meta) = path.metadata() {
                 match Kinds::classifiy_kinds(&path, &meta) {
@@ -827,10 +823,21 @@ impl App {
                     Kinds::File(_) => self.push_command_log("Not directory"),
                 }
             }
+            self.searcher_init();
+            self.mode = Mode::Normal;
         }
     }
 
-    fn searcher_move_to_parent(&mut self) {}
+    fn searcher_make_found_items(&mut self) {
+        let items = self.selecting_dir_file_items().clone();
+        for item in items {
+            self.searcher.filter_push(item);
+        }
+    }
+
+    fn searcher_is_empty(&self) -> bool {
+        self.searcher.is_empty()
+    }
 }
 
 //
@@ -866,6 +873,12 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
             let cmd = cmd.as_str();
             if cmd == QUIT {
                 return Ok(());
+            }
+            if cmd == SEARCHING_FIXED {
+                app.searcher_make_found_items();
+                if app.searcher_is_empty() {
+                    handle_modal_seacher(&mut app);
+                }
             }
             if cmd == SEARCHING {
                 continue;
@@ -1034,8 +1047,9 @@ fn run_commands(app: &mut App, cmd: &str) {
         "stacker_move" => app.stcker_move_file_item_to_crr_dir(),
 
         // searcher commands
-        "seacher_next_file_item" => app.searcher_next(),
-        "seacher_prev_file_item" => app.searcher_prev(),
+        "searcher_next_file_item" => app.searcher_next(),
+        "searcher_prev_file_item" => app.searcher_prev(),
+        "searcher_move_to_child_dir" => app.searcher_move_to_child_dir(),
         _ => {}
     }
 }

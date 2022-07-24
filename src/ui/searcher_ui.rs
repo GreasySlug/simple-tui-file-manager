@@ -50,8 +50,7 @@ pub fn ui<B: Backend>(
         .constraints([Constraint::Percentage(100)])
         .split(directory_window);
 
-    let dir = app.selecting_dir_file_items().clone();
-    let file_item_list = app.make_seacher_vector(dir);
+    let file_item_list = app.selecting_dir_file_items().clone();
     if let Some(re) = app.regex_ref() {
         let dir_block_style = themes.boader_style();
         let selecting_style = themes

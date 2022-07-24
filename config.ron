@@ -88,8 +88,9 @@
             "S-d": "stacker_delete_all",
         },
         searcher: {
-            "j": "seacher_next_file_item",
-            "k": "seacher_prev_file_item",
+            "j": "searcher_next_file_item",
+            "k": "searcher_prev_file_item",
+            "l": "searcher_move_to_child_dir",
             "esc": "normal",
             // "u":   "stacker_pop",
             // "C-a": "stacker_select_all",

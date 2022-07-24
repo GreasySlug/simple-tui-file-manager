@@ -132,14 +132,18 @@ impl Searcher {
             None
         }
     }
-    pub fn make_filter_vec(&mut self, items: Vec<FileItem>) -> Vec<FileItem> {
-        if let Some(re) = self.get_regex() {
-            items
-                .into_iter()
-                .filter(|item| item.find(re).is_some())
-                .collect::<Vec<FileItem>>()
-        } else {
-            Vec::new()
+
+    pub fn is_empty(&self) -> bool {
+        self.searched_items.is_empty()
+    }
+
+    pub fn filter_push(&mut self, item: FileItem) {
+        if self.re.is_none() {
+            return;
+        }
+        let re = self.re.as_ref().unwrap();
+        if item.find(re).is_some() {
+            self.push_searched_item(item.path().to_owned());
         }
     }
 }
