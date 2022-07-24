@@ -13,6 +13,7 @@
             (Black, White), // normal
             (Black, LightGreen), // imput
             (Black,  LightBlue), // stacker
+            (Black,  LightRed), // searcher
             ],
     ),
     symbols: {
@@ -43,6 +44,7 @@
             "S-g": "move_to_bottom_of_file_item",
             "tab":"next_dirtab",
             "S-tab":"prev_dirtab",
+            "/": "search_file_items",
         },
         input: {
             ": q" :"quit",
@@ -75,8 +77,8 @@
             "C-n": "stacker_next_file_item",
             "C-p": "stacker_prev_file_item",
 
-            "s":   "stacker_select",
-            "u":   "stacker_unselect",
+            "s":   "stacker_toggle_select",
+            "u":   "stacker_pop",
             "C-s": "stacker_select_all_recursively",
             "C-a": "stacker_select_all",
             "p":   "stacker_paste",

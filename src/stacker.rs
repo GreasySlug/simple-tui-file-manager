@@ -110,8 +110,8 @@ impl StackerVec {
         }
     }
 
-    pub fn stacker_contains(&self, path: &PathBuf) -> bool {
-        self.stack.contains(path)
+    pub fn stacker_contains(&self, path: &Path) -> bool {
+        self.stack.contains(&path.to_owned())
     }
 
     pub fn stacker_is_empty(&self) -> bool {

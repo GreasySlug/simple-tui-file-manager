@@ -1,9 +1,11 @@
 use std::collections::{hash_map::Entry, HashMap};
 use std::fmt::Debug;
+use std::io::Result as ioResult;
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-use crossterm::event::{self, Event};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use regex::Regex;
 use tui::backend::Backend;
 use tui::Terminal;
 
@@ -21,7 +23,7 @@ use crate::path_process::{
 
 use crate::stacker::StackerVec;
 use crate::state::StatefulDirectory;
-use crate::ui::input_ui::start_user_input;
+use crate::ui::input_ui::{init_input_area_terminal, input_area_ui, start_user_input};
 use crate::ui::ui;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,6 +31,7 @@ pub enum Mode {
     Normal,
     Input,
     Stacker,
+    Searcher,
 }
 
 // TODO: Restrictions without reason, so think cost
@@ -48,6 +51,9 @@ pub struct App {
     be_cleaned: bool,
     editor: String,
     show_hidden_files: bool,
+    // traial
+    re: Option<Regex>,
+    searching_name: String,
 }
 
 impl App {
@@ -63,6 +69,9 @@ impl App {
             be_cleaned: false,
             editor: String::new(),
             show_hidden_files: false,
+            // traial
+            re: None,
+            searching_name: String::new(),
         }
     }
 
@@ -471,26 +480,35 @@ impl App {
         self.stacker.stacker_push(path);
     }
 
-    fn stacker_pop_back(&mut self) -> Option<PathBuf> {
-        self.stacker.stacker_pop()
-    }
-
-    pub fn stacker_contains(&self, path: &PathBuf) -> bool {
-        self.stacker.stacker_contains(path)
-    }
-
-    // select
-    fn stack_crr_file_item(&mut self) {
-        if let Some(item) = self.selecting_crr_file_item() {
-            let path = item.path().to_path_buf();
-            if !self.stacker_contains(&path) {
-                self.stacker_push_back(path);
+    ///
+    /// If the item is not selected, select it
+    /// if the item is selected, select it
+    ///
+    fn stacker_handle_selecter(&mut self) {
+        let item = self.selected_statefuldir_ref().get_selected_file_item();
+        if let Some(item) = item {
+            if self.stacker_contains(item.path()) {
+                self.stacker.remove_selecting_item();
+            } else {
+                let path = item.path();
+                if !self.stacker_contains(&path) {
+                    self.stacker_push_back(path.to_path_buf());
+                }
             }
         }
     }
 
+    // unselect latest
+    fn stacker_deselected(&mut self) {
+        self.stacker.stacker_pop();
+    }
+
+    pub fn stacker_contains(&self, path: &Path) -> bool {
+        self.stacker.stacker_contains(path)
+    }
+
     // select all
-    fn stack_all_file_items(&mut self) {
+    fn stacker_all_file_items(&mut self) {
         let dir = self.selected_statefuldir_mut();
         for item in dir.file_items().to_owned() {
             let path = item.path().to_path_buf();
@@ -500,7 +518,7 @@ impl App {
         }
     }
 
-    fn stack_dir_recursively(&mut self, path: PathBuf) {
+    fn stacker_push_dir_recursively(&mut self, path: PathBuf) {
         if !path.exists() {
             self.push_command_log("Doesn't exist");
             return;
@@ -518,7 +536,7 @@ impl App {
         for entry in path.read_dir().unwrap().flatten() {
             let entry_path = entry.path();
             if entry_path.is_dir() {
-                self.stack_dir_recursively(entry_path.clone())
+                self.stacker_push_dir_recursively(entry_path.clone())
             }
             if self.stacker_contains(&entry_path) {
                 continue;
@@ -528,11 +546,11 @@ impl App {
         self.stacker_push_back(path);
     }
 
-    fn stack_crr_dir_recursively(&mut self) {
+    fn stacker_crr_dir_recursively(&mut self) {
         if let Some(item) = self.selecting_crr_file_item() {
             let path = item.path().to_path_buf();
             if !self.stacker_contains(&path) {
-                self.stack_dir_recursively(path);
+                self.stacker_push_dir_recursively(path);
             }
         }
     }
@@ -546,11 +564,11 @@ impl App {
         }
     }
 
-    fn next_stacker_item(&mut self) {
+    fn stacker_next_item(&mut self) {
         self.stacker.next_stacker_item();
     }
 
-    fn previous_stacker_item(&mut self) {
+    fn stacker_previous_item(&mut self) {
         self.stacker.previous_stacker_item();
     }
 
@@ -595,7 +613,7 @@ impl App {
         if let Some(i) = stacker_stete.selected() {
             let path = self.stacker.stacker_remove(i);
             if path.is_dir() {
-                self.delete_directory_including_its_contents(&path);
+                self.stacker_delete_directory_including_its_contents(&path);
             } else {
                 self.delete_crr_item_in_stacker();
             }
@@ -615,7 +633,7 @@ impl App {
     ///. ** User Carefully ** ///
     /// delete directory and its contents
     ///
-    fn delete_directory_including_its_contents(&mut self, path: &Path) {
+    fn stacker_delete_directory_including_its_contents(&mut self, path: &Path) {
         match fs::remove_dir_all(path) {
             Ok(_) => {}
             Err(err) => {
@@ -673,7 +691,7 @@ impl App {
     }
 
     // stacker move methods
-    fn move_file_item_to_crr_dir(&mut self) {
+    fn stcker_move_file_item_to_crr_dir(&mut self) {
         if self.stacker.stacker_is_empty() {
             return;
         }
@@ -704,7 +722,6 @@ impl App {
                         io::ErrorKind::PermissionDenied => "Permission Denied",
                         _ => "Duplecate name",
                     };
-                    println!("Move Command: {}", mss);
                     self.stacker.stacker_push(from_path);
                 }
             }
@@ -727,11 +744,43 @@ impl App {
         self.be_clear();
         self.shift_to_input_mode();
     }
+
+    fn search_file_items(&mut self) {
+        self.mode = Mode::Searcher;
+    }
+
+    pub fn new_regex(&mut self) {
+        let lien = self.searhing_name();
+        if lien.is_empty() {
+            self.re = None
+        } else {
+            let re = Regex::new(self.searhing_name());
+            if let Ok(re) = re {
+                self.re = Some(re);
+            }
+        }
+    }
+
+    pub fn clear_regex(&mut self) {
+        self.re = None;
+    }
+
+    pub fn matching_regex(&self) -> Option<&Regex> {
+        self.re.as_ref()
+    }
+
+    fn searhing_name(&self) -> &String {
+        &self.searching_name
+    }
+
+    fn replace_searching_name(&mut self, s: &str) {
+        self.searching_name = s.to_owned();
+    }
 }
 
 // receives input from the user and determines if a command
 // it is possible to receive different commands each modes
-pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult<()> {
     // TODO: only directory settings exit, but default settings be going to be added.
     app.user_settings();
     let mut normal = app.normal_user_keybinds();
@@ -744,11 +793,24 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
             Mode::Normal => key_matchings(&mut normal),
             Mode::Input => key_matchings(&mut input),
             Mode::Stacker => key_matchings(&mut stacker),
+            Mode::Searcher => {
+                let res = searching_files_by_name(&mut app);
+                if res.as_str() == "stop" {
+                    Ok(String::with_capacity(0))
+                } else {
+                    Ok("searhing".to_string())
+                }
+            }
         };
 
         if let Ok(cmd) = res {
+            let cmd = cmd.as_str();
             if cmd == "quit" {
                 return Ok(());
+            }
+
+            if cmd == "searching" {
+                continue;
             }
             run_commands(&mut app, &cmd);
 
@@ -760,7 +822,67 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
     }
 }
 
-fn key_matchings(keybinds: &mut UserKeybinds) -> io::Result<String> {
+//
+fn searching_files_by_name(app: &mut App) -> String {
+    let style = app.config.theme().command_style(1).unwrap();
+    let mut line = app.searhing_name().to_owned();
+    let mut index = line.len();
+    let mut terminal =
+        init_input_area_terminal().expect("Failed to make searching input area terminal...");
+
+    terminal
+        .draw(|f| input_area_ui(f, &line, style, line.len() as u16))
+        .expect("failed to make input area window");
+
+    if let Event::Key(KeyEvent { code, .. }) = event::read().expect("Failed to input") {
+        match code {
+            KeyCode::Enter => {
+                app.mode = Mode::Input;
+                app.clear_regex();
+                return "stop".to_string();
+            }
+            KeyCode::Esc => {
+                app.mode = Mode::Input;
+                line.clear();
+                app.clear_regex();
+                app.searching_name = line;
+                return "stop".to_string();
+            }
+            KeyCode::Char(c) => {
+                if line.len() < 40 {
+                    line.insert(index, c);
+                    if index < line.len() {
+                        index += 1;
+                    }
+                }
+            }
+            KeyCode::Backspace => {
+                if index > 0 {
+                    line.remove(index - 1);
+                    index -= 1;
+                }
+            }
+            KeyCode::Left => {
+                if index > 0 {
+                    index -= 1;
+                }
+            }
+            KeyCode::Right => {
+                if index < line.len() {
+                    index += 1;
+                }
+            }
+            _ => {}
+        }
+        app.replace_searching_name(&line);
+        terminal
+            .draw(|f| input_area_ui(f, &line, style, index as u16))
+            .expect("failed to make input area window");
+    }
+    "continue".to_string()
+}
+
+fn key_matchings(keybinds: &mut UserKeybinds) -> ioResult<String> {
     if let Event::Key(key) = event::read()? {
         keybinds.set_keyevent(key);
         // matching a key bindings without combo
@@ -808,20 +930,20 @@ fn run_commands(app: &mut App, cmd: &str) {
         "make_directory" => app.make_directory(),
         "make_file" => app.make_file(),
         "edit" => app.user_edit_file_item(),
+        "search_file_items" => app.search_file_items(),
         // "rename_file_item" => app.rename_file_name(),
-        // "search_file_items" => app.search_file_items(),
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
-        "stacker_select" => app.stack_crr_file_item(),
-        "stacker_unselect" => app.pop_file_item(),
-        "stacker_select_all_recursively" => app.stack_crr_dir_recursively(),
-        "stacker_select_all" => app.stack_all_file_items(),
-        "stacker_next_file_item" => app.next_stacker_item(),
-        "stacker_prev_file_item" => app.previous_stacker_item(),
+        "stacker_toggle_select" => app.stacker_handle_selecter(),
+        // "stacker_unselect" => app.handle_selecter(),
+        "stacker_pop" => app.stacker_deselected(),
+        "stacker_select_all_recursively" => app.stacker_crr_dir_recursively(),
+        "stacker_select_all" => app.stacker_all_file_items(),
+        "stacker_next_file_item" => app.stacker_next_item(),
+        "stacker_prev_file_item" => app.stacker_previous_item(),
         "stacker_paste" => app.stacker_copy_file_item_to_crr_dir(),
-        "stacker_move" => app.move_file_item_to_crr_dir(),
+        "stacker_move" => app.stcker_move_file_item_to_crr_dir(),
         _ => {}
     }
-    app.push_command_log(cmd);
 }
