@@ -775,8 +775,9 @@ impl App {
         self.mode = Mode::Searcher;
     }
 
-    pub fn new_regex(&mut self) {
-        self.searcher.new_regex();
+    fn shift_to_normal_mode_from_searcher(&mut self) {
+        self.searcher_init();
+        self.mode = Mode::Normal;
     }
 
     pub fn regex_ref(&self) -> Option<&Regex> {
@@ -881,6 +882,14 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
     }
 }
 
+fn handle_modal_seacher(app: &mut App) {
+    if app.mode() == &Mode::Searcher {
+        app.shift_to_normal_mode_from_searcher();
+    } else {
+        app.shift_to_normal_mode();
+    }
+}
+
 fn searching_handling(
     app: &mut App,
     res: &mut String,
@@ -923,7 +932,6 @@ fn searching_files_by_name(app: &mut App, themes: &SettingTheme) -> String {
     if let Event::Key(KeyEvent { code, .. }) = event::read().expect("Failed to input") {
         match code {
             KeyCode::Enter => {
-                app.searcher_init();
                 return SEARCHING_FIXED.to_string();
             }
             KeyCode::Esc => {
@@ -987,7 +995,8 @@ fn key_matchings(keybinds: &mut UserKeybinds) -> ioResult<String> {
 fn run_commands(app: &mut App, cmd: &str) {
     match cmd {
         // mode
-        "normal" => app.shift_to_normal_mode(),
+        // "normal" => app.shift_to_normal_mode(),
+        "normal" => handle_modal_seacher(app),
         "input" => app.shift_to_input_mode(),
         "stacker" => app.shift_to_stacker_mode(),
 
@@ -1005,6 +1014,7 @@ fn run_commands(app: &mut App, cmd: &str) {
         // "add_directory_to_dirtab" => app.add_dir_to_dirtab(),
         // "display_or_hide_hidden_file" => app.display_or_hide_hedden_file(),
         // "use_editor" => app.edit_crr_file_item(),
+        "search_file_items" => app.shift_to_searcher_mode(),
 
         // input commands
         "make_directory" => app.make_directory(),
@@ -1026,7 +1036,6 @@ fn run_commands(app: &mut App, cmd: &str) {
         // searcher commands
         "seacher_next_file_item" => app.searcher_next(),
         "seacher_prev_file_item" => app.searcher_prev(),
-        "search_file_items" => app.shift_to_searcher_mode(),
         _ => {}
     }
 }

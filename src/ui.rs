@@ -84,7 +84,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
             stacker_ui(f, app, chunks[1], themes);
         }
         Mode::Searcher => {
-            input_ui::ui(f, app, themes);
             searcher_ui::ui(f, app, chunks[1], themes);
         }
     }

@@ -52,7 +52,6 @@ pub fn ui<B: Backend>(
 
     let dir = app.selecting_dir_file_items().clone();
     let file_item_list = app.make_seacher_vector(dir);
-    app.new_regex();
     if let Some(re) = app.regex_ref() {
         let dir_block_style = themes.boader_style();
         let selecting_style = themes
