@@ -43,8 +43,8 @@ pub fn stacker_ui<B: Backend>(
     let dir_symbol = app.symbols(&FileItems::Directory);
     let select_symbol = app.symbols(&FileItems::Select);
 
-    let current_dir_path = pathbuf_to_string_name(app.crr_dir_path());
-    let file_item_iter = app.crr_file_items();
+    let current_dir_path = pathbuf_to_string_name(app.selecting_dir_path());
+    let file_item_iter = app.selecting_dir_file_items();
 
     let file_style = themes.file_style();
     let dir_style = themes.dir_style();
@@ -73,7 +73,7 @@ pub fn stacker_ui<B: Backend>(
             lines.insert(4, Span::styled(&file_symbol, file_style));
         };
 
-        if app.stacker_contains(&file_item.path().to_path_buf()) {
+        if app.stacker_contains(file_item.path()) {
             Row::new(lines).style(
                 themes.select_style().patch(
                     Style::default()
@@ -104,7 +104,7 @@ pub fn stacker_ui<B: Backend>(
         .highlight_style(selecting_style)
         .highlight_symbol(&select_symbol);
 
-    let dir = app.selected_statefuldir_ref();
+    let dir = app.selecting_statefuldir_ref();
 
     let (term_col, _) = crossterm::terminal::size().expect("failed to get terminal size...");
     // Determine just the right size

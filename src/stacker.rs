@@ -97,7 +97,7 @@ impl StackerVec {
         None
     }
 
-    pub fn stacker_remove_by_path(&mut self, path: &Path) -> Option<PathBuf> {
+    pub fn stacker_take_by_path(&mut self, path: &Path) -> Option<PathBuf> {
         if let Some(i) = self.stack.iter().position(|x| x.as_path() == path) {
             return Some(self.stacker_remove(i));
         }

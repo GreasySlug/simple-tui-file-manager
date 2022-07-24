@@ -126,28 +126,28 @@ impl App {
     }
 
     // The current directory should be selected, so that tab and hashmap must existe.
-    pub fn selected_statefuldir_mut(&mut self) -> &mut StatefulDirectory {
+    pub fn selecting_statefuldir_mut(&mut self) -> &mut StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
         self.dir_map.get_mut(selected_tab).unwrap()
     }
 
-    pub fn selected_statefuldir_ref(&self) -> &StatefulDirectory {
+    pub fn selecting_statefuldir_ref(&self) -> &StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
         self.dir_map.get(selected_tab).unwrap()
     }
 
-    pub fn crr_dir_path(&self) -> &std::path::Path {
-        let selected_stateful_dir = self.selected_statefuldir_ref();
+    pub fn selecting_dir_path(&self) -> &std::path::Path {
+        let selected_stateful_dir = self.selecting_statefuldir_ref();
         selected_stateful_dir.dir_path()
     }
 
-    pub fn crr_file_items(&self) -> &Vec<FileItem> {
-        let stateful_dir = self.selected_statefuldir_ref();
+    pub fn selecting_dir_file_items(&self) -> &Vec<FileItem> {
+        let stateful_dir = self.selecting_statefuldir_ref();
         stateful_dir.file_items()
     }
 
-    fn dir_contain_name(&self, name: &str) -> bool {
-        self.selected_statefuldir_ref().contain_name(name)
+    fn selecting_dir_contain_name(&self, name: &str) -> bool {
+        self.selecting_statefuldir_ref().contain_name(name)
     }
 
     fn dirtab_contains_dirname(&self, name: &String) -> bool {
@@ -155,12 +155,12 @@ impl App {
     }
 
     pub fn selecting_crr_file_item(&self) -> Option<&FileItem> {
-        let stateful_dir = self.selected_statefuldir_ref();
+        let stateful_dir = self.selecting_statefuldir_ref();
         if !stateful_dir.is_selected() {
             return None;
         }
         if let Some(i) = stateful_dir.state_table().selected() {
-            return self.crr_file_items().get(i);
+            return self.selecting_dir_file_items().get(i);
         }
 
         None
@@ -201,11 +201,11 @@ impl App {
     }
 
     pub fn move_to_next_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_next_file_item();
+        self.selecting_statefuldir_mut().select_next_file_item();
     }
 
     pub fn move_to_prev_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_previous_file_item();
+        self.selecting_statefuldir_mut().select_previous_file_item();
     }
 
     pub fn shift_to_input_mode(&mut self) {
@@ -276,9 +276,9 @@ impl App {
     }
 
     pub fn move_to_parent_dir(&mut self) {
-        let selected_dir = self.selected_statefuldir_mut();
+        let selected_dir = self.selecting_statefuldir_mut();
         let dir_name = selected_dir.dir_name();
-        if let Some(parent_path) = self.crr_dir_path().parent() {
+        if let Some(parent_path) = self.selecting_dir_path().parent() {
             let parent_dir_name = pathbuf_to_string_name(parent_path);
             let parent_path = parent_path.to_owned();
             self.insert_new_statefuldir(parent_path);
@@ -287,7 +287,7 @@ impl App {
             *name = parent_dir_name;
 
             // select the position of crr dir name or select top
-            let state_dir = self.selected_statefuldir_mut();
+            let state_dir = self.selecting_statefuldir_mut();
             let dir_pos = state_dir
                 .file_items()
                 .iter()
@@ -298,11 +298,11 @@ impl App {
     }
 
     fn move_to_top_of_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_top_file_item();
+        self.selecting_statefuldir_mut().select_top_file_item();
     }
 
     fn move_to_bottom_of_file_item(&mut self) {
-        self.selected_statefuldir_mut().select_bottom_file_item();
+        self.selecting_statefuldir_mut().select_bottom_file_item();
     }
 
     fn path_to_file_item_recurrently(&mut self, mut path: PathBuf) {
@@ -349,7 +349,7 @@ impl App {
             Ok(()) => {
                 // TODO: bug
                 let item = make_a_file_item_from_dirpath(&path);
-                self.selected_statefuldir_mut()
+                self.selecting_statefuldir_mut()
                     .push_file_item_and_sort(item);
             }
             Err(error) => {
@@ -491,13 +491,13 @@ impl App {
     /// if the item is selected, select it
     ///
     fn stacker_handle_selecter(&mut self) {
-        let item = self.selected_statefuldir_ref().get_selected_file_item();
+        let item = self.selecting_statefuldir_ref().get_selected_file_item();
         if let Some(item) = item {
             if self.stacker_contains(item.path()) {
                 self.stacker.remove_selecting_item();
             } else {
                 let path = item.path();
-                if !self.stacker_contains(&path) {
+                if !self.stacker_contains(path) {
                     self.stacker_push_back(path.to_path_buf());
                 }
             }
@@ -515,8 +515,8 @@ impl App {
 
     // select all
     fn stacker_all_file_items(&mut self) {
-        let dir = self.selected_statefuldir_mut();
-        for item in dir.file_items().to_owned() {
+        let items = self.selecting_dir_file_items().clone();
+        for item in items {
             let path = item.path().to_path_buf();
             if !self.stacker_contains(&path) {
                 self.stacker_push_back(path);
@@ -585,7 +585,7 @@ impl App {
     }
 
     fn remove_path_in_stacker(&mut self, path: &Path) -> Option<PathBuf> {
-        self.stacker.stacker_remove_by_path(path)
+        self.stacker.stacker_take_by_path(path)
     }
 
     // 完全消去ではなくアプリ内のゴミ箱へ移動させて、もとに戻せるようにする
@@ -599,7 +599,7 @@ impl App {
 
         match result {
             Ok(_) => {
-                let stateful_dir = self.selected_statefuldir_mut();
+                let stateful_dir = self.selecting_statefuldir_mut();
                 stateful_dir.remove_file_item_with_path(path);
             }
             Err(err) => {
@@ -667,20 +667,20 @@ impl App {
             }
 
             // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
-            if self.dir_contain_name(name) {
+            if self.selecting_dir_contain_name(name) {
                 self.stacker.stacker_push(from_path);
                 continue;
             }
-            let dir_path = self.crr_dir_path();
+            let dir_path = self.selecting_dir_path();
             let to_path = dir_path.join(name);
             let res = fs::copy(&from_path, &to_path);
             match res {
                 Ok(_n) => {
                     let item = make_a_file_item_from_dirpath(&to_path);
-                    if self.dir_contain_name(item.name_ref()) {
+                    if self.selecting_dir_contain_name(item.name_ref()) {
                         break;
                     }
-                    self.selected_statefuldir_mut()
+                    self.selecting_statefuldir_mut()
                         .push_file_item_and_sort(item);
                 }
                 Err(e) => {
@@ -705,19 +705,19 @@ impl App {
         while let Some(from_path) = self.stacker.remove_selecting_item() {
             let name = &pathbuf_to_string_name(&from_path);
             // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
-            if self.dir_contain_name(name) {
+            if self.selecting_dir_contain_name(name) {
                 self.stacker_push_back(from_path);
                 self.push_command_log("Duplicate name");
                 return;
             }
 
-            let dir_path = self.crr_dir_path();
+            let dir_path = self.selecting_dir_path();
             let to_path = dir_path.join(name);
             let res = fs::copy(&from_path, &to_path);
             match res {
                 Ok(_n) => {
                     let item = make_a_file_item_from_dirpath(&to_path);
-                    self.selected_statefuldir_mut()
+                    self.selecting_statefuldir_mut()
                         .push_file_item_and_sort(item);
                     self.delete_file_item_with_path(&from_path);
                     self.remove_file_item_instance(&from_path);

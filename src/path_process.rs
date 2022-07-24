@@ -85,7 +85,7 @@ pub fn get_user_profile_path() -> Option<PathBuf> {
 
 pub fn join_to_crr_dir(app: &mut App, relpath: impl AsRef<Path>) -> PathBuf {
     let fullpath = app
-        .selected_statefuldir_mut()
+        .selecting_statefuldir_mut()
         .directory()
         .pathbuf()
         .join(relpath);

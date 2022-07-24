@@ -42,7 +42,7 @@ pub fn directory_ui<B: Backend>(
     let file_symbol = app.symbols(&FileItems::File);
     let dir_symbol = app.symbols(&FileItems::Directory);
 
-    let file_item_iter = app.crr_file_items();
+    let file_items = app.selecting_dir_file_items();
 
     let file_style = themes.file_style();
     let dir_style = themes.dir_style();
@@ -92,7 +92,7 @@ pub fn directory_ui<B: Backend>(
         .highlight_style(selecting_style)
         .highlight_symbol(&select_symbol);
 
-    let dir = app.selected_statefuldir_ref();
+    let dir = app.selecting_statefuldir_ref();
     f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
 }
 
@@ -119,10 +119,10 @@ pub fn matching_directory_ui<B: Backend>(
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
     app.new_regex();
-    if let Some(rgx) = app.matching_regex() {
+    if let Some(rgx) = app.regex_ref() {
         let file_symbol = app.symbols(&FileItems::File);
         let dir_symbol = app.symbols(&FileItems::Directory);
-        let file_items = app.crr_file_items();
+        let file_items = app.selecting_dir_file_items();
 
         let file_style = themes.file_style();
         let dir_style = themes.dir_style();
@@ -189,7 +189,7 @@ pub fn matching_directory_ui<B: Backend>(
             .highlight_style(selecting_style)
             .highlight_symbol(&select_symbol);
 
-        let dir = app.selected_statefuldir_ref();
+        let dir = app.selecting_statefuldir_ref();
         f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
     } else {
         directory_ui(f, app, directory_window, themes);
