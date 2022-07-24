@@ -91,9 +91,9 @@
             "j": "searcher_next_file_item",
             "k": "searcher_prev_file_item",
             "l": "searcher_move_to_child_dir",
+            "C-a": "searcher_select_all",
             "esc": "normal",
             // "u":   "stacker_pop",
-            // "C-a": "stacker_select_all",
         }
     )
 )

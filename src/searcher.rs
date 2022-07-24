@@ -146,6 +146,10 @@ impl Searcher {
             self.push_searched_item(item.path().to_owned());
         }
     }
+
+    pub fn file_items_ref(&self) -> &Vec<PathBuf> {
+        &self.searched_items
+    }
 }
 
 #[cfg(test)]

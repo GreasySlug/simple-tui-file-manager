@@ -828,6 +828,15 @@ impl App {
         }
     }
 
+    fn searcher_stack_all_items(&mut self) {
+        // TODO: I don't wanna use clone()
+        let item_paths = self.searcher.file_items_ref().clone();
+        for path in item_paths {
+            self.stacker_push_back(path);
+        }
+        self.mode = Mode::Stacker;
+    }
+
     fn searcher_make_found_items(&mut self) {
         let items = self.selecting_dir_file_items().clone();
         for item in items {
@@ -1050,6 +1059,7 @@ fn run_commands(app: &mut App, cmd: &str) {
         "searcher_next_file_item" => app.searcher_next(),
         "searcher_prev_file_item" => app.searcher_prev(),
         "searcher_move_to_child_dir" => app.searcher_move_to_child_dir(),
+        "searcher_select_all" => app.searcher_stack_all_items(),
         _ => {}
     }
 }
