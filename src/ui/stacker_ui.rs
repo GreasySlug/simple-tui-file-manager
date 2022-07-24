@@ -8,7 +8,9 @@ use tui::{
 };
 
 use crate::{
-    application::App, file_item_list::Kinds, load_config::FileItems,
+    application::App,
+    file_item_list::Kinds,
+    load_config::{FileItems, SettingTheme},
     path_process::pathbuf_to_string_name,
 };
 
@@ -16,8 +18,13 @@ use super::{
     FILE_LENGTH, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, NEW_HEADER_TITLES, PERMISION_LENGTH,
 };
 
-pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window: Rect) {
-    let header_style = app.theme().header_style();
+pub fn stacker_ui<B: Backend>(
+    f: &mut Frame<B>,
+    app: &mut App,
+    directory_window: Rect,
+    themes: &SettingTheme,
+) {
+    let header_style = themes.header_style();
     let header_titles = NEW_HEADER_TITLES
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
@@ -39,8 +46,8 @@ pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window:
     let current_dir_path = pathbuf_to_string_name(app.crr_dir_path());
     let file_item_iter = app.crr_file_items();
 
-    let file_style = app.theme().file_style();
-    let dir_style = app.theme().dir_style();
+    let file_style = themes.file_style();
+    let dir_style = themes.dir_style();
     let file_items_list = file_item_iter.iter().map(|file_item| {
         let name = file_item.name();
         let perm = if file_item.get_permission() {
@@ -68,7 +75,7 @@ pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window:
 
         if app.stacker_contains(&file_item.path().to_path_buf()) {
             Row::new(lines).style(
-                app.theme().select_style().patch(
+                themes.select_style().patch(
                     Style::default()
                         .add_modifier(Modifier::BOLD)
                         .add_modifier(Modifier::ITALIC),
@@ -83,8 +90,8 @@ pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window:
         .constraints([Constraint::Percentage(100)])
         .split(directory_window);
 
-    let dir_block_style = app.theme().boader_style();
-    let selecting_style = app.theme().select_style().add_modifier(Modifier::BOLD);
+    let dir_block_style = themes.boader_style();
+    let selecting_style = themes.select_style().add_modifier(Modifier::BOLD);
     let items = Table::new(file_items_list)
         .header(header_cells)
         .widths(&header_constraints)
@@ -114,14 +121,19 @@ pub fn stacker_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window:
     };
     f.render_stateful_widget(items, layout[0], &mut dir.state_table());
 
-    stacking_item_ui(f, app, layout[1]);
+    stacking_item_ui(f, app, layout[1], themes);
 }
 
-pub fn stacking_item_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, stack_window: Rect) {
+pub fn stacking_item_ui<B: Backend>(
+    f: &mut Frame<B>,
+    app: &mut App,
+    stack_window: Rect,
+    themes: &SettingTheme,
+) {
     let select_symbol = app.symbols(&FileItems::Select);
-    let select_file_style = app.theme().file_style();
-    let select_style = app.theme().select_style();
-    let dir_block_style = app.theme().boader_style();
+    let select_file_style = themes.file_style();
+    let select_style = themes.select_style();
+    let dir_block_style = themes.boader_style();
     let items = app.stacker_mut();
     let state_items: Vec<ListItem> = items
         .stack_ref()

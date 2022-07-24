@@ -1,7 +1,8 @@
-pub mod command_ui;
-pub mod directory_ui;
+mod command_ui;
+mod directory_ui;
 pub mod input_ui;
-pub mod stacker_ui;
+mod searcher_ui;
+mod stacker_ui;
 
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
@@ -11,6 +12,7 @@ use tui::widgets::{Block, Borders, Tabs};
 use tui::Frame;
 
 use crate::application::{App, Mode};
+use crate::load_config::SettingTheme;
 
 use self::command_ui::command_ui;
 use self::directory_ui::directory_ui;
@@ -26,9 +28,9 @@ const MARGIN_LENGTH: u16 = 2;
 const PERMISION_LENGTH: u16 = 4;
 const NEW_HEADER_TITLES: [&str; 6] = ["perm", "size", "date", "", "", "name"];
 
-pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    let background_style = app.theme().background_style();
-    let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
+pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
+    let background_style = themes.background_style();
+    let tab_highlight_style = themes.select_style().add_modifier(Modifier::BOLD);
 
     // possible to toggle tab and command window
     let main_windows_constrains = [
@@ -79,42 +81,29 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
-                .style(app.theme().command_style(0).unwrap())
+                .style(themes.normal_command_style())
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
-            directory_ui(f, app, chunks[1]);
+            directory_ui(f, app, chunks[1], themes);
         }
         Mode::Input => {
-            let tabs = Tabs::new(tab_titles)
-                .block(Block::default().borders(Borders::ALL).title("Tabs"))
-                .select(app.tab_index())
-                .style(app.theme().command_style(1).unwrap())
-                .highlight_style(tab_highlight_style);
-
-            f.render_widget(tabs, chunks[0]);
-            input_ui::ui(f, app);
+            input_ui::ui(f, app, themes);
+            directory_ui(f, app, chunks[1], themes);
         }
         Mode::Stacker => {
             let tabs = Tabs::new(tab_titles)
                 .block(Block::default().borders(Borders::ALL).title("Tabs"))
                 .select(app.tab_index())
-                .style(app.theme().command_style(2).unwrap())
+                .style(themes.stacker_command_style())
                 .highlight_style(tab_highlight_style);
 
             f.render_widget(tabs, chunks[0]);
-            stacker_ui(f, app, chunks[1]);
+            stacker_ui(f, app, chunks[1], themes);
         }
         Mode::Searcher => {
-            let tabs = Tabs::new(tab_titles)
-                .block(Block::default().borders(Borders::ALL).title("Tabs"))
-                .select(app.tab_index())
-                .style(app.theme().command_style(2).unwrap())
-                .highlight_style(tab_highlight_style);
-
-            f.render_widget(tabs, chunks[0]);
-            input_ui::ui(f, app);
-            // matching_directory_ui(f, app, chunks[1]);
+            input_ui::ui(f, app, themes);
+            searcher_ui::ui(f, app, chunks[1], themes);
         }
     }
 }

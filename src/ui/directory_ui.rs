@@ -7,15 +7,24 @@ use tui::{
     Frame,
 };
 
-use crate::{application::App, file_item_list::Kinds, load_config::FileItems};
+use crate::{
+    application::App,
+    file_item_list::Kinds,
+    load_config::{FileItems, SettingTheme},
+};
 
 use super::{
     FILE_LENGTH, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, NEW_HEADER_TITLES, PERMISION_LENGTH,
 };
 
-pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: Rect) {
+pub fn directory_ui<B: Backend>(
+    f: &mut Frame<B>,
+    app: &App,
+    directory_window: Rect,
+    themes: &SettingTheme,
+) {
     // TODO: Display and hide the header and each element with bool
-    let header_style = app.theme().header_style();
+    let header_style = themes.header_style();
     let header_titles = NEW_HEADER_TITLES
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
@@ -35,9 +44,9 @@ pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: R
 
     let file_item_iter = app.crr_file_items();
 
-    let file_style = app.theme().file_style();
-    let dir_style = app.theme().dir_style();
-    let file_items_list = file_item_iter.iter().map(|file_item| {
+    let file_style = themes.file_style();
+    let dir_style = themes.dir_style();
+    let file_items_list = file_items.iter().map(|file_item| {
         let name = file_item.name();
         let perm = if file_item.get_permission() {
             format!("{:>4}", "r")
@@ -69,8 +78,8 @@ pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: R
         .constraints([Constraint::Percentage(100)])
         .split(directory_window);
 
-    let dir_block_style = app.theme().boader_style();
-    let selecting_style = app.theme().select_style().add_modifier(Modifier::BOLD);
+    let dir_block_style = themes.boader_style();
+    let selecting_style = themes.select_style().add_modifier(Modifier::BOLD);
     let select_symbol = app.symbols(&FileItems::Select);
     let items = Table::new(file_items_list)
         .header(header_cells)
@@ -87,9 +96,14 @@ pub fn directory_ui<B: Backend>(f: &mut Frame<B>, app: &App, directory_window: R
     f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
 }
 
-pub fn matching_directory_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, directory_window: Rect) {
+pub fn matching_directory_ui<B: Backend>(
+    f: &mut Frame<B>,
+    app: &mut App,
+    directory_window: Rect,
+    themes: &SettingTheme,
+) {
     // TODO: Display and hide the header and each element with bool
-    let header_style = app.theme().header_style();
+    let header_style = themes.header_style();
     let header_titles = NEW_HEADER_TITLES
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
@@ -110,9 +124,9 @@ pub fn matching_directory_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, direct
         let dir_symbol = app.symbols(&FileItems::Directory);
         let file_items = app.crr_file_items();
 
-        let file_style = app.theme().file_style();
-        let dir_style = app.theme().dir_style();
-        let match_color = app.theme().select_style();
+        let file_style = themes.file_style();
+        let dir_style = themes.dir_style();
+        let match_color = themes.select_style();
         let file_items_list = file_items.iter().flat_map(|file_item| {
             let res = file_item.find(rgx);
             if let Some((s, r)) = res {
@@ -161,8 +175,8 @@ pub fn matching_directory_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, direct
             .constraints([Constraint::Percentage(100)])
             .split(directory_window);
 
-        let dir_block_style = app.theme().boader_style();
-        let selecting_style = app.theme().select_style().add_modifier(Modifier::BOLD);
+        let dir_block_style = themes.boader_style();
+        let selecting_style = themes.select_style().add_modifier(Modifier::BOLD);
         let select_symbol = app.symbols(&FileItems::Select);
         let items = Table::new(file_items_list)
             .header(header_cells)
@@ -178,6 +192,6 @@ pub fn matching_directory_ui<B: Backend>(f: &mut Frame<B>, app: &mut App, direct
         let dir = app.selected_statefuldir_ref();
         f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
     } else {
-        directory_ui(f, app, directory_window);
+        directory_ui(f, app, directory_window, themes);
     }
 }
