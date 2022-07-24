@@ -22,6 +22,7 @@ enum Colors {
     LightYellow,
     LightCyan,
     Rgb(u8, u8, u8),
+    HexCode(String),
 }
 
 pub fn default_vim_movements() -> ModeKeybinds {
@@ -1017,6 +1018,21 @@ impl SettingTheme {
     }
 }
 
+fn hex_to_colorcode(code: &str) -> (u8, u8, u8) {
+    let code = if code.starts_with('#') {
+        let (_shape, code) = code.split_at(1);
+        code
+    } else {
+        code
+    };
+    let (r, gb) = code.split_at(1);
+    let (g, b) = gb.split_at(1);
+    let r = u8::from_str_radix(r, 16).unwrap_or_default();
+    let g = u8::from_str_radix(g, 16).unwrap_or_default();
+    let b = u8::from_str_radix(b, 16).unwrap_or_default();
+    (r, g, b)
+}
+
 fn color_translator(color: &Colors) -> Option<Color> {
     let c = match color {
         Colors::White => Color::White,
@@ -1036,6 +1052,10 @@ fn color_translator(color: &Colors) -> Option<Color> {
         Colors::LightYellow => Color::LightYellow,
         Colors::LightCyan => Color::LightCyan,
         Colors::Rgb(r, g, b) => Color::Rgb(*r, *g, *b),
+        Colors::HexCode(code) => {
+            let (r, g, b) = hex_to_colorcode(code);
+            Color::Rgb(r, g, b)
+        }
         _ => Color::Reset,
     };
     Some(c)
