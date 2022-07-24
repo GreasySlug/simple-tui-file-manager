@@ -2,18 +2,18 @@
     // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
     // LightRed, LightGreen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
     theme: SettingTheme (
-        background: Black,
+        background: White,
         header: Magenta, // file name, permission, size, date
-        boader: White, // frame line
+        boader: Black, // frame line
         directory: Blue, // dir font
-        file_item: White, // file font
+        file_item: Black, // file font
         select: Green, // selecting hightlight
         command: [
             // bg, font
-            (Black, White), // normal
-            (Black, LightGreen), // imput
-            (Black,  LightBlue), // stacker
-            (Black,  LightRed), // searcher
+            (White, Black), // normal
+            (White, Green), // imput
+            (White,  Blue), // stacker
+            (White,  Red), // searcher
             ],
     ),
     symbols: {

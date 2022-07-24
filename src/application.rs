@@ -7,11 +7,13 @@ use std::{fs, io};
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use regex::Regex;
 use tui::backend::Backend;
+use tui::widgets::TableState;
 use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 
+use crate::input::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
@@ -24,7 +26,7 @@ use crate::path_process::{
 use crate::searcher::Searcher;
 use crate::stacker::StackerVec;
 use crate::state::StatefulDirectory;
-use crate::ui::input_ui::{init_input_area_terminal, input_area_ui, start_user_input};
+use crate::ui::input_ui::input_area_ui;
 use crate::ui::ui;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -513,7 +515,9 @@ impl App {
         self.stacker.stacker_contains(path)
     }
 
-    // select all
+    ///
+    /// select all in current directory
+    ///
     fn stacker_all_file_items(&mut self) {
         let items = self.selecting_dir_file_items().clone();
         for item in items {
@@ -524,6 +528,9 @@ impl App {
         }
     }
 
+    ///
+    /// directories are flatted and the structure breaks.
+    ///
     fn stacker_push_dir_recursively(&mut self, path: PathBuf) {
         if !path.exists() {
             self.push_command_log("Doesn't exist");
@@ -578,18 +585,50 @@ impl App {
         self.stacker.previous_stacker_item();
     }
 
-    // 削除や移動した後の残ったインスタンスを削除するメソッド
+    /// func to delete remaining instance after moveing or deleting etc...
     fn remove_file_item_instance(&mut self, path: &Path) {
-        let stateful_dir = self.selected_statefuldir_mut();
+        let stateful_dir = self.selecting_statefuldir_mut();
         stateful_dir.remove_file_item_with_path(path);
     }
 
+    ///
+    /// Function to remove a path from a vec of Stacker
+    /// If no selection is made, do nothing with the return value,
+    /// and use it to delete an instance of FileItem vec by a path if it is used to move, delete, etc.
+    ///
     fn remove_path_in_stacker(&mut self, path: &Path) -> Option<PathBuf> {
         self.stacker.stacker_take_by_path(path)
     }
 
-    // 完全消去ではなくアプリ内のゴミ箱へ移動させて、もとに戻せるようにする
-    // 完全消去と分けてメソッドを作った方が良いかもしれない
+    ///
+    /// The item in the stacker, at the position where the cursor is in the selection, is deleted.
+    /// complete delete, cannot be undone
+    ///
+    fn stacker_delete_selecting_item(&mut self) {
+        let stacker_stete = self.stacker.state_mut();
+        if let Some(i) = stacker_stete.selected() {
+            let path = self.stacker.stacker_remove(i);
+            if path.is_dir() {
+                self.delete_directory_including_its_contents(&path);
+            } else {
+                self.stacker_delete_selecting_item();
+            }
+            self.remove_path_in_stacker(&path);
+        }
+    }
+
+    /// TODO: Instead of deleting it completely, it is better to move it to the Recycle Bin in the application so that it can be undone, etc.
+    fn stacker_delete_all(&mut self) {
+        let stacker = self.stacker.stack_ref().to_owned();
+        for path in stacker.iter() {
+            self.delete_file_item_with_path(path);
+        }
+    }
+
+    ///
+    ///. ** User Carefully ** ///
+    /// I think it would be better to separate the function between full deletion and move to trashbox.
+    ///
     fn delete_file_item_with_path(&mut self, path: &Path) {
         let result = if path.is_dir() {
             fs::remove_dir(path)
@@ -613,33 +652,11 @@ impl App {
         }
     }
 
-    /// Delete Methods
-    fn delete_crr_item_in_stacker(&mut self) {
-        let stacker_stete = self.stacker.state_mut();
-        if let Some(i) = stacker_stete.selected() {
-            let path = self.stacker.stacker_remove(i);
-            if path.is_dir() {
-                self.stacker_delete_directory_including_its_contents(&path);
-            } else {
-                self.delete_crr_item_in_stacker();
-            }
-            self.remove_path_in_stacker(&path);
-        }
-    }
-
-    /// TODO: Instead of deleting it completely, it is better to move it to the Recycle Bin in the application so that it can be undone, etc.
-    fn delete_all_in_stacker(&mut self) {
-        let stacker = self.stacker.stack_ref().to_owned();
-        for path in stacker.iter() {
-            self.delete_file_item_with_path(path);
-        }
-    }
-
     ///
     ///. ** User Carefully ** ///
     /// delete directory and its contents
     ///
-    fn stacker_delete_directory_including_its_contents(&mut self, path: &Path) {
+    fn delete_directory_including_its_contents(&mut self, path: &Path) {
         match fs::remove_dir_all(path) {
             Ok(_) => {}
             Err(err) => {
@@ -728,6 +745,7 @@ impl App {
                         io::ErrorKind::PermissionDenied => "Permission Denied",
                         _ => "Duplecate name",
                     };
+                    self.push_command_log(mss);
                     self.stacker.stacker_push(from_path);
                 }
             }
@@ -736,7 +754,7 @@ impl App {
 
     ///
     /// open file with user editor, like vim, emacs
-    /// if
+    ///
     fn user_edit_file_item(&mut self) {
         if self.selecting_crr_file_item().is_none() {
             return;
@@ -774,13 +792,13 @@ impl App {
     }
     fn searcher_prev(&mut self) {
         self.searcher.previous_stacker_item();
-            }
+    }
 
     pub fn searcher_init(&mut self) {
         self.searcher.clear_regex();
         self.searcher.init_name();
         self.searcher.init_index();
-        }
+    }
 
     pub fn make_seacher_vector(&mut self, v: Vec<FileItem>) -> Vec<FileItem> {
         self.searcher.make_filter_vec(v)
@@ -812,7 +830,7 @@ impl App {
     }
 
     fn searcher_move_to_parent(&mut self) {}
-    }
+}
 
 //
 // &str(s) are used for state transitions
@@ -823,8 +841,6 @@ const SEARCHING: &str = "searching";
 const SEARCHING_FIXED: &str = "fix";
 const SEARCHING_STOP: &str = "stop";
 const QUIT: &str = "quit";
-}
-
 // receives input from the user and determines if a command
 // it is possible to receive different commands each modes
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult<()> {
@@ -994,13 +1010,11 @@ fn run_commands(app: &mut App, cmd: &str) {
         "make_directory" => app.make_directory(),
         "make_file" => app.make_file(),
         "edit" => app.user_edit_file_item(),
-        "search_file_items" => app.search_file_items(),
         // "rename_file_item" => app.rename_file_name(),
         // "search_file_items_by_using_re" => app.search_file_items_by_using_re()
 
         // stacker commands
         "stacker_toggle_select" => app.stacker_handle_selecter(),
-        // "stacker_unselect" => app.handle_selecter(),
         "stacker_pop" => app.stacker_deselected(),
         "stacker_select_all_recursively" => app.stacker_crr_dir_recursively(),
         "stacker_select_all" => app.stacker_all_file_items(),

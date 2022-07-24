@@ -1,7 +1,4 @@
 use regex::Regex;
-use std::collections::hash_map::Keys;
-use std::collections::HashMap;
-use std::ops::Range;
 use std::path::PathBuf;
 use tui::widgets::TableState;
 
@@ -13,7 +10,6 @@ pub struct Searcher {
     re: Option<Regex>,
     name: String,
     index: usize,
-    items: HashMap<String, (String, Range<usize>)>,
     searched_items: Vec<PathBuf>,
 }
 
@@ -24,7 +20,6 @@ impl Searcher {
             re: None,
             name: String::new(),
             index: 0,
-            items: HashMap::new(),
             searched_items: Vec::new(),
         }
     }
@@ -65,22 +60,6 @@ impl Searcher {
             None => 0,
         };
         self.state.select(Some(i));
-    }
-
-    pub fn set_items(&mut self, items: HashMap<String, (String, Range<usize>)>) {
-        self.items = items;
-    }
-
-    pub fn searched_items_key(&self) -> Keys<String, (String, Range<usize>)> {
-        self.items.keys()
-    }
-
-    pub fn seacherd_item_names(&self) -> Vec<String> {
-        let mut names = Vec::new();
-        for key in self.items.keys() {
-            names.push(key.to_owned());
-        }
-        names
     }
 
     pub fn init_name(&mut self) {

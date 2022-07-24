@@ -45,24 +45,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
         .constraints(main_windows_constrains)
         .split(size);
 
-    let (index, file_items) = {
-        let state = app.selected_statefuldir_ref();
-        (
-            state.state_table().selected().unwrap_or(0),
-            state.file_items().len(),
-        )
-    };
-
-    let rate = index as f32 / file_items as f32;
-    command_ui(
-        f,
-        app.command_history(),
-        chunks[2],
-        app.theme().command_styles(),
-        app.mode(),
-        rate,
-    );
-
     // let index = app.tab_index();
     let tabs = app.dirtab();
     let mode = app.mode();
@@ -106,4 +88,22 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
             searcher_ui::ui(f, app, chunks[1], themes);
         }
     }
+
+    let (index, file_items) = {
+        let state = app.selecting_statefuldir_ref();
+        (
+            state.state_table().selected().unwrap_or(0),
+            state.file_items().len(),
+        )
+    };
+
+    let rate = index as f32 / file_items as f32;
+    command_ui(
+        f,
+        app.command_history(),
+        chunks[2],
+        themes.command_styles(),
+        app.mode(),
+        rate,
+    );
 }

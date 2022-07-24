@@ -1003,13 +1003,53 @@ impl SettingTheme {
         styles
     }
 
-    pub fn command_style(&self, i: usize) -> Option<Style> {
-        if let Some(command_color) = &self.command.get(i) {
-            let fg = style_formatter(&command_color.1, true, false);
-            let bg = style_formatter(&command_color.0, false, true);
-            return Some(fg.patch(bg));
+    // pub fn command_style(&self, i: usize) -> Option<Style> {
+    //     if let Some(command_color) = &self.command.get(i) {
+    //         let fg = style_formatter(&command_color.1, true, false);
+    //         let bg = style_formatter(&command_color.0, false, true);
+    //         return Some(fg.patch(bg));
+    //     }
+    //     None
+    // }
+
+    pub fn normal_command_style(&self) -> Style {
+        if let Some((bg, fg)) = self.command.get(0) {
+            let bg_style = style_formatter(bg, false, true);
+            let fg_style = style_formatter(fg, true, false);
+            fg_style.patch(bg_style)
+        } else {
+            Style::default().fg(Color::White).bg(Color::Black)
         }
-        None
+    }
+
+    pub fn input_command_style(&self) -> Style {
+        if let Some((bg, fg)) = self.command.get(1) {
+            let bg_style = style_formatter(bg, false, true);
+            let fg_style = style_formatter(fg, true, false);
+            fg_style.patch(bg_style)
+        } else {
+            Style::default().fg(Color::White).bg(Color::Black)
+        }
+    }
+
+    pub fn stacker_command_style(&self) -> Style {
+        if let Some((bg, fg)) = self.command.get(2) {
+            let bg_style = style_formatter(bg, false, true);
+            let fg_style = style_formatter(fg, true, false);
+            fg_style.patch(bg_style)
+        } else {
+            Style::default().fg(Color::White).bg(Color::Black)
+        }
+    }
+
+    pub fn searcher_command_style(&self) -> Style {
+        if let Some((bg, fg)) = self.command.get(3) {
+            let bg_style = style_formatter(bg, false, true);
+            let fg_style = style_formatter(fg, true, false);
+            fg_style.patch(bg_style)
+        } else {
+            Style::default().fg(Color::White).bg(Color::Black)
+        }
     }
 
     pub fn background_style(&self) -> Style {
@@ -1091,6 +1131,7 @@ pub struct ModeKeybinds {
     pub normal: HashMap<String, String>,
     pub input: HashMap<String, String>,
     pub stacker: HashMap<String, String>,
+    pub searcher: HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -1181,6 +1222,10 @@ impl UserConfig {
 
     pub fn stacker_keybindings_map(&self) -> HashMap<String, String> {
         self.user_keybinds.stacker.clone()
+    }
+
+    pub fn searcher_keybindings_map(&self) -> HashMap<String, String> {
+        self.user_keybinds.searcher.clone()
     }
 
     pub fn additional_directory(&self) -> Vec<String> {
