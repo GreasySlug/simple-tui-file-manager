@@ -31,6 +31,10 @@ pub fn default_vim_movements() -> ModeKeybinds {
         ("j", "move_to_next_file_item"),
         ("k", "move_to_prev_file_item"),
         ("l", "move_to_child_dir"),
+        ("left", "move_to_parent_dir"),
+        ("down", "move_to_next_file_item"),
+        ("up", "move_to_prev_file_item"),
+        ("right", "move_to_child_dir"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -44,72 +48,22 @@ pub fn default_vim_movements() -> ModeKeybinds {
 
     let mut input: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
-        ("C-j", "move_to_next_file_item"),
-        ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
+        (": q", "quit"),
         ("esc", "normal"),
-        ("v", "stacker"),
-    ]
-    .into_iter();
-    for (name, cmd) in iter {
-        input.insert(name.to_string(), cmd.to_string());
-    }
-
-    let mut stacker: HashMap<String, String> = HashMap::new();
-    let iter = [
+        ("S-v", "stacker"),
         ("h", "move_to_parent_dir"),
         ("j", "move_to_next_file_item"),
         ("k", "move_to_prev_file_item"),
         ("l", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
-        ("q", "quit"),
-        ("esc", "normal"),
-        ("v", "stacker"),
-    ]
-    .into_iter();
-    for (name, cmd) in iter {
-        stacker.insert(name.to_string(), cmd.to_string());
-    }
-
-    ModeKeybinds {
-        normal,
-        input,
-        stacker,
-    }
-}
-
-pub fn default_arrow_key() -> ModeKeybinds {
-    let mut normal: HashMap<String, String> = HashMap::new();
-    let iter = [
-        ("Left", "move_to_parent_dir"),
-        ("Down", "move_to_next_file_item"),
-        ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
-        ("q", "quit"),
-        ("i", "input"),
-        ("v", "stacker"),
-    ]
-    .into_iter();
-    for (name, cmd) in iter {
-        normal.insert(name.to_string(), cmd.to_string());
-    }
-
-    let mut input: HashMap<String, String> = HashMap::new();
-    let iter = [
-        ("Left", "move_to_parent_dir"),
-        ("Down", "move_to_next_file_item"),
-        ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
-        ("esc", "normal"),
-        ("v", "stacker"),
+        ("left", "move_to_parent_dir"),
+        ("down", "move_to_next_file_item"),
+        ("up", "move_to_prev_file_item"),
+        ("right", "move_to_child_dir"),
+        ("tab", "next_dirtab"),
+        ("S-tab", "prev_dirtab"),
+        ("m", "make_directory"),
+        ("i", "make_file"),
+        ("enter", "edit"),
     ]
     .into_iter();
     for (name, cmd) in iter {
@@ -118,83 +72,56 @@ pub fn default_arrow_key() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("Left", "move_to_parent_dir"),
-        ("Down", "move_to_next_file_item"),
-        ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
         ("q", "quit"),
+        ("S-i", "input"),
         ("esc", "normal"),
-        ("v", "stacker"),
+        ("h", "move_to_parent_dir"),
+        ("j", "move_to_next_file_item"),
+        ("k", "move_to_prev_file_item"),
+        ("l", "move_to_child_dir"),
+        ("left", "move_to_parent_dir"),
+        ("down", "move_to_next_file_item"),
+        ("up", "move_to_prev_file_item"),
+        ("right", "move_to_child_dir"),
+        ("tab", "next_dirtab"),
+        ("S-tab", "prev_dirtab"),
+        ("C-n", "stacker_next_file_item"),
+        ("C-p", "stacker_prev_file_item"),
+        ("s", "stacker_toggle_select"),
+        ("u", "stacker_pop"),
+        ("C-s", "stacker_select_all_recursively"),
+        ("C-a", "stacker_select_all"),
+        ("p", "stacker_paste"),
+        ("S-p", "stacker_stacking_paste"),
+        ("m", "stacker_move"),
+        ("d", "stacker_delete"),
+        ("S-d", "stacker_delete_all"),
     ]
     .into_iter();
     for (name, cmd) in iter {
         stacker.insert(name.to_string(), cmd.to_string());
     }
 
-    ModeKeybinds {
-        normal,
-        input,
-        stacker,
-    }
-}
-
-pub fn default_vim_ctrl_movements() -> ModeKeybinds {
-    let mut normal: HashMap<String, String> = HashMap::new();
+    let mut searcher: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
-        ("C-j", "move_to_next_file_item"),
-        ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
-        ("q", "quit"),
-        ("i", "input"),
-        ("v", "stacker"),
+        ("left", "move_to_parent_dir"),
+        ("down", "move_to_next_file_item"),
+        ("up", "move_to_prev_file_item"),
+        ("right", "move_to_child_dir"),
+        ("s", "stacker_toggle_select"),
+        ("u", "stacker_pop"),
+        ("C-a", "stacker_select_all"),
     ]
     .into_iter();
     for (name, cmd) in iter {
-        normal.insert(name.to_string(), cmd.to_string());
-    }
-
-    let mut input: HashMap<String, String> = HashMap::new();
-    let iter = [
-        ("C-h", "move_to_parent_dir"),
-        ("C-j", "move_to_next_file_item"),
-        ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
-        ("esc", "normal"),
-        ("v", "stacker"),
-    ]
-    .into_iter();
-    for (name, cmd) in iter {
-        input.insert(name.to_string(), cmd.to_string());
-    }
-
-    let mut stacker: HashMap<String, String> = HashMap::new();
-    let iter = [
-        ("C-h", "move_to_parent_dir"),
-        ("C-j", "move_to_next_file_item"),
-        ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
-        ("q", "quit"),
-        ("esc", "normal"),
-        ("v", "stacker"),
-    ]
-    .into_iter();
-    for (name, cmd) in iter {
-        stacker.insert(name.to_string(), cmd.to_string());
+        searcher.insert(name.to_string(), cmd.to_string());
     }
 
     ModeKeybinds {
         normal,
         input,
         stacker,
+        searcher,
     }
 }
 
@@ -1202,7 +1129,7 @@ impl UserConfig {
             theme: SettingTheme::dark_blue_theme(),
             symbols: example_symbols(),
             user_settings: Settings::default_vim(),
-            user_keybinds: default_vim_ctrl_movements(),
+            user_keybinds: default_vim_movements(),
             additional_directories: vec![],
         }
     }
@@ -1212,7 +1139,7 @@ impl UserConfig {
             theme: SettingTheme::light_theme(),
             symbols: example_symbols(),
             user_settings: Settings::default_emacs(),
-            user_keybinds: default_arrow_key(),
+            user_keybinds: default_vim_movements(),
             additional_directories: vec![],
         }
     }
