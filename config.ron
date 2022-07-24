@@ -87,5 +87,12 @@
             "d":   "stacker_delete",
             "S-d": "stacker_delete_all",
         },
+        searcher: {
+            "j": "seacher_next_file_item",
+            "k": "seacher_prev_file_item",
+            "esc": "normal",
+            // "u":   "stacker_pop",
+            // "C-a": "stacker_select_all",
+        }
     )
 )

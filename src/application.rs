@@ -21,6 +21,7 @@ use crate::path_process::{
     user_commands,
 };
 
+use crate::searcher::Searcher;
 use crate::stacker::StackerVec;
 use crate::state::StatefulDirectory;
 use crate::ui::input_ui::{init_input_area_terminal, input_area_ui, start_user_input};
@@ -51,9 +52,7 @@ pub struct App {
     be_cleaned: bool,
     editor: String,
     show_hidden_files: bool,
-    // traial
-    re: Option<Regex>,
-    searching_name: String,
+    searcher: Searcher,
 }
 
 impl App {
@@ -70,8 +69,7 @@ impl App {
             editor: String::new(),
             show_hidden_files: false,
             // traial
-            re: None,
-            searching_name: String::new(),
+            searcher: Searcher::new(),
         }
     }
 
@@ -457,9 +455,17 @@ impl App {
             .make_multiple_keybinds(keymap)
     }
 
+    fn searcher_user_keybinds(&self) -> UserKeybinds {
+        let keybind = self.config.searcher_keybindings_map();
+        let keymap = multi_string_map_to_user_keyboad(&keybind);
+        UserKeybinds::new()
+            .make_single_keybinds(keymap.clone())
+            .make_multiple_keybinds(keymap)
+    }
+
     fn run_user_input(&mut self) -> Option<String> {
         let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
-        let res = start_user_input(&mut name, self.theme());
+        let res = start_user_input(&mut name, self.theme(), "Input file name");
         self.be_clear();
         if let Ok(()) = res {
             let name = name.trim().to_owned();
@@ -745,37 +751,78 @@ impl App {
         self.shift_to_input_mode();
     }
 
-    fn search_file_items(&mut self) {
+    /// *** Seacher Mode *** ///
+
+    fn shift_to_searcher_mode(&mut self) {
         self.mode = Mode::Searcher;
     }
 
     pub fn new_regex(&mut self) {
-        let lien = self.searhing_name();
-        if lien.is_empty() {
-            self.re = None
-        } else {
-            let re = Regex::new(self.searhing_name());
-            if let Ok(re) = re {
-                self.re = Some(re);
+        self.searcher.new_regex();
+    }
+
+    pub fn regex_ref(&self) -> Option<&Regex> {
+        self.searcher.get_regex()
+    }
+
+    fn searhing_name(&self) -> &str {
+        self.searcher.name()
+    }
+
+    fn searcher_next(&mut self) {
+        self.searcher.next_stacker_item();
+    }
+    fn searcher_prev(&mut self) {
+        self.searcher.previous_stacker_item();
+            }
+
+    pub fn searcher_init(&mut self) {
+        self.searcher.clear_regex();
+        self.searcher.init_name();
+        self.searcher.init_index();
+        }
+
+    pub fn make_seacher_vector(&mut self, v: Vec<FileItem>) -> Vec<FileItem> {
+        self.searcher.make_filter_vec(v)
+    }
+
+    pub fn searcher_state(&mut self) -> &mut TableState {
+        self.searcher.state()
+    }
+
+    fn remove_file_path_searcher(&mut self) -> Option<PathBuf> {
+        self.searcher.remove_file_path()
+    }
+
+    fn searcher_move_to_child(&mut self) {
+        if let Some(path) = self.remove_file_path_searcher() {
+            if let Ok(meta) = path.metadata() {
+                match Kinds::classifiy_kinds(&path, &meta) {
+                    Kinds::Directory(_) => {
+                        let dir_name = pathbuf_to_string_name(&path);
+                        self.insert_new_statefuldir(path);
+                        let i = self.tab_index;
+                        let name = self.directory_tabs.get_mut(i);
+                        *name.expect("Failed to get name in diirtab...") = dir_name;
+                    }
+                    Kinds::File(_) => self.push_command_log("Not directory"),
+                }
             }
         }
     }
 
-    pub fn clear_regex(&mut self) {
-        self.re = None;
+    fn searcher_move_to_parent(&mut self) {}
     }
 
-    pub fn matching_regex(&self) -> Option<&Regex> {
-        self.re.as_ref()
-    }
-
-    fn searhing_name(&self) -> &String {
-        &self.searching_name
-    }
-
-    fn replace_searching_name(&mut self, s: &str) {
-        self.searching_name = s.to_owned();
-    }
+//
+// &str(s) are used for state transitions
+// this situation is not good, I think.
+// so I want to use enum to make state
+// transitions with fixed values
+const SEARCHING: &str = "searching";
+const SEARCHING_FIXED: &str = "fix";
+const SEARCHING_STOP: &str = "stop";
+const QUIT: &str = "quit";
 }
 
 // receives input from the user and determines if a command
@@ -786,100 +833,117 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
     let mut normal = app.normal_user_keybinds();
     let mut input = app.input_user_keybinds();
     let mut stacker = app.stacker_user_keybinds();
+    let mut searcher = app.searcher_user_keybinds();
+    let themes = app.theme().clone();
+    let mut res = SEARCHING.to_string();
     loop {
-        terminal.draw(|f| ui(f, &mut app))?;
+        terminal.draw(|f| ui(f, &mut app, &themes))?;
         // TODO: Consider a more efficient way to declare the name of each command.
         let res = match app.mode() {
             Mode::Normal => key_matchings(&mut normal),
             Mode::Input => key_matchings(&mut input),
             Mode::Stacker => key_matchings(&mut stacker),
-            Mode::Searcher => {
-                let res = searching_files_by_name(&mut app);
-                if res.as_str() == "stop" {
-                    Ok(String::with_capacity(0))
-                } else {
-                    Ok("searhing".to_string())
-                }
-            }
+            Mode::Searcher => searching_handling(&mut app, &mut res, &mut searcher, &themes),
         };
-
         if let Ok(cmd) = res {
             let cmd = cmd.as_str();
-            if cmd == "quit" {
+            if cmd == QUIT {
                 return Ok(());
             }
-
-            if cmd == "searching" {
+            if cmd == SEARCHING {
                 continue;
             }
-            run_commands(&mut app, &cmd);
+            run_commands(&mut app, cmd);
 
             if app.be_cleaned {
                 terminal.clear()?;
                 app.be_cleaned();
             }
+        } else {
+            // TODO: logging io message
         }
     }
 }
 
-//
-fn searching_files_by_name(app: &mut App) -> String {
-    let style = app.config.theme().command_style(1).unwrap();
-    let mut line = app.searhing_name().to_owned();
-    let mut index = line.len();
+fn searching_handling(
+    app: &mut App,
+    res: &mut String,
+    search: &mut UserKeybinds,
+    themes: &SettingTheme,
+) -> ioResult<String> {
+    if res == SEARCHING_FIXED {
+        key_matchings(search)
+    } else {
+        *res = searching_files_by_name(app, themes);
+        match res.as_str() {
+            "stop" => Ok(String::new()),
+            "continue" => Ok(SEARCHING.to_string()),
+            "fix" => Ok(SEARCHING_FIXED.to_string()),
+            "searching" => Ok(SEARCHING.to_string()),
+            _ => {
+                panic!("Failed to searching...");
+            }
+        }
+    }
+}
+
+fn searching_files_by_name(app: &mut App, themes: &SettingTheme) -> String {
+    let style = themes.searcher_command_style();
     let mut terminal =
         init_input_area_terminal().expect("Failed to make searching input area terminal...");
 
     terminal
-        .draw(|f| input_area_ui(f, &line, style, line.len() as u16))
+        .draw(|f| {
+            input_area_ui(
+                f,
+                app.searhing_name(),
+                style,
+                app.searcher.index() as u16,
+                "Input Searching file name",
+            )
+        })
         .expect("failed to make input area window");
 
     if let Event::Key(KeyEvent { code, .. }) = event::read().expect("Failed to input") {
         match code {
             KeyCode::Enter => {
-                app.mode = Mode::Input;
-                app.clear_regex();
-                return "stop".to_string();
+                app.searcher_init();
+                return SEARCHING_FIXED.to_string();
             }
             KeyCode::Esc => {
-                app.mode = Mode::Input;
-                line.clear();
-                app.clear_regex();
-                app.searching_name = line;
-                return "stop".to_string();
+                app.searcher_init();
+                app.mode = Mode::Normal;
+                return SEARCHING_STOP.to_string();
             }
             KeyCode::Char(c) => {
-                if line.len() < 40 {
-                    line.insert(index, c);
-                    if index < line.len() {
-                        index += 1;
-                    }
-                }
+                app.searcher.insert_char(c);
+                app.searcher.add_index();
             }
             KeyCode::Backspace => {
-                if index > 0 {
-                    line.remove(index - 1);
-                    index -= 1;
-                }
+                app.searcher.sub_index();
+                app.searcher.remove_char();
             }
             KeyCode::Left => {
-                if index > 0 {
-                    index -= 1;
-                }
+                app.searcher.sub_index();
             }
             KeyCode::Right => {
-                if index < line.len() {
-                    index += 1;
-                }
+                app.searcher.add_index();
             }
             _ => {}
         }
-        app.replace_searching_name(&line);
         terminal
-            .draw(|f| input_area_ui(f, &line, style, index as u16))
+            .draw(|f| {
+                input_area_ui(
+                    f,
+                    app.searhing_name(),
+                    style,
+                    app.searcher.index() as u16,
+                    "Input searching file name",
+                )
+            })
             .expect("failed to make input area window");
     }
-    "continue".to_string()
+    SEARCHING.to_string()
 }
 
 fn key_matchings(keybinds: &mut UserKeybinds) -> ioResult<String> {
@@ -944,6 +1008,11 @@ fn run_commands(app: &mut App, cmd: &str) {
         "stacker_prev_file_item" => app.stacker_previous_item(),
         "stacker_paste" => app.stacker_copy_file_item_to_crr_dir(),
         "stacker_move" => app.stcker_move_file_item_to_crr_dir(),
+
+        // searcher commands
+        "seacher_next_file_item" => app.searcher_next(),
+        "seacher_prev_file_item" => app.searcher_prev(),
+        "search_file_items" => app.shift_to_searcher_mode(),
         _ => {}
     }
 }
