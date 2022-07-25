@@ -832,11 +832,12 @@ impl App {
     fn searcher_move_to_parent(&mut self) {}
 }
 
-//
-// &str(s) are used for state transitions
-// this situation is not good, I think.
-// so I want to use enum to make state
-// transitions with fixed values
+///
+/// &str(s) are used for state transitions
+/// this situation is not good, I think.
+/// so I want to use enum to make state
+/// transitions with fixed values
+///
 const SEARCHING: &str = "searching";
 const SEARCHING_FIXED: &str = "fix";
 const SEARCHING_STOP: &str = "stop";
