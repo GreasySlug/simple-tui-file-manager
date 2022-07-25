@@ -62,15 +62,16 @@ pub fn stacker_ui<B: Backend>(
             Span::raw(size),
             Span::raw(date),
             Span::raw(" "),
-            Span::raw(name),
         ];
 
         if file_item.kinds() == Kinds::Directory(true)
             || file_item.kinds() == Kinds::Directory(false)
         {
-            lines.insert(4, Span::styled(&dir_symbol, dir_style));
+            lines.push(Span::styled(&dir_symbol, dir_style));
+            lines.push(Span::styled(name, dir_style));
         } else {
-            lines.insert(4, Span::styled(&file_symbol, file_style));
+            lines.push(Span::styled(&file_symbol, file_style));
+            lines.push(Span::styled(name, file_style));
         };
 
         if app.stacker_contains(file_item.path()) {
