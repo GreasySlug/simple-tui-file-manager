@@ -70,7 +70,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
             directory_ui(f, app, chunks[1], themes);
         }
         Mode::Input => {
-            input_ui::ui(f, app, themes);
+            input_ui::ui(f, themes);
             directory_ui(f, app, chunks[1], themes);
         }
         Mode::Stacker => {
@@ -84,7 +84,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
             stacker_ui(f, app, chunks[1], themes);
         }
         Mode::Searcher => {
-            input_ui::ui(f, app, themes);
+            input_ui::ui(f, themes);
             searcher_ui::ui(f, app, chunks[1], themes);
         }
     }

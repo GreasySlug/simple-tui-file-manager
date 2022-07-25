@@ -140,7 +140,7 @@ impl StatefulDirectory {
         }
     }
 
-    pub fn remove_file_itemwith_name(&mut self, name: &str) {
+    pub fn remove_file_item_with_name(&mut self, name: &str) {
         if let Some(i) = self
             .file_items()
             .iter()

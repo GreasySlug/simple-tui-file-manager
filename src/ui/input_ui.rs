@@ -5,7 +5,7 @@ use tui::widgets::{Block, Borders, Paragraph};
 use tui::Frame;
 
 use super::{HEIGHT_OF_UI_ONE_LINE_LENGTH, UI_MIN_PERCENTAGE};
-use crate::{application::App, load_config::SettingTheme};
+use crate::load_config::SettingTheme;
 
 pub fn input_area_ui<B: Backend>(
     f: &mut Frame<B>,
@@ -36,7 +36,7 @@ pub fn input_area_ui<B: Backend>(
     f.render_widget(para, input_area[0]);
 }
 
-pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
+pub fn ui<B: Backend>(f: &mut Frame<B>, themes: &SettingTheme) {
     let input_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
