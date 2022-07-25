@@ -72,13 +72,16 @@ impl Searcher {
 
     pub fn insert_char(&mut self, c: char) {
         self.name.insert(self.index, c);
+        self.set_regex();
     }
 
     pub fn remove_char(&mut self) {
         if self.name().is_empty() {
+            self.clear_regex();
             return;
         }
         self.name.remove(self.index);
+        self.set_regex();
     }
 
     pub const fn index(&self) -> usize {
@@ -105,8 +108,12 @@ impl Searcher {
         self.re.as_ref()
     }
 
-    pub fn set_regex(&mut self, re: Regex) {
-        self.re = Some(re);
+    pub fn set_regex(&mut self) {
+        if self.name().is_empty() {
+            self.re = None;
+            return;
+        }
+        self.re = Regex::new(self.name()).ok();
     }
 
     pub fn clear_regex(&mut self) {
@@ -123,36 +130,52 @@ impl Searcher {
 
     pub fn remove_file_path(&mut self) -> Option<PathBuf> {
         if let Some(i) = self.state.selected() {
-            Some(self.searched_items.remove(i))
+            let path = self.searched_items.remove(i);
+            self.re = Regex::new(self.name()).ok();
+            Some(path)
         } else {
             None
         }
     }
-    ///
-    /// so much expensive
-    /// TODO: change fuzzy muccher
-    ///
-    pub fn new_regex(&mut self) {
-        let lien = self.name();
-        if lien.is_empty() {
-            self.clear_regex();
-        } else {
-            let ptn: String = self.name().chars().map(|c| format!("({}.*?)", c)).collect();
-            let re = Regex::new(&ptn);
-            if let Ok(re) = re {
-                self.set_regex(re);
-            }
+
+    pub fn is_empty(&self) -> bool {
+        self.searched_items.is_empty()
+    }
+
+    pub fn filter_push(&mut self, item: FileItem) {
+        if self.re.is_none() {
+            return;
+        }
+        let re = self.re.as_ref().unwrap();
+        if item.find(re).is_some() {
+            self.push_searched_item(item.path().to_owned());
         }
     }
 
-    pub fn make_filter_vec(&mut self, items: Vec<FileItem>) -> Vec<FileItem> {
-        if let Some(re) = self.get_regex() {
-            items
-                .into_iter()
-                .filter(|item| item.find(re).is_some())
-                .collect::<Vec<FileItem>>()
-        } else {
-            Vec::new()
-        }
+    pub fn file_items_ref(&self) -> &Vec<PathBuf> {
+        &self.searched_items
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Searcher;
+
+    #[test]
+    fn init_regex_test() {
+        let mut searcher = Searcher::new();
+        searcher.insert_char('s');
+        searcher.add_index();
+        searcher.set_regex();
+        println!("{:?}", searcher.re);
+        println!("{:?}", searcher.index());
+        assert!(searcher.get_regex().is_some());
+
+        searcher.insert_char('s');
+        searcher.add_index();
+        searcher.set_regex();
+        println!("{:?}", searcher.re);
+        println!("{:?}", searcher.index());
+        assert!(searcher.get_regex().is_some());
     }
 }

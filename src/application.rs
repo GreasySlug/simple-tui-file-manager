@@ -775,8 +775,9 @@ impl App {
         self.mode = Mode::Searcher;
     }
 
-    pub fn new_regex(&mut self) {
-        self.searcher.new_regex();
+    fn shift_to_normal_mode_from_searcher(&mut self) {
+        self.searcher_init();
+        self.mode = Mode::Normal;
     }
 
     pub fn regex_ref(&self) -> Option<&Regex> {
@@ -800,10 +801,6 @@ impl App {
         self.searcher.init_index();
     }
 
-    pub fn make_seacher_vector(&mut self, v: Vec<FileItem>) -> Vec<FileItem> {
-        self.searcher.make_filter_vec(v)
-    }
-
     pub fn searcher_state(&mut self) -> &mut TableState {
         self.searcher.state()
     }
@@ -812,7 +809,7 @@ impl App {
         self.searcher.remove_file_path()
     }
 
-    fn searcher_move_to_child(&mut self) {
+    fn searcher_move_to_child_dir(&mut self) {
         if let Some(path) = self.remove_file_path_searcher() {
             if let Ok(meta) = path.metadata() {
                 match Kinds::classifiy_kinds(&path, &meta) {
@@ -826,10 +823,30 @@ impl App {
                     Kinds::File(_) => self.push_command_log("Not directory"),
                 }
             }
+            self.searcher_init();
+            self.mode = Mode::Normal;
         }
     }
 
-    fn searcher_move_to_parent(&mut self) {}
+    fn searcher_stack_all_items(&mut self) {
+        // TODO: I don't wanna use clone()
+        let item_paths = self.searcher.file_items_ref().clone();
+        for path in item_paths {
+            self.stacker_push_back(path);
+        }
+        self.mode = Mode::Stacker;
+    }
+
+    fn searcher_make_found_items(&mut self) {
+        let items = self.selecting_dir_file_items().clone();
+        for item in items {
+            self.searcher.filter_push(item);
+        }
+    }
+
+    fn searcher_is_empty(&self) -> bool {
+        self.searcher.is_empty()
+    }
 }
 
 ///
@@ -867,6 +884,12 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
             if cmd == QUIT {
                 return Ok(());
             }
+            if cmd == SEARCHING_FIXED {
+                app.searcher_make_found_items();
+                if app.searcher_is_empty() {
+                    handle_modal_seacher(&mut app);
+                }
+            }
             if cmd == SEARCHING {
                 continue;
             }
@@ -879,6 +902,14 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
         } else {
             // TODO: logging io message
         }
+    }
+}
+
+fn handle_modal_seacher(app: &mut App) {
+    if app.mode() == &Mode::Searcher {
+        app.shift_to_normal_mode_from_searcher();
+    } else {
+        app.shift_to_normal_mode();
     }
 }
 
@@ -924,7 +955,6 @@ fn searching_files_by_name(app: &mut App, themes: &SettingTheme) -> String {
     if let Event::Key(KeyEvent { code, .. }) = event::read().expect("Failed to input") {
         match code {
             KeyCode::Enter => {
-                app.searcher_init();
                 return SEARCHING_FIXED.to_string();
             }
             KeyCode::Esc => {
@@ -988,7 +1018,8 @@ fn key_matchings(keybinds: &mut UserKeybinds) -> ioResult<String> {
 fn run_commands(app: &mut App, cmd: &str) {
     match cmd {
         // mode
-        "normal" => app.shift_to_normal_mode(),
+        // "normal" => app.shift_to_normal_mode(),
+        "normal" => handle_modal_seacher(app),
         "input" => app.shift_to_input_mode(),
         "stacker" => app.shift_to_stacker_mode(),
 
@@ -1006,6 +1037,7 @@ fn run_commands(app: &mut App, cmd: &str) {
         // "add_directory_to_dirtab" => app.add_dir_to_dirtab(),
         // "display_or_hide_hidden_file" => app.display_or_hide_hedden_file(),
         // "use_editor" => app.edit_crr_file_item(),
+        "search_file_items" => app.shift_to_searcher_mode(),
 
         // input commands
         "make_directory" => app.make_directory(),
@@ -1025,9 +1057,10 @@ fn run_commands(app: &mut App, cmd: &str) {
         "stacker_move" => app.stcker_move_file_item_to_crr_dir(),
 
         // searcher commands
-        "seacher_next_file_item" => app.searcher_next(),
-        "seacher_prev_file_item" => app.searcher_prev(),
-        "search_file_items" => app.shift_to_searcher_mode(),
+        "searcher_next_file_item" => app.searcher_next(),
+        "searcher_prev_file_item" => app.searcher_prev(),
+        "searcher_move_to_child_dir" => app.searcher_move_to_child_dir(),
+        "searcher_select_all" => app.searcher_stack_all_items(),
         _ => {}
     }
 }
