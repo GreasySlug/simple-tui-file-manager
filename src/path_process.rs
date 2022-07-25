@@ -61,12 +61,12 @@ pub fn working_dir_path() -> PathBuf {
 
 // C:\Users\UserName\Downloads\
 #[cfg(target_os = "windows")]
-pub fn get_user_profile_path(additional_pos: &str) -> Option<PathBuf> {
+pub fn get_user_profile_path(additional_path: &str) -> Option<PathBuf> {
     const HOME_DIR_NAME: &str = "USERPROFILE";
     match std::env::var(HOME_DIR_NAME) {
         Ok(mut path) => {
             path.push('\\');
-            path.push_str(additional_pos);
+            path.push_str(additional_path);
             Some(PathBuf::from(path))
         }
         Err(e) => None,
@@ -75,10 +75,14 @@ pub fn get_user_profile_path(additional_pos: &str) -> Option<PathBuf> {
 
 //  /home/userName
 #[cfg(target_os = "linux")]
-pub fn get_user_profile_path() -> Option<PathBuf> {
+pub fn get_user_profile_path(additional_path: &str) -> Option<PathBuf> {
     let HOME_DIR: &str = "HOME";
     match std::env::var(HOME_DIR) {
-        Ok(path) => Some(PathBuf::from(path)),
+        Ok(path) => {
+            path.push("\\");
+            path.push(additional_path);
+            Some(PathBuf::from(path))
+        }
         Err(e) => None,
     }
 }

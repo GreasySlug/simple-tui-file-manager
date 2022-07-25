@@ -120,7 +120,7 @@ impl App {
         let config = self.config();
         let additional_directories = config.additional_directory();
         for dir in additional_directories.into_iter() {
-            if let Some(path) = get_user_profile_path() {
+            if let Some(path) = get_user_profile_path(&dir) {
                 self.push_new_dirname_to_dirtab(pathbuf_to_string_name(&path));
                 self.insert_new_statefuldir(path);
             }
