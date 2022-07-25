@@ -6,10 +6,8 @@ use tui::widgets::{Block, Borders, Cell, Row, Table};
 use tui::Frame;
 
 use crate::load_config::SettingTheme;
-use crate::{
-    application::App, file_item_list::Kinds, load_config::FileItems,
-    path_process::pathbuf_to_string_name,
-};
+use crate::path_process::pathbuf_to_string_name;
+use crate::{application::App, file_item_list::Kinds, load_config::FileItems};
 
 use super::{
     directory_ui, FILE_LENGTH, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, NEW_HEADER_TITLES,
@@ -50,6 +48,7 @@ pub fn ui<B: Backend>(
         .constraints([Constraint::Percentage(100)])
         .split(directory_window);
 
+    // TODO: I dont wanna to use clone()
     let file_item_list = app.selecting_dir_file_items().clone();
     if let Some(re) = app.regex_ref() {
         let dir_block_style = themes.boader_style();

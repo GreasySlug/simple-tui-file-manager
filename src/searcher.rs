@@ -81,6 +81,7 @@ impl Searcher {
             return;
         }
         self.name.remove(self.index);
+        self.set_regex();
     }
 
     pub const fn index(&self) -> usize {
@@ -108,6 +109,10 @@ impl Searcher {
     }
 
     pub fn set_regex(&mut self) {
+        if self.name().is_empty() {
+            self.re = None;
+            return;
+        }
         self.re = Regex::new(self.name()).ok();
     }
 
@@ -158,19 +163,19 @@ mod test {
 
     #[test]
     fn init_regex_test() {
-        let mut seacher = Searcher::new();
-        seacher.insert_char('s');
-        seacher.add_index();
-        seacher.set_regex();
-        println!("{:?}", seacher.re);
-        println!("{:?}", seacher.index());
-        assert!(seacher.get_regex().is_some());
+        let mut searcher = Searcher::new();
+        searcher.insert_char('s');
+        searcher.add_index();
+        searcher.set_regex();
+        println!("{:?}", searcher.re);
+        println!("{:?}", searcher.index());
+        assert!(searcher.get_regex().is_some());
 
-        seacher.insert_char('s');
-        seacher.add_index();
-        seacher.set_regex();
-        println!("{:?}", seacher.re);
-        println!("{:?}", seacher.index());
-        assert!(seacher.get_regex().is_some());
+        searcher.insert_char('s');
+        searcher.add_index();
+        searcher.set_regex();
+        println!("{:?}", searcher.re);
+        println!("{:?}", searcher.index());
+        assert!(searcher.get_regex().is_some());
     }
 }
