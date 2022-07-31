@@ -34,7 +34,11 @@ impl StatefulDirectory {
     }
 
     pub fn push_file_item_and_sort(&mut self, item: FileItem) {
+        if self.contain_name(item.name_ref()) {
+            return;
+        }
         self.file_items.push(item);
+        self.length = self.file_items.len();
         let index = self.file_items.len() - 1;
         self.state.select(Some(index));
         self.sort_file_items_by_kinds();

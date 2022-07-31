@@ -307,23 +307,17 @@ impl App {
         self.selecting_statefuldir_mut().select_bottom_file_item();
     }
 
-    fn path_to_file_item_recurrently(&mut self, mut path: PathBuf) {
+    fn inseart_new_file_item_instance(&mut self, mut path: PathBuf) {
         loop {
-            let parent_path = path.parent();
-            if let Some(paren_path) = parent_path {
-                // 親ディレクトリが含まれていれば、現在のパスをFileItemのインスタンスを生成しそのディレクトリに追加する
-                let p_item = make_a_file_item_from_dirpath(paren_path);
-                let p_dirname = p_item.name();
-                if self.dirtab_contains_dirname(&p_dirname) {
-                    let item = make_a_file_item_from_dirpath(&path);
-                    if let Some(dirstate) = self.dir_map.get_mut(&p_dirname) {
-                        dirstate.push_file_item_and_sort(item)
-                    }
-                }
-            } else {
-                break;
+            let original_path = path.clone();
+            if !path.pop() {
+                return;
             }
-            path.pop();
+            let path_name = pathbuf_to_string_name(&path);
+            if let Some(dirstate) = self.dir_map.get_mut(&path_name) {
+                let item = make_a_file_item_from_dirpath(&original_path);
+                dirstate.push_file_item_and_sort(item);
+            }
         }
     }
 
@@ -332,7 +326,7 @@ impl App {
     ///  ex1) dirname
     ///  ex2) dirname01/dirname02
     /// None: File cannot be created.
-    /// ex) sample.txt means a "sample.txt" directory not a file
+    ///  ex) sample.txt means a "sample.txt" directory not a file
     ///
     fn make_directory(&mut self) {
         let relpath = self.run_user_input();
@@ -349,10 +343,7 @@ impl App {
 
         match fs::create_dir_all(&path) {
             Ok(()) => {
-                // TODO: bug
-                let item = make_a_file_item_from_dirpath(&path);
-                self.selecting_statefuldir_mut()
-                    .push_file_item_and_sort(item);
+                self.inseart_new_file_item_instance(path);
             }
             Err(error) => {
                 let message = match error.kind() {
@@ -375,12 +366,11 @@ impl App {
 
         let file_name = relpath.unwrap();
         if file_name.contains(|c| c == '\\') {
-            let path = join_to_crr_dir(self, file_name);
+            let path = join_to_crr_dir(self, &file_name);
             self.make_file_with_dir(&path);
-            return;
         }
 
-        let path = join_to_crr_dir(self, file_name);
+        let path = join_to_crr_dir(self, &file_name);
 
         if path.is_dir() {
             self.push_command_log("Duplicate name");
@@ -389,7 +379,7 @@ impl App {
 
         match fs::File::create(&path) {
             Ok(_) => {
-                self.path_to_file_item_recurrently(path);
+                self.inseart_new_file_item_instance(path);
             }
             Err(error) => {
                 let message = match error.kind() {
@@ -421,7 +411,7 @@ impl App {
 
     fn make_dir_with_path(&mut self, path: &Path) {
         match fs::create_dir_all(path) {
-            Ok(_) => self.path_to_file_item_recurrently(path.to_owned()),
+            Ok(_) => self.inseart_new_file_item_instance(path.to_owned()),
             Err(error) => {
                 let message = match error.kind() {
                     io::ErrorKind::PermissionDenied => "Permission denied",
@@ -638,6 +628,7 @@ impl App {
 
         match result {
             Ok(_) => {
+                self.remove_file_item_instance(path);
                 let stateful_dir = self.selecting_statefuldir_mut();
                 stateful_dir.remove_file_item_with_path(path);
             }
@@ -648,12 +639,13 @@ impl App {
                     // io::ErrorKind::IsADirectory => "It's a Directory",
                     _ => "",
                 };
+                self.push_command_log(mss);
             }
         }
     }
 
     ///
-    ///. ** User Carefully ** ///
+    ///. ** Use Carefully ** ///
     /// delete directory and its contents
     ///
     fn delete_directory_including_its_contents(&mut self, path: &Path) {
@@ -688,6 +680,7 @@ impl App {
                 self.stacker.stacker_push(from_path);
                 continue;
             }
+
             let dir_path = self.selecting_dir_path();
             let to_path = dir_path.join(name);
             let res = fs::copy(&from_path, &to_path);
@@ -829,7 +822,7 @@ impl App {
     }
 
     fn searcher_stack_all_items(&mut self) {
-        // TODO: I don't wanna use clone()
+        // TODO: I don't want to use clone()
         let item_paths = self.searcher.file_items_ref().clone();
         for path in item_paths {
             self.stacker_push_back(path);
