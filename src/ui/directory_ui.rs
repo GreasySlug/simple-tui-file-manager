@@ -2,7 +2,7 @@ use tui::{
     backend::Backend,
     layout::{Constraint, Layout, Rect},
     style::Modifier,
-    text::{Span, Spans},
+    text::Span,
     widgets::{Block, Borders, Cell, Row, Table},
     Frame,
 };
@@ -82,12 +82,14 @@ pub fn directory_ui<B: Backend>(
     let dir_block_style = themes.boader_style();
     let selecting_style = themes.select_style().add_modifier(Modifier::BOLD);
     let select_symbol = app.symbols(&FileItems::Select);
+    let dir_path = app.selecting_dir_path().to_str().unwrap_or_default();
     let items = Table::new(file_items_list)
         .header(header_cells)
         .widths(&header_constraints)
         .block(
             Block::default()
                 .borders(Borders::ALL)
+                .title(dir_path)
                 .style(dir_block_style),
         )
         .highlight_style(selecting_style)

@@ -4,7 +4,6 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use crate::application::App;
-use crate::file_item_list::file_item::Extension;
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 
@@ -27,12 +26,7 @@ pub fn make_file_items_from_dirpath(path: &Path) -> Vec<FileItem> {
             let meta = entry.metadata().unwrap();
             let kinds = Kinds::classifiy_kinds(path, &meta);
             let hidden = Kinds::is_hidden(path);
-            let extension = if kinds == Kinds::Directory(true) || hidden {
-                None
-            } else {
-                Some(Extension::classify_extension(&file_path))
-            };
-            files_item.push(FileItem::new(file_name, file_path, meta, kinds, extension));
+            files_item.push(FileItem::new(file_name, file_path, meta, kinds));
         }
     }
 
@@ -44,12 +38,7 @@ pub fn make_a_file_item_from_dirpath(file_path: &Path) -> FileItem {
     let meta = file_path.metadata().expect("Failed to get metadata");
     let kinds = Kinds::classifiy_kinds(file_path, &meta);
     let hidden = Kinds::is_hidden(file_path);
-    let extension = if kinds == Kinds::Directory(true) || hidden {
-        None
-    } else {
-        Some(Extension::classify_extension(file_path))
-    };
-    FileItem::new(file_name, file_path.to_path_buf(), meta, kinds, extension)
+    FileItem::new(file_name, file_path.to_path_buf(), meta, kinds)
 }
 
 pub fn working_dir_path() -> PathBuf {
