@@ -329,7 +329,7 @@ impl App {
     ///  ex) sample.txt means a "sample.txt" directory not a file
     ///
     fn make_directory(&mut self) {
-        let relpath = self.run_user_input();
+        let relpath = self.run_user_input("Input directory name");
         if relpath.is_none() {
             self.push_command_log("Failed to make directory");
             return;
@@ -357,7 +357,7 @@ impl App {
     }
 
     fn make_file(&mut self) {
-        let relpath = self.run_user_input();
+        let relpath = self.run_user_input("Input file name");
 
         if relpath.is_none() {
             self.push_command_log("Failed to make file");
@@ -455,9 +455,12 @@ impl App {
             .make_multiple_keybinds(keymap)
     }
 
-    fn run_user_input(&mut self) -> Option<String> {
+    ///
+    /// one line user input
+    ///
+    fn run_user_input(&mut self, cmd: &str) -> Option<String> {
         let mut name = String::with_capacity(MAX_FILE_NAME_SIZE);
-        let res = start_user_input(&mut name, self.theme(), "Input file name");
+        let res = start_user_input(&mut name, self.theme(), cmd);
         self.be_clear();
         if let Ok(()) = res {
             let name = name.trim().to_owned();
@@ -496,7 +499,9 @@ impl App {
         }
     }
 
-    // unselect latest
+    ///
+    /// unselect latest
+    ///
     fn stacker_deselected(&mut self) {
         self.stacker.stacker_pop();
     }
