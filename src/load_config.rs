@@ -1003,15 +1003,6 @@ impl SettingTheme {
         styles
     }
 
-    // pub fn command_style(&self, i: usize) -> Option<Style> {
-    //     if let Some(command_color) = &self.command.get(i) {
-    //         let fg = style_formatter(&command_color.1, true, false);
-    //         let bg = style_formatter(&command_color.0, false, true);
-    //         return Some(fg.patch(bg));
-    //     }
-    //     None
-    // }
-
     pub fn normal_command_style(&self) -> Style {
         if let Some((bg, fg)) = self.command.get(0) {
             let bg_style = style_formatter(bg, false, true);
@@ -1065,12 +1056,16 @@ fn hex_to_colorcode(code: &str) -> (u8, u8, u8) {
     } else {
         code
     };
+    let str_to_16 = |x| -> u8 { u8::from_str_radix(x, 16).unwrap_or_default() };
     let (r, gb) = code.split_at(1);
     let (g, b) = gb.split_at(1);
-    let r = u8::from_str_radix(r, 16).unwrap_or_default();
-    let g = u8::from_str_radix(g, 16).unwrap_or_default();
-    let b = u8::from_str_radix(b, 16).unwrap_or_default();
-    (r, g, b)
+    let mut rgb = [0; 3];
+    for (i, j) in [r, g, b].iter().enumerate() {
+        let splited_str = j.split_at(1);
+        let x = str_to_16(splited_str.0) * str_to_16(splited_str.1);
+        rgb[i] = x;
+    }
+    (rgb[0], rgb[1], rgb[2])
 }
 
 fn color_translator(color: &Colors) -> Option<Color> {
@@ -1144,13 +1139,6 @@ impl Settings {
     fn default_vim() -> Self {
         Self {
             editor: "vim".to_string(),
-            show_hidden_files: true,
-        }
-    }
-
-    fn default_emacs() -> Self {
-        Self {
-            editor: "emacs".to_string(),
             show_hidden_files: true,
         }
     }

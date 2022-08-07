@@ -564,15 +564,6 @@ impl App {
         }
     }
 
-    fn pop_file_item(&mut self) {
-        if let Some(item) = self.selecting_crr_file_item() {
-            let path = item.path().to_path_buf();
-            if self.stacker_contains(&path) {
-                self.stacker.stacker_delete_with_path(&path);
-            }
-        }
-    }
-
     fn stacker_next_item(&mut self) {
         self.stacker.next_stacker_item();
     }
@@ -925,7 +916,6 @@ fn searching_handling(
         *res = searching_files_by_name(app, themes);
         match res.as_str() {
             "stop" => Ok(String::new()),
-            "continue" => Ok(SEARCHING.to_string()),
             "fix" => Ok(SEARCHING_FIXED.to_string()),
             "searching" => Ok(SEARCHING.to_string()),
             _ => {

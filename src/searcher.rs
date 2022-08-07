@@ -124,10 +124,6 @@ impl Searcher {
         self.searched_items.push(path);
     }
 
-    pub fn pop_searched_item(&mut self) -> Option<PathBuf> {
-        self.searched_items.pop()
-    }
-
     pub fn remove_file_path(&mut self) -> Option<PathBuf> {
         if let Some(i) = self.state.selected() {
             let path = self.searched_items.remove(i);
