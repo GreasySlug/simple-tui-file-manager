@@ -13,6 +13,7 @@ use tui::Frame;
 
 use crate::application::{App, Mode};
 use crate::load_config::SettingTheme;
+use crate::path_process::pathbuf_to_string_name;
 
 use self::command_ui::command_ui;
 use self::directory_ui::directory_ui;
@@ -54,7 +55,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
 
     let tab_titles: Vec<Spans> = tabs
         .iter()
-        .map(|t| Spans::from(vec![Span::raw(t)]))
+        .map(|(_path, name)| Spans::from(vec![Span::raw(name)]))
         .collect();
 
     // Put above command_ui inside

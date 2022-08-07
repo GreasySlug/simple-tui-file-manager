@@ -39,14 +39,14 @@ pub enum Mode {
 
 // TODO: Restrictions without reason, so think cost
 const DRAIN_SIZE: usize = 50;
-const MAX_HIST_SIZE: usize = 500;
+const MAX_HIST_SIZE: usize = 1000;
 const MAX_FILE_NAME_SIZE: usize = 40;
 
 // TODO: Do I have to load  use config in this struct?
 pub struct App {
-    directory_tabs: Vec<String>,
+    directory_tabs: Vec<(PathBuf, String)>,
     tab_index: usize,
-    dir_map: HashMap<String, StatefulDirectory>,
+    dir_map: HashMap<PathBuf, StatefulDirectory>,
     command_history: Vec<String>,
     stacker: StackerVec,
     mode: Mode,
@@ -107,7 +107,7 @@ impl App {
         let additional_directories = config.additional_directory();
         for dir in additional_directories.into_iter() {
             if let Some(path) = get_user_profile_path(&dir) {
-                self.push_new_dirname_to_dirtab(pathbuf_to_string_name(&path));
+                self.push_new_dirname_to_dirtab(path.clone());
                 self.insert_new_statefuldir(path);
             }
         }
@@ -130,12 +130,12 @@ impl App {
     // The current directory should be selected, so that tab and hashmap must existe.
     pub fn selecting_statefuldir_mut(&mut self) -> &mut StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
-        self.dir_map.get_mut(selected_tab).unwrap()
+        self.dir_map.get_mut(&selected_tab.0).unwrap()
     }
 
     pub fn selecting_statefuldir_ref(&self) -> &StatefulDirectory {
         let selected_tab = self.directory_tabs.get(self.tab_index).unwrap();
-        self.dir_map.get(selected_tab).unwrap()
+        self.dir_map.get(&selected_tab.0).unwrap()
     }
 
     pub fn selecting_dir_path(&self) -> &std::path::Path {
@@ -152,8 +152,8 @@ impl App {
         self.selecting_statefuldir_ref().contain_name(name)
     }
 
-    fn dirtab_contains_dirname(&self, name: &String) -> bool {
-        self.directory_tabs.contains(name)
+    fn dirtab_contains_dirname(&self, path: &PathBuf) -> bool {
+        self.directory_tabs.iter().any(|(p, _name)| p == path)
     }
 
     pub fn selecting_crr_file_item(&self) -> Option<&FileItem> {
@@ -172,14 +172,13 @@ impl App {
         self.tab_index
     }
 
-    pub fn dirtab(&self) -> &Vec<String> {
+    pub fn dirtab(&self) -> &Vec<(PathBuf, String)> {
         &self.directory_tabs
     }
 
     pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
         let is_show = self.show_hidden_files();
-        let dir_name = pathbuf_to_string_name(&dir_path);
-        if let Entry::Vacant(item) = self.dir_map.entry(dir_name) {
+        if let Entry::Vacant(item) = self.dir_map.entry(dir_path.clone()) {
             let mut new_stateful_dir = StatefulDirectory::new(dir_path, is_show);
 
             // Sorted by name in each of the files and directories
@@ -192,9 +191,11 @@ impl App {
         }
     }
 
-    pub fn push_new_dirname_to_dirtab(&mut self, dir_name: String) {
-        if !self.directory_tabs.contains(&dir_name) {
-            self.directory_tabs.push(dir_name)
+    pub fn push_new_dirname_to_dirtab(&mut self, path: PathBuf) {
+        let name = pathbuf_to_string_name(&path);
+        let new_tab = (path, name);
+        if !self.directory_tabs.contains(&new_tab) {
+            self.directory_tabs.push(new_tab)
         }
     }
 
@@ -265,28 +266,29 @@ impl App {
         if let Some(file_item) = self.selecting_crr_file_item() {
             match Kinds::classifiy_kinds(file_item.path(), file_item.meta()) {
                 Kinds::Directory(_) => {
-                    let dir_name = file_item.name();
                     let new_dir_path = file_item.path().to_path_buf();
-                    self.insert_new_statefuldir(new_dir_path);
+                    let new_dir_name = pathbuf_to_string_name(&new_dir_path);
+                    self.insert_new_statefuldir(new_dir_path.clone());
                     let i = self.tab_index;
-                    let name = self.directory_tabs.get_mut(i);
-                    *name.unwrap() = dir_name;
+                    if let Some(name) = self.directory_tabs.get_mut(i) {
+                        *name = (new_dir_path, new_dir_name);
+                    }
                 }
                 Kinds::File(_) => self.push_command_log("Not directory"),
             }
         }
     }
 
-    pub fn move_to_parent_dir(&mut self) {
+    pub fn move_to_parent_dir<'b>(&mut self) {
         let selected_dir = self.selecting_statefuldir_mut();
         let dir_name = selected_dir.dir_name();
         if let Some(parent_path) = self.selecting_dir_path().parent() {
-            let parent_dir_name = pathbuf_to_string_name(parent_path);
             let parent_path = parent_path.to_owned();
-            self.insert_new_statefuldir(parent_path);
+            let parent_name = pathbuf_to_string_name(&parent_path);
+            self.insert_new_statefuldir(parent_path.clone());
             let i = self.tab_index;
             let name = self.directory_tabs.get_mut(i).unwrap();
-            *name = parent_dir_name;
+            *name = (parent_path, parent_name);
 
             // select the position of crr dir name or select top
             let state_dir = self.selecting_statefuldir_mut();
@@ -310,14 +312,13 @@ impl App {
     fn inseart_new_file_item_instance(&mut self, mut path: PathBuf) {
         loop {
             let original_path = path.clone();
-            if !path.pop() {
+            if !path.parent().is_none() {
                 return;
             }
-            let path_name = pathbuf_to_string_name(&path);
-            if let Some(dirstate) = self.dir_map.get_mut(&path_name) {
-                let item = make_a_file_item_from_dirpath(&original_path);
-                dirstate.push_file_item_and_sort(item);
-            }
+            // if let Some(dirstate) = self.dir_map.get_mut(&path) {
+            //     let item = make_a_file_item_from_dirpath(&original_path);
+            //     dirstate.push_file_item_and_sort(item);
+            // }
         }
     }
 
@@ -812,11 +813,12 @@ impl App {
             if let Ok(meta) = path.metadata() {
                 match Kinds::classifiy_kinds(&path, &meta) {
                     Kinds::Directory(_) => {
-                        let dir_name = pathbuf_to_string_name(&path);
-                        self.insert_new_statefuldir(path);
+                        let name = pathbuf_to_string_name(&path);
+                        self.insert_new_statefuldir(path.clone());
                         let i = self.tab_index;
-                        let name = self.directory_tabs.get_mut(i);
-                        *name.expect("Failed to get name in diirtab...") = dir_name;
+                        if let Some(tab) = self.directory_tabs.get_mut(i) {
+                            *tab = (path, name);
+                        }
                     }
                     Kinds::File(_) => self.push_command_log("Not directory"),
                 }

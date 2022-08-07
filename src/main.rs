@@ -67,10 +67,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // current working directory
     let crr_dir_path = working_dir_path();
-    let dir_name = pathbuf_to_string_name(&crr_dir_path);
     let mut app = App::new();
-    app.insert_new_statefuldir(crr_dir_path);
-    app.push_new_dirname_to_dirtab(dir_name);
+    app.insert_new_statefuldir(crr_dir_path.clone());
+    app.push_new_dirname_to_dirtab(crr_dir_path);
 
     let res = run_app(&mut terminal, app);
 
