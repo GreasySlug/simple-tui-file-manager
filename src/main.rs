@@ -55,37 +55,36 @@ fn main() -> Result<(), Box<dyn Error>> {
                 return Ok(());
             }
         },
-        None => {}
+        None => {
+            // setup terminal
+            enable_raw_mode()?;
+            let mut stdout = io::stdout();
+            execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+            let backend = CrosstermBackend::new(stdout);
+            let mut terminal = Terminal::new(backend)?;
+
+            // current working directory
+            let crr_dir_path = working_dir_path();
+            let mut app = App::new();
+            app.insert_new_statefuldir(crr_dir_path.clone());
+            app.push_new_dirname_to_dirtab(crr_dir_path);
+
+            let res = run_app(&mut terminal, app);
+
+            // restore terminal
+            disable_raw_mode()?;
+            execute!(
+                terminal.backend_mut(),
+                LeaveAlternateScreen,
+                DisableMouseCapture
+            )?;
+            terminal.show_cursor()?;
+            terminal.clear()?;
+
+            if let Err(err) = res {
+                println!("{:?}", err)
+            }
+        }
     }
-
-    // setup terminal
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    // current working directory
-    let crr_dir_path = working_dir_path();
-    let mut app = App::new();
-    app.insert_new_statefuldir(crr_dir_path.clone());
-    app.push_new_dirname_to_dirtab(crr_dir_path);
-
-    let res = run_app(&mut terminal, app);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-    terminal.clear()?;
-
-    if let Err(err) = res {
-        println!("{:?}", err)
-    }
-
     Ok(())
 }

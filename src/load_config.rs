@@ -73,7 +73,7 @@ pub fn default_vim_movements() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("q", "quit"),
+        (": q", "quit"),
         ("S-i", "input"),
         ("esc", "normal"),
         ("h", "move_to_parent_dir"),
@@ -105,6 +105,7 @@ pub fn default_vim_movements() -> ModeKeybinds {
 
     let mut searcher: HashMap<String, String> = HashMap::new();
     let iter = [
+        ("esc", "normal"),
         ("left", "move_to_parent_dir"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
@@ -1187,7 +1188,7 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::light_theme(),
             symbols: example_symbols(),
-            user_settings: Settings::default_emacs(),
+            user_settings: Settings::default_vim(),
             user_keybinds: default_vim_movements(),
             additional_directories: vec![],
         }
