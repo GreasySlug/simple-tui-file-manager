@@ -1,7 +1,11 @@
 [package]
 name = "simple-tui-file-manager"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
+
+[[bin]]
+name = "sfm"
+path = "src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
