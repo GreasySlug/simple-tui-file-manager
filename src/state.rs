@@ -52,7 +52,7 @@ impl StatefulDirectory {
         self.directory.pathbuf()
     }
 
-    pub fn dir_parent_path(&self) -> &PathBuf {
+    pub fn _dir_parent_path(&self) -> &PathBuf {
         self.directory.parent()
     }
 
@@ -144,7 +144,7 @@ impl StatefulDirectory {
         }
     }
 
-    pub fn remove_file_item_with_name(&mut self, name: &str) {
+    pub fn _remove_file_item_with_name(&mut self, name: &str) {
         if let Some(i) = self
             .file_items()
             .iter()
@@ -159,7 +159,7 @@ impl StatefulDirectory {
         self.file_items.iter().any(|x| x.name_ref() == name)
     }
 
-    pub fn contain_path(&self, path: &Path) -> bool {
+    pub fn _contain_path(&self, path: &Path) -> bool {
         self.file_items.iter().any(|p| p.path() == path)
     }
 }

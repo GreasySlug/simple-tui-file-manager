@@ -4,7 +4,7 @@ use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
-use path_process::{pathbuf_to_string_name, working_dir_path};
+use path_process::working_dir_path;
 use std::env;
 use std::{error::Error, io};
 use tui::{backend::CrosstermBackend, Terminal};

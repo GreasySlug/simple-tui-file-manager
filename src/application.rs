@@ -152,7 +152,7 @@ impl App {
         self.selecting_statefuldir_ref().contain_name(name)
     }
 
-    fn dirtab_contains_dirname(&self, path: &PathBuf) -> bool {
+    fn dirtab_contains_dirpath(&self, path: &PathBuf) -> bool {
         self.directory_tabs.iter().any(|(p, _name)| p == path)
     }
 
@@ -270,8 +270,8 @@ impl App {
                     let new_dir_name = pathbuf_to_string_name(&new_dir_path);
                     self.insert_new_statefuldir(new_dir_path.clone());
                     let i = self.tab_index;
-                    if let Some(name) = self.directory_tabs.get_mut(i) {
-                        *name = (new_dir_path, new_dir_name);
+                    if let Some(dirtab) = self.directory_tabs.get_mut(i) {
+                        *dirtab = (new_dir_path, new_dir_name);
                     }
                 }
                 Kinds::File(_) => self.push_command_log("Not directory"),
@@ -279,7 +279,7 @@ impl App {
         }
     }
 
-    pub fn move_to_parent_dir<'b>(&mut self) {
+    pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.selecting_statefuldir_mut();
         let dir_name = selected_dir.dir_name();
         if let Some(parent_path) = self.selecting_dir_path().parent() {
@@ -287,8 +287,8 @@ impl App {
             let parent_name = pathbuf_to_string_name(&parent_path);
             self.insert_new_statefuldir(parent_path.clone());
             let i = self.tab_index;
-            let name = self.directory_tabs.get_mut(i).unwrap();
-            *name = (parent_path, parent_name);
+            let dirtab = self.directory_tabs.get_mut(i).unwrap();
+            *dirtab = (parent_path, parent_name);
 
             // select the position of crr dir name or select top
             let state_dir = self.selecting_statefuldir_mut();

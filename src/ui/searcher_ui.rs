@@ -10,7 +10,7 @@ use crate::path_process::pathbuf_to_string_name;
 use crate::{application::App, file_item_list::Kinds, load_config::FileItems};
 
 use super::{
-    directory_ui, FILE_LENGTH, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, NEW_HEADER_TITLES,
+    directory_ui, FILE_LENGTH, HEADER_TITLES, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH,
     PERMISION_LENGTH,
 };
 
@@ -21,7 +21,7 @@ pub fn ui<B: Backend>(
     themes: &SettingTheme,
 ) {
     let header_style = app.theme().header_style();
-    let header_titles = NEW_HEADER_TITLES
+    let header_titles = HEADER_TITLES
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
 

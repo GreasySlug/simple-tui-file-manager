@@ -15,7 +15,7 @@ use crate::{
 };
 
 use super::{
-    FILE_LENGTH, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, NEW_HEADER_TITLES, PERMISION_LENGTH,
+    FILE_LENGTH, HEADER_TITLES, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, PERMISION_LENGTH,
 };
 
 pub fn stacker_ui<B: Backend>(
@@ -25,7 +25,7 @@ pub fn stacker_ui<B: Backend>(
     themes: &SettingTheme,
 ) {
     let header_style = themes.header_style();
-    let header_titles = NEW_HEADER_TITLES
+    let header_titles = HEADER_TITLES
         .iter()
         .map(|h| Cell::from(*h).style(header_style));
 

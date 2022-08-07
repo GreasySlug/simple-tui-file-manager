@@ -13,7 +13,6 @@ use tui::Frame;
 
 use crate::application::{App, Mode};
 use crate::load_config::SettingTheme;
-use crate::path_process::pathbuf_to_string_name;
 
 use self::command_ui::command_ui;
 use self::directory_ui::directory_ui;
@@ -27,7 +26,7 @@ const FILE_LENGTH: u16 = 40;
 const ICON_LENGTH: u16 = 4;
 const MARGIN_LENGTH: u16 = 2;
 const PERMISION_LENGTH: u16 = 4;
-const NEW_HEADER_TITLES: [&str; 6] = ["perm", "size", "date", "", "", "name"];
+const HEADER_TITLES: [&str; 6] = ["perm", "size", "date", "", "", "name"];
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
     let background_style = themes.background_style();
