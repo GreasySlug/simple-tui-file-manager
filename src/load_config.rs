@@ -925,10 +925,10 @@ impl SettingTheme {
             file_item: Colors::Gray,
             select: Colors::LightMagenta,
             command: vec![
-                (Colors::Green, Colors::Cyan),
-                (Colors::White, Colors::Blue),
-                (Colors::Magenta, Colors::Red),
-                (Colors::White, Colors::Red),
+                (Colors::Black, Colors::Cyan),  // normal
+                (Colors::White, Colors::Blue),  // input
+                (Colors::Magenta, Colors::Red), // select
+                (Colors::White, Colors::Red),   // search
             ],
         }
     }
@@ -942,10 +942,10 @@ impl SettingTheme {
             file_item: Colors::Black,
             select: Colors::LightRed,
             command: vec![
-                (Colors::Blue, Colors::White),
-                (Colors::Green, Colors::White),
-                (Colors::Magenta, Colors::White),
-                (Colors::Green, Colors::White),
+                (Colors::Blue, Colors::White),    // normal
+                (Colors::Green, Colors::White),   // input
+                (Colors::Magenta, Colors::White), // select
+                (Colors::Green, Colors::White),   // search
             ],
         }
     }

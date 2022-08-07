@@ -588,6 +588,7 @@ impl App {
     }
 
     ///
+    /// TODO: FIX BUG
     /// The item in the stacker, at the position where the cursor is in the selection, is deleted.
     /// complete delete, cannot be undone
     ///
@@ -660,7 +661,10 @@ impl App {
         }
     }
 
+    ///
+    /// TODO: FIX BUG
     /// stacker Copy Mehotds
+    ///
     fn stacker_copy_file_item_to_crr_dir(&mut self) {
         if self.stacker.stacker_is_empty() {
             return;
@@ -703,7 +707,12 @@ impl App {
         }
     }
 
-    // stacker move methods
+    ///
+    /// ## stacker move methods
+    ///
+    /// 現在いるディレクトリにスタッカーにスタックされている
+    /// ファイルやディテクトリを移動させる
+    ///
     fn stcker_move_file_item_to_crr_dir(&mut self) {
         if self.stacker.stacker_is_empty() {
             return;
@@ -711,7 +720,7 @@ impl App {
 
         while let Some(from_path) = self.stacker.remove_selecting_item() {
             let name = &pathbuf_to_string_name(&from_path);
-            // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
+            // TODO:if name is duplecated, y/n is displayed y is pass,and other charactors are return.
             if self.selecting_dir_contain_name(name) {
                 self.stacker_push_back(from_path);
                 self.push_command_log("Duplicate name");
@@ -759,8 +768,12 @@ impl App {
         self.shift_to_input_mode();
     }
 
-    /// *** Seacher Mode *** ///
-
+    /// ## Seacher Mode
+    ///
+    /// ## search crr dir file name
+    ///
+    /// `/` shift to searcher mode
+    ///
     fn shift_to_searcher_mode(&mut self) {
         self.mode = Mode::Searcher;
     }
@@ -799,6 +812,12 @@ impl App {
         self.searcher.remove_file_path()
     }
 
+    ///
+    /// ## Searcher move to child directory
+    ///
+    /// 検索モードで検索されたファイル要素でそれがディレクトリである場合
+    /// そのディレクトリ内へ移動することができる
+    ///
     fn searcher_move_to_child_dir(&mut self) {
         if let Some(path) = self.remove_file_path_searcher() {
             if let Ok(meta) = path.metadata() {
@@ -819,6 +838,9 @@ impl App {
         }
     }
 
+    ///
+    /// 現在、中身のあるディテクトリはバグになるのでおすすめしない
+    ///
     fn searcher_stack_all_items(&mut self) {
         // TODO: I don't want to use clone()
         let item_paths = self.searcher.file_items_ref().clone();
@@ -896,6 +918,11 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
     }
 }
 
+///
+/// use searhcer mode
+/// searched directory diffrent from normal mode's directory
+/// so searche mode to shi
+///
 fn handle_modal_seacher(app: &mut App) {
     if app.mode() == &Mode::Searcher {
         app.shift_to_normal_mode_from_searcher();
@@ -904,6 +931,11 @@ fn handle_modal_seacher(app: &mut App) {
     }
 }
 
+///
+/// stop: pressed esc and then clear searching string and shift to normal mode
+/// fix: pressed enter and then shift to normal mode
+/// searching: searching state
+///
 fn searching_handling(
     app: &mut App,
     res: &mut String,
@@ -986,7 +1018,7 @@ fn searching_files_by_name(app: &mut App, themes: &SettingTheme) -> String {
 fn key_matchings(keybinds: &mut UserKeybinds) -> ioResult<String> {
     if let Event::Key(key) = event::read()? {
         keybinds.set_keyevent(key);
-        // matching a key bindings without combo
+        // matching a key binding without combo
         if let Some(cmd) = keybinds.matching_single_keys() {
             return Ok(cmd);
         }
@@ -1005,6 +1037,7 @@ fn key_matchings(keybinds: &mut UserKeybinds) -> ioResult<String> {
     Ok(String::with_capacity(0))
 }
 
+/// all commands in here
 fn run_commands(app: &mut App, cmd: &str) {
     match cmd {
         // mode
