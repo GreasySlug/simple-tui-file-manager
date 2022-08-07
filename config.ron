@@ -84,8 +84,8 @@
             "p":   "stacker_paste",
             "S-p": "stacker_stacking_paste",
             "m":   "stacker_move",
-            "d":   "stacker_delete",
-            "S-d": "stacker_delete_all",
+            "d d":   "stacker_delete", // use carefully, delete completely
+            "S-d S-d": "stacker_delete_all", // use carefully, delete completetly
         },
         searcher: {
             "j": "searcher_next_file_item",

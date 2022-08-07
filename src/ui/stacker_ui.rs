@@ -43,7 +43,7 @@ pub fn stacker_ui<B: Backend>(
     let dir_symbol = app.symbols(&FileItems::Directory);
     let select_symbol = app.symbols(&FileItems::Select);
 
-    let current_dir_path = pathbuf_to_string_name(app.selecting_dir_path());
+    let dirname = app.selecting_dirtab().1.as_str();
     let file_item_iter = app.selecting_dir_file_items();
 
     let file_style = themes.file_style();
@@ -100,7 +100,7 @@ pub fn stacker_ui<B: Backend>(
             Block::default()
                 .borders(Borders::ALL)
                 .style(dir_block_style)
-                .title(current_dir_path),
+                .title(dirname),
         )
         .highlight_style(selecting_style)
         .highlight_symbol(&select_symbol);

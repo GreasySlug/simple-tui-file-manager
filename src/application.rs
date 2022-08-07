@@ -75,10 +75,16 @@ impl App {
         }
     }
 
+    ///
+    /// when this is called, screen is clean
+    ///
     fn be_clear(&mut self) {
         self.be_cleaned = true;
     }
 
+    ///
+    /// be_clear is called, this function is called to fase
+    ///
     fn be_cleaned(&mut self) {
         self.be_cleaned = false;
     }
@@ -138,11 +144,6 @@ impl App {
         self.dir_map.get(&selected_tab.0).unwrap()
     }
 
-    pub fn selecting_dir_path(&self) -> &std::path::Path {
-        let selected_stateful_dir = self.selecting_statefuldir_ref();
-        selected_stateful_dir.dir_path()
-    }
-
     pub fn selecting_dir_file_items(&self) -> &Vec<FileItem> {
         let stateful_dir = self.selecting_statefuldir_ref();
         stateful_dir.file_items()
@@ -174,6 +175,12 @@ impl App {
 
     pub fn dirtab(&self) -> &Vec<(PathBuf, String)> {
         &self.directory_tabs
+    }
+
+    pub fn selecting_dirtab(&self) -> &(PathBuf, String) {
+        let dirtab = self.dirtab();
+        let i = self.tab_index();
+        &dirtab[i]
     }
 
     pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
@@ -282,7 +289,7 @@ impl App {
     pub fn move_to_parent_dir(&mut self) {
         let selected_dir = self.selecting_statefuldir_mut();
         let dir_name = selected_dir.dir_name();
-        if let Some(parent_path) = self.selecting_dir_path().parent() {
+        if let Some(parent_path) = self.selecting_dirtab().0.parent() {
             let parent_path = parent_path.to_owned();
             let parent_name = pathbuf_to_string_name(&parent_path);
             self.insert_new_statefuldir(parent_path.clone());
@@ -682,7 +689,7 @@ impl App {
                 continue;
             }
 
-            let dir_path = self.selecting_dir_path();
+            let dir_path = &self.selecting_dirtab().0;
             let to_path = dir_path.join(name);
             let res = fs::copy(&from_path, &to_path);
             match res {
@@ -727,7 +734,7 @@ impl App {
                 return;
             }
 
-            let dir_path = self.selecting_dir_path();
+            let dir_path = &self.selecting_dirtab().0;
             let to_path = dir_path.join(name);
             let res = fs::copy(&from_path, &to_path);
             match res {
@@ -1078,6 +1085,8 @@ fn run_commands(app: &mut App, cmd: &str) {
         "stacker_prev_file_item" => app.stacker_previous_item(),
         "stacker_paste" => app.stacker_copy_file_item_to_crr_dir(),
         "stacker_move" => app.stcker_move_file_item_to_crr_dir(),
+        "stacker_delete" => app.stacker_delete_selecting_item(), // use carefully
+        "stacker_delete_all" => app.stacker_delete_all(),        // use carefully
 
         // searcher commands
         "searcher_next_file_item" => app.searcher_next(),

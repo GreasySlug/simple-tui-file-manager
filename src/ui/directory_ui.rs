@@ -82,7 +82,7 @@ pub fn directory_ui<B: Backend>(
     let dir_block_style = themes.boader_style();
     let selecting_style = themes.select_style().add_modifier(Modifier::BOLD);
     let select_symbol = app.symbols(&FileItems::Select);
-    let dir_path = app.selecting_dir_path().to_str().unwrap_or_default();
+    let dir_path = app.selecting_dirtab().1.as_str();
     let items = Table::new(file_items_list)
         .header(header_cells)
         .widths(&header_constraints)

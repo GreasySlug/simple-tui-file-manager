@@ -6,7 +6,6 @@ use tui::widgets::{Block, Borders, Cell, Row, Table};
 use tui::Frame;
 
 use crate::load_config::SettingTheme;
-use crate::path_process::pathbuf_to_string_name;
 use crate::{application::App, file_item_list::Kinds, load_config::FileItems};
 
 use super::{
@@ -39,7 +38,8 @@ pub fn ui<B: Backend>(
     let dir_symbol = app.symbols(&FileItems::Directory);
     let select_symbol = app.symbols(&FileItems::Select);
 
-    let current_dir_path = pathbuf_to_string_name(app.selecting_dir_path());
+    // TODO: I don't want to use clone()
+    let dirname = app.selecting_dirtab().1.clone();
 
     let file_style = app.theme().file_style();
     let dir_style = app.theme().dir_style();
@@ -100,7 +100,7 @@ pub fn ui<B: Backend>(
                 Block::default()
                     .borders(Borders::ALL)
                     .style(dir_block_style)
-                    .title(current_dir_path),
+                    .title(dirname),
             )
             .highlight_style(selecting_style)
             .highlight_symbol(&select_symbol);
