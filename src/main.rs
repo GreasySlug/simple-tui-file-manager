@@ -11,6 +11,7 @@ use tui::{backend::CrosstermBackend, Terminal};
 
 mod application;
 mod file_item_list;
+mod infobox;
 mod input;
 mod load_config;
 mod path_process;

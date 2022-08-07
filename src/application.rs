@@ -70,7 +70,6 @@ impl App {
             be_cleaned: false,
             editor: String::new(),
             show_hidden_files: false,
-            // traial
             searcher: Searcher::new(),
         }
     }
