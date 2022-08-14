@@ -8,7 +8,7 @@ use tui::{
 
 use crate::application::Mode;
 
-const BLOCK_ELEMENTS: [&str; 7] = [" ", "▁", "▂", "▃", "▄", "▅", "▆"];
+const INDICATOR_BLOCKS: [&str; 7] = [" ", "▁", "▂", "▃", "▄", "▅", "▆"];
 pub fn command_ui<B: Backend>(
     f: &mut Frame<B>,
     cmd_hist: &[String],
@@ -34,14 +34,14 @@ pub fn command_ui<B: Backend>(
     let cmd_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(8),
+            Constraint::Min(20),
             Constraint::Percentage(60),
             Constraint::Min(20),
         ])
         .margin(1)
         .split(cmd_window);
 
-    let uni_block = BLOCK_ELEMENTS[(rate * BLOCK_ELEMENTS.len() as f32) as usize];
+    let uni_block = INDICATOR_BLOCKS[(rate * INDICATOR_BLOCKS.len() as f32 - 1.0) as usize];
     let right_block = format!("{}% : {}", (rate * 100_f32) as usize, uni_block);
     let uni_block = Paragraph::new(right_block)
         .block(block.clone())

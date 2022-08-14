@@ -89,15 +89,17 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {
         }
     }
 
-    let (index, file_items) = {
+    let rate: f32 = {
         let state = app.selecting_statefuldir_ref();
-        (
-            state.state_table().selected().unwrap_or(0),
-            state.file_items().len(),
-        )
+        let index = state.state_table().selected().unwrap_or(0);
+        let item_len = state.file_items().len();
+        if index == 0 || item_len == 0 {
+            0.0
+        } else {
+            index as f32 / (item_len - 1) as f32
+        }
     };
 
-    let rate = index as f32 / file_items as f32;
     command_ui(
         f,
         app.command_history(),
