@@ -8,6 +8,11 @@
         directory: Blue, // dir font
         file_item: Black, // file font
         select: Green, // selecting hightlight
+        warning_background: Rgb(233, 163, 38), // orange
+        warning_foreground: White,
+        error_background: Rgb(233, 40, 30), // Red
+        error_foreground: White,
+                error: LightRed,
         command: [
             // bg, font
             (White, Black), // normal

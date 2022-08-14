@@ -12,7 +12,7 @@ use tui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
-
+use crate::infobox::Infobox;
 use crate::input::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
     load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
@@ -613,9 +613,22 @@ impl App {
 
     /// TODO: Instead of deleting it completely, it is better to move it to the Recycle Bin in the application so that it can be undone, etc.
     fn stacker_delete_all(&mut self) {
+        let warning = self.theme().warning_style();
+        Infobox::init()
+            .set_info(
+                "Delete all",
+                vec!["Are you sure you want to\ndelete all in stacker?", "y/n"],
+            )
+            .create_popup(warning);
+        if let Some(ans) = self.run_user_input("Input 'y'/'Y' or else") {
+            if ans == "y" || ans == "Y" {
         let stacker = self.stacker.stack_ref().to_owned();
         for path in stacker.iter() {
             self.delete_file_item_with_path(path);
+                }
+
+                self.push_command_log("Fished to delete all");
+            }
         }
     }
 
