@@ -912,6 +912,10 @@ pub struct SettingTheme {
     file_item: Colors,
     select: Colors,
     header: Colors,
+    warning_background: Colors,
+    warning_foreground: Colors,
+    error_background: Colors,
+    error_foreground: Colors,
     // (bg, fg): normal, input, stacker
     command: Vec<(Colors, Colors)>,
 }
@@ -925,6 +929,10 @@ impl SettingTheme {
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::LightMagenta,
+            warning_background: Colors::Rgb(238, 163, 23),
+            warning_foreground: Colors::White,
+            error_background: Colors::Red,
+            error_foreground: Colors::White,
             command: vec![
                 (Colors::Black, Colors::Cyan),  // normal
                 (Colors::White, Colors::Blue),  // input
@@ -942,6 +950,10 @@ impl SettingTheme {
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
+            warning_background: Colors::Rgb(238, 163, 23),
+            warning_foreground: Colors::White,
+            error_background: Colors::Red,
+            error_foreground: Colors::White,
             command: vec![
                 (Colors::Blue, Colors::White),    // normal
                 (Colors::Green, Colors::White),   // input
@@ -959,6 +971,10 @@ impl SettingTheme {
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::Green,
+            warning_background: Colors::Rgb(238, 163, 23),
+            warning_foreground: Colors::White,
+            error_background: Colors::Red,
+            error_foreground: Colors::White,
             command: vec![
                 (Colors::Blue, Colors::Black),
                 (Colors::Green, Colors::Blue),
@@ -1047,6 +1063,22 @@ impl SettingTheme {
     pub fn background_style(&self) -> Style {
         let user_color = &self.background;
         style_formatter(user_color, false, true)
+    }
+
+    pub fn error_style(&self) -> Style {
+        let user_color = &self.error_background;
+        let bg = style_formatter(user_color, false, true);
+        let user_color = &self.error_foreground;
+        let fg = style_formatter(user_color, true, false);
+        bg.patch(fg)
+    }
+
+    pub fn warning_style(&self) -> Style {
+        let user_color = &self.warning_background;
+        let bg = style_formatter(user_color, false, true);
+        let user_color = &self.warning_foreground;
+        let fg = style_formatter(user_color, true, false);
+        bg.patch(fg)
     }
 }
 
