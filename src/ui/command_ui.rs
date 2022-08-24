@@ -41,7 +41,9 @@ pub fn command_ui<B: Backend>(
         .margin(1)
         .split(cmd_window);
 
-    let uni_block = INDICATOR_BLOCKS[(rate * INDICATOR_BLOCKS.len() as f32 - 1.0) as usize];
+    let index = rate * INDICATOR_BLOCKS.len() as f32 - 1.0;
+    let index = if index.lt(&0.0) { 0 } else { index as usize };
+    let uni_block = INDICATOR_BLOCKS[index];
     let right_block = format!("{}% : {}", (rate * 100_f32) as usize, uni_block);
     let uni_block = Paragraph::new(right_block)
         .block(block.clone())

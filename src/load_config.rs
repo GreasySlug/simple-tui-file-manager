@@ -1,6 +1,6 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use serde::Deserialize;
-use std::{collections::HashMap, fs::File};
+use std::{collections::HashMap, fs::File, u8};
 use tui::style::{Color, Style};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -143,634 +143,139 @@ pub fn multi_string_map_to_user_keyboad(
     keybind
 }
 
-fn char_keyevent_matcher(c: char, modi: KeyModifiers) -> KeyEvent {
+fn char_keyevent_with_modifier(c: char, modi: KeyModifiers) -> KeyEvent {
     match modi {
         KeyModifiers::NONE => KeyEvent {
             code: KeyCode::Char(c),
             modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         },
         KeyModifiers::SHIFT => KeyEvent {
             code: KeyCode::Char(c),
             modifiers: KeyModifiers::SHIFT,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         },
         KeyModifiers::CONTROL => KeyEvent {
             code: KeyCode::Char(c),
             modifiers: KeyModifiers::CONTROL,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         },
         KeyModifiers::ALT => KeyEvent {
             code: KeyCode::Char(c),
             modifiers: KeyModifiers::ALT,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         },
         _ => KeyEvent {
             code: KeyCode::Null,
             modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         },
     }
 }
 
-fn digit_keyevent_matcher(c: char, m: char, is_f: bool) -> KeyEvent {
-    let modifiers = match m {
+fn keyevent_classify_modifier(m: char) -> KeyModifiers {
+    match m {
         'S' => KeyModifiers::SHIFT,
         'C' => KeyModifiers::CONTROL,
         'A' => KeyModifiers::ALT,
         _ => KeyModifiers::NONE,
-    };
+    }
+}
 
+fn keyevent_classify_code(is_f: bool, s: &str) -> KeyCode {
     if is_f {
-        if let Some(n) = c.to_digit(10) {
-            KeyEvent {
-                code: KeyCode::F(n as u8),
-                modifiers,
+        let (_f, s) = s.split_at(1);
+        if let Ok(n) = s.parse::<u8>() {
+            return KeyCode::F(n);
+        }
+    }
+
+    match s {
+        "esc" => KeyCode::Esc,
+        "enter" | "return" => KeyCode::Enter,
+        "tab" => KeyCode::Tab,
+        "right" => KeyCode::Right,
+        "left" => KeyCode::Left,
+        "up" => KeyCode::Up,
+        "down" => KeyCode::Down,
+        _ => {
+            let c: Vec<char> = s.chars().collect();
+            if c.len() > 1 {
+                panic!("Not implement yet: {:?}", c);
+            } else {
+                KeyCode::Char(c[0])
             }
-        } else {
-            panic!("numbers range is 0 to 9 or f0 to f12");
+        }
+    }
+}
+
+fn keyboard_classify(s: Vec<&str>) -> KeyEvent {
+    if s.is_empty() {
+        return KeyEvent {
+            code: KeyCode::Null,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
+        };
+    }
+    if s.len() == 1 {
+        let is_f = s[0].contains('f');
+        let code = keyevent_classify_code(is_f, s[0]);
+        KeyEvent {
+            code,
+            modifiers: KeyModifiers::NONE,
+            kind: KeyEventKind::Press,
+            state: KeyEventState::NONE,
         }
     } else {
-        KeyEvent {
-            code: KeyCode::Char(c),
-            modifiers,
+        let mut keyevents: Vec<KeyModifiers> = Vec::new();
+        let mut code: KeyCode = KeyCode::Null;
+        for tkn in s.into_iter() {
+            if tkn.contains('A') || tkn.contains('C') || tkn.contains('S') {
+                let c = tkn.chars().collect::<Vec<char>>()[0];
+                keyevents.push(keyevent_classify_modifier(c));
+            } else {
+                let is_f = tkn.contains('f');
+                code = keyevent_classify_code(is_f, tkn);
+            }
+        }
+        match (keyevents.get(0), keyevents.get(1), keyevents.get(2)) {
+            (Some(&modi00), Some(&modi01), Some(&modi02)) => KeyEvent {
+                code,
+                modifiers: modi00 | modi01 | modi02,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+            (Some(&modi00), Some(&modi01), None) => KeyEvent {
+                code,
+                modifiers: modi00 | modi01,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+            (Some(&modi00), None, None) => KeyEvent {
+                code,
+                modifiers: modi00,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+            _ => KeyEvent {
+                code: KeyCode::Null,
+                modifiers: KeyModifiers::NONE,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
         }
     }
 }
 
 fn string_to_keyevent(s: &str) -> KeyEvent {
-    match s {
-        "a" => KeyEvent {
-            code: KeyCode::Char('a'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "b" => KeyEvent {
-            code: KeyCode::Char('b'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "c" => KeyEvent {
-            code: KeyCode::Char('c'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "d" => KeyEvent {
-            code: KeyCode::Char('d'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "e" => KeyEvent {
-            code: KeyCode::Char('e'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f" => KeyEvent {
-            code: KeyCode::Char('f'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "g" => KeyEvent {
-            code: KeyCode::Char('g'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "h" => KeyEvent {
-            code: KeyCode::Char('h'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "i" => KeyEvent {
-            code: KeyCode::Char('i'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "j" => KeyEvent {
-            code: KeyCode::Char('j'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "k" => KeyEvent {
-            code: KeyCode::Char('k'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "l" => KeyEvent {
-            code: KeyCode::Char('l'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "m" => KeyEvent {
-            code: KeyCode::Char('m'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "n" => KeyEvent {
-            code: KeyCode::Char('n'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "o" => KeyEvent {
-            code: KeyCode::Char('o'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "p" => KeyEvent {
-            code: KeyCode::Char('p'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "q" => KeyEvent {
-            code: KeyCode::Char('q'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "r" => KeyEvent {
-            code: KeyCode::Char('r'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "s" => KeyEvent {
-            code: KeyCode::Char('s'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "t" => KeyEvent {
-            code: KeyCode::Char('t'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "u" => KeyEvent {
-            code: KeyCode::Char('u'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "v" => KeyEvent {
-            code: KeyCode::Char('v'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "w" => KeyEvent {
-            code: KeyCode::Char('w'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "x" => KeyEvent {
-            code: KeyCode::Char('x'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "y" => KeyEvent {
-            code: KeyCode::Char('y'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "z" => KeyEvent {
-            code: KeyCode::Char('z'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "#" => KeyEvent {
-            code: KeyCode::Char('#'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "!" => KeyEvent {
-            code: KeyCode::Char('!'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "$" => KeyEvent {
-            code: KeyCode::Char('$'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "%" => KeyEvent {
-            code: KeyCode::Char('%'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "&" => KeyEvent {
-            code: KeyCode::Char('&'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "'" => KeyEvent {
-            code: KeyCode::Char('\''),
-            modifiers: KeyModifiers::NONE,
-        },
-        "(" => KeyEvent {
-            code: KeyCode::Char('('),
-            modifiers: KeyModifiers::NONE,
-        },
-        ")" => KeyEvent {
-            code: KeyCode::Char(')'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "-" => KeyEvent {
-            code: KeyCode::Char('-'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "=" => KeyEvent {
-            code: KeyCode::Char('='),
-            modifiers: KeyModifiers::NONE,
-        },
-        "^" => KeyEvent {
-            code: KeyCode::Char('^'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "~" => KeyEvent {
-            code: KeyCode::Char('~'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "\\" => KeyEvent {
-            code: KeyCode::Char('\\'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "|" => KeyEvent {
-            code: KeyCode::Char('|'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "@" => KeyEvent {
-            code: KeyCode::Char('@'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "[" => KeyEvent {
-            code: KeyCode::Char('['),
-            modifiers: KeyModifiers::NONE,
-        },
-        "]" => KeyEvent {
-            code: KeyCode::Char(']'),
-            modifiers: KeyModifiers::NONE,
-        },
-        ";" => KeyEvent {
-            code: KeyCode::Char(';'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "+" => KeyEvent {
-            code: KeyCode::Char('+'),
-            modifiers: KeyModifiers::NONE,
-        },
-        ":" => KeyEvent {
-            code: KeyCode::Char(':'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "*" => KeyEvent {
-            code: KeyCode::Char('*'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "?" => KeyEvent {
-            code: KeyCode::Char('?'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "/" => KeyEvent {
-            code: KeyCode::Char('/'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "," => KeyEvent {
-            code: KeyCode::Char(','),
-            modifiers: KeyModifiers::NONE,
-        },
-        "." => KeyEvent {
-            code: KeyCode::Char('.'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "<" => KeyEvent {
-            code: KeyCode::Char('<'),
-            modifiers: KeyModifiers::NONE,
-        },
-        ">" => KeyEvent {
-            code: KeyCode::Char('>'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "_" => KeyEvent {
-            code: KeyCode::Char('_'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "esc" | "Esc" => KeyEvent {
-            code: KeyCode::Esc,
-            modifiers: KeyModifiers::NONE,
-        },
-        "tab" => KeyEvent {
-            code: KeyCode::Tab,
-            modifiers: KeyModifiers::NONE,
-        },
-        "return" | "enter" => KeyEvent {
-            code: KeyCode::Enter,
-            modifiers: KeyModifiers::NONE,
-        },
-        "S-tab" => KeyEvent {
-            code: KeyCode::BackTab,
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-a" => KeyEvent {
-            code: KeyCode::Char('A'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-b" => KeyEvent {
-            code: KeyCode::Char('B'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-c" => KeyEvent {
-            code: KeyCode::Char('C'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-d" => KeyEvent {
-            code: KeyCode::Char('D'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-e" => KeyEvent {
-            code: KeyCode::Char('E'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-f" => KeyEvent {
-            code: KeyCode::Char('F'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-g" => KeyEvent {
-            code: KeyCode::Char('G'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-h" => KeyEvent {
-            code: KeyCode::Char('H'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-i" => KeyEvent {
-            code: KeyCode::Char('I'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-j" => KeyEvent {
-            code: KeyCode::Char('J'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-k" => KeyEvent {
-            code: KeyCode::Char('K'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-l" => KeyEvent {
-            code: KeyCode::Char('L'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-m" => KeyEvent {
-            code: KeyCode::Char('M'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-n" => KeyEvent {
-            code: KeyCode::Char('N'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-o" => KeyEvent {
-            code: KeyCode::Char('O'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-p" => KeyEvent {
-            code: KeyCode::Char('P'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-q" => KeyEvent {
-            code: KeyCode::Char('Q'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-r" => KeyEvent {
-            code: KeyCode::Char('R'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-s" => KeyEvent {
-            code: KeyCode::Char('S'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-t" => KeyEvent {
-            code: KeyCode::Char('T'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-u" => KeyEvent {
-            code: KeyCode::Char('U'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-v" => KeyEvent {
-            code: KeyCode::Char('V'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-w" => KeyEvent {
-            code: KeyCode::Char('W'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-x" => KeyEvent {
-            code: KeyCode::Char('X'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-y" => KeyEvent {
-            code: KeyCode::Char('Y'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-z" => KeyEvent {
-            code: KeyCode::Char('Z'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "C-a" => KeyEvent {
-            code: KeyCode::Char('a'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-b" => KeyEvent {
-            code: KeyCode::Char('b'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-c" => KeyEvent {
-            code: KeyCode::Char('c'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-d" => KeyEvent {
-            code: KeyCode::Char('d'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-e" => KeyEvent {
-            code: KeyCode::Char('e'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-f" => KeyEvent {
-            code: KeyCode::Char('f'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-g" => KeyEvent {
-            code: KeyCode::Char('g'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-h" => KeyEvent {
-            code: KeyCode::Char('h'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-i" => KeyEvent {
-            code: KeyCode::Char('i'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-j" => KeyEvent {
-            code: KeyCode::Char('j'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-k" => KeyEvent {
-            code: KeyCode::Char('k'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-l" => KeyEvent {
-            code: KeyCode::Char('l'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-m" => KeyEvent {
-            code: KeyCode::Char('m'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-n" => KeyEvent {
-            code: KeyCode::Char('n'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-o" => KeyEvent {
-            code: KeyCode::Char('o'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-p" => KeyEvent {
-            code: KeyCode::Char('p'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-q" => KeyEvent {
-            code: KeyCode::Char('q'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-r" => KeyEvent {
-            code: KeyCode::Char('r'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-s" => KeyEvent {
-            code: KeyCode::Char('s'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-t" => KeyEvent {
-            code: KeyCode::Char('t'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-u" => KeyEvent {
-            code: KeyCode::Char('u'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-v" => KeyEvent {
-            code: KeyCode::Char('v'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-w" => KeyEvent {
-            code: KeyCode::Char('w'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-x" => KeyEvent {
-            code: KeyCode::Char('x'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-y" => KeyEvent {
-            code: KeyCode::Char('y'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-z" => KeyEvent {
-            code: KeyCode::Char('z'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "A-a" => KeyEvent {
-            code: KeyCode::Char('A'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-b" => KeyEvent {
-            code: KeyCode::Char('B'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-c" => KeyEvent {
-            code: KeyCode::Char('C'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-d" => KeyEvent {
-            code: KeyCode::Char('D'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-e" => KeyEvent {
-            code: KeyCode::Char('E'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-f" => KeyEvent {
-            code: KeyCode::Char('F'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-g" => KeyEvent {
-            code: KeyCode::Char('G'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-h" => KeyEvent {
-            code: KeyCode::Char('H'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-i" => KeyEvent {
-            code: KeyCode::Char('I'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-j" => KeyEvent {
-            code: KeyCode::Char('J'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-k" => KeyEvent {
-            code: KeyCode::Char('K'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-l" => KeyEvent {
-            code: KeyCode::Char('L'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-m" => KeyEvent {
-            code: KeyCode::Char('M'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-n" => KeyEvent {
-            code: KeyCode::Char('N'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-o" => KeyEvent {
-            code: KeyCode::Char('O'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-p" => KeyEvent {
-            code: KeyCode::Char('P'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-q" => KeyEvent {
-            code: KeyCode::Char('Q'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-r" => KeyEvent {
-            code: KeyCode::Char('R'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-s" => KeyEvent {
-            code: KeyCode::Char('S'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-t" => KeyEvent {
-            code: KeyCode::Char('T'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-u" => KeyEvent {
-            code: KeyCode::Char('U'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-v" => KeyEvent {
-            code: KeyCode::Char('V'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-w" => KeyEvent {
-            code: KeyCode::Char('W'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-x" => KeyEvent {
-            code: KeyCode::Char('X'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-y" => KeyEvent {
-            code: KeyCode::Char('Y'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-z" => KeyEvent {
-            code: KeyCode::Char('Z'),
-            modifiers: KeyModifiers::ALT,
-        },
-        _ => {
-            let is_num = s.chars().filter(|c| c.is_ascii_digit()).count() > 0;
-            if !is_num {
-                return KeyEvent {
-                    code: KeyCode::Null,
-                    modifiers: KeyModifiers::NONE,
-                };
-            }
-
-            let split_char: Vec<char> = s.split('-').flat_map(|c| c.chars()).collect();
-
-            let has_f = split_char.iter().find(|c| c == &&'f');
-            let has_shift = split_char.iter().find(|c| c == &&'S');
-            let has_ctrl = split_char.iter().find(|c| c == &&'C');
-            let has_alt = split_char.iter().find(|c| c == &&'A');
-
-            match (has_shift, has_ctrl, has_alt, has_f) {
-                (None, None, None, None) => digit_keyevent_matcher(split_char[0], 'n', false),
-                (Some(&c), None, None, None) => digit_keyevent_matcher(split_char[1], c, false),
-                (None, Some(&c), None, None) => digit_keyevent_matcher(split_char[1], c, false),
-                (None, None, Some(&c), None) => digit_keyevent_matcher(split_char[1], c, false),
-                (None, None, None, Some(_)) => digit_keyevent_matcher(split_char[1], 'n', true),
-                (Some(&c), None, None, Some(_)) => digit_keyevent_matcher(split_char[2], c, true),
-                (None, Some(&c), None, Some(_)) => digit_keyevent_matcher(split_char[2], c, true),
-                (None, None, Some(&c), Some(_)) => digit_keyevent_matcher(split_char[2], c, true),
-                _ => KeyEvent {
-                    code: KeyCode::Null,
-                    modifiers: KeyModifiers::NONE,
-                },
-            }
-        }
-    }
+    let s: Vec<&str> = s.split('-').collect();
+    keyboard_classify(s)
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -819,6 +324,8 @@ impl UserKeybinds {
             key: KeyEvent {
                 code: KeyCode::Null,
                 modifiers: KeyModifiers::NONE,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
             },
         }
     }
@@ -1177,10 +684,21 @@ impl Settings {
     }
 }
 
+#[cfg(not(target_os = "windows"))]
 impl Default for Settings {
     fn default() -> Self {
         Self {
             editor: "vi".to_string(),
+            show_hidden_files: false,
+        }
+    }
+}
+
+#[cfg(target_os = "windows")]
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            editor: "notepad.exe".to_string(),
             show_hidden_files: false,
         }
     }
@@ -1278,7 +796,7 @@ pub fn load_user_config_file() -> UserConfig {
     let path = "config.ron";
     match File::open(path) {
         Ok(f) => {
-            let config: Result<UserConfig, ron::de::Error> = ron::de::from_reader(f);
+            let config: Result<UserConfig, ron::de::SpannedError> = ron::de::from_reader(f);
             if let Ok(config) = config {
                 config
             } else {
@@ -1292,16 +810,20 @@ pub fn load_user_config_file() -> UserConfig {
 
 #[cfg(test)]
 mod test {
+
+    use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     use ron::de;
 
     use crate::load_config::UserConfig;
+
+    use super::string_to_keyevent;
 
     #[test]
     fn can_read_ron_file() {
         let path = "config.ron";
         let f = std::fs::File::open(path);
         assert!(f.is_ok());
-        let config: Result<UserConfig, de::Error> = ron::de::from_reader(f.unwrap());
+        let config: Result<UserConfig, de::SpannedError> = ron::de::from_reader(f.unwrap());
         match &config {
             Ok(_) => {}
             Err(e) => println!("{e:#?}"),
@@ -1310,5 +832,47 @@ mod test {
         let config = config.unwrap();
         let keybinds = config.stacker_keybindings_map();
         println!("{:#?}", keybinds);
+    }
+
+    #[test]
+    fn can_parse_user_single_keybind() {
+        let keybinds = ["a", "S-a", "A-a", "C-a", "C-S-A-a"];
+        let keyevents = [
+            KeyEvent {
+                code: KeyCode::Char('a'),
+                modifiers: KeyModifiers::NONE,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+            KeyEvent {
+                code: KeyCode::Char('a'),
+                modifiers: KeyModifiers::SHIFT,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+            KeyEvent {
+                code: KeyCode::Char('a'),
+                modifiers: KeyModifiers::ALT,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+            KeyEvent {
+                code: KeyCode::Char('a'),
+                modifiers: KeyModifiers::CONTROL,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+            KeyEvent {
+                code: KeyCode::Char('a'),
+                modifiers: KeyModifiers::CONTROL | KeyModifiers::SHIFT | KeyModifiers::ALT,
+                kind: KeyEventKind::Press,
+                state: KeyEventState::NONE,
+            },
+        ];
+
+        for (binds, keyevent) in keybinds.into_iter().zip(&keyevents) {
+            let key = string_to_keyevent(binds);
+            assert_eq!(&key, keyevent);
+        }
     }
 }
