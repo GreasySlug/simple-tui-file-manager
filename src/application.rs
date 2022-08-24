@@ -137,7 +137,7 @@ impl App {
         self.selecting_statefuldir_ref().contain_name(name)
     }
 
-    fn dirtab_contains_dirpath(&self, path: &PathBuf) -> bool {
+    fn _dirtab_contains_dirpath(&self, path: &PathBuf) -> bool {
         self.directory_tabs.iter().any(|(p, _name)| p == path)
     }
 
