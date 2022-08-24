@@ -104,8 +104,7 @@ impl App {
         self.show_hidden_files
     }
 
-    #[cfg(target_os = "windows")]
-    fn user_settings(&mut self) {
+    fn set_user_config(&mut self) {
         self.editor = self.config().user_editor();
         self.show_hidden_files = self.config().show_hidden_files();
         let config = self.config();
@@ -113,20 +112,6 @@ impl App {
         for dir in additional_directories.into_iter() {
             if let Some(path) = get_user_profile_path(&dir) {
                 self.push_new_dirname_to_dirtab(path.clone());
-                self.insert_new_statefuldir(path);
-            }
-        }
-    }
-
-    #[cfg(target_os = "linux")]
-    fn user_settings(&mut self) {
-        self.editor = self.config().user_editor();
-        self.show_hidden_files = self.config().show_hidden_files();
-        let config = self.config();
-        let additional_directories = config.additional_directory();
-        for dir in additional_directories.into_iter() {
-            if let Some(path) = get_user_profile_path(&dir) {
-                self.push_new_dirname_to_dirtab(pathbuf_to_string_name(&path));
                 self.insert_new_statefuldir(path);
             }
         }
