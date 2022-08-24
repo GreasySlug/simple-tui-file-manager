@@ -300,16 +300,18 @@ impl App {
         self.selecting_statefuldir_mut().select_bottom_file_item();
     }
 
-    fn inseart_new_file_item_instance(&mut self, mut path: PathBuf) {
-        loop {
-            let original_path = path.clone();
-            if !path.parent().is_none() {
-                return;
+    fn inseart_new_file_item_instance_to_crr_dir(&mut self, path: PathBuf) {
+        let parent_path = path.parent();
+        if parent_path.is_none() {
+            // # TODO: insert path to root directory
+            return;
+        }
+
+        // parent path must be exist
+        if let Some(dirstate) = self.dir_map.get_mut(parent_path.unwrap()) {
+            if let Some(item) = make_a_file_item_from_dirpath(&path) {
+                dirstate.push_file_item_and_sort(item);
             }
-            // if let Some(dirstate) = self.dir_map.get_mut(&path) {
-            //     let item = make_a_file_item_from_dirpath(&original_path);
-            //     dirstate.push_file_item_and_sort(item);
-            // }
         }
     }
 
@@ -318,7 +320,7 @@ impl App {
     ///  ex1) dirname
     ///  ex2) dirname01/dirname02
     /// None: File cannot be created.
-    ///  ex) sample.txt means a "sample.txt" directory not a file
+    ///  ex) sample.txt means a `sample.txt` directory not a file
     ///
     fn make_directory(&mut self) {
         let relpath = self.run_user_input("Input directory name");
@@ -328,50 +330,54 @@ impl App {
         }
         let path = join_to_crr_dir(self, &relpath.unwrap());
 
-        if path.is_dir() {
-            self.push_command_log("Duplicate name");
+        if path.exists() {
+            self.push_command_log("Error: Already exists");
             return;
         }
 
-        match fs::create_dir_all(&path) {
-            Ok(()) => {
-                self.inseart_new_file_item_instance(path);
-            }
-            Err(error) => {
-                let message = match error.kind() {
-                    io::ErrorKind::PermissionDenied => "Permission denied",
-                    io::ErrorKind::NotFound => "Not Found",
-                    _ => "Duplicate name",
-                };
-                self.push_command_log(message);
-            }
-        }
+        self.make_dir_with_path(&path);
     }
 
     fn make_file(&mut self) {
         let relpath = self.run_user_input("Input file name");
 
         if relpath.is_none() {
-            self.push_command_log("Failed to make file");
+            self.push_command_log("Error: Input file name or something");
             return;
         }
 
         let file_name = relpath.unwrap();
-        if file_name.contains(|c| c == '\\') {
-            let path = join_to_crr_dir(self, &file_name);
-            self.make_file_with_dir(&path);
-        }
 
         let path = join_to_crr_dir(self, &file_name);
 
-        if path.is_dir() {
-            self.push_command_log("Duplicate name");
+        if path.exists() {
+            self.push_command_log("Error: Already exits");
             return;
         }
 
+        if let Some(parent) = path.parent() {
+            self.make_dir_with_path(parent);
+        }
+
+        if file_name.contains(|c| c == '\\') {
+            if let Some(dirname) = file_name.split('\\').next() {
+                let path = join_to_crr_dir(self, dirname);
+                self.inseart_new_file_item_instance_to_crr_dir(path);
+            }
+        }
+        if file_name.contains(|c| c == '/') {
+            if let Some(dirname) = file_name.split('/').next() {
+                let path = join_to_crr_dir(self, dirname);
+                self.inseart_new_file_item_instance_to_crr_dir(path);
+            }
+        }
+        self.make_file_with_path(&path);
+    }
+
+    fn make_file_with_path(&mut self, path: &Path) {
         match fs::File::create(&path) {
             Ok(_) => {
-                self.inseart_new_file_item_instance(path);
+                self.push_command_log(&format!("Completed make dir: {path:?}"));
             }
             Err(error) => {
                 let message = match error.kind() {
@@ -384,26 +390,12 @@ impl App {
         }
     }
 
-    fn make_file_with_dir(&mut self, path: &Path) {
-        if let Some(parent_path) = path.parent() {
-            self.make_dir_with_path(parent_path);
-            match fs::File::create(path) {
-                Ok(_) => {}
-                Err(error) => {
-                    let message = match error.kind() {
-                        io::ErrorKind::PermissionDenied => "Permission denied",
-                        io::ErrorKind::NotFound => "Not Found",
-                        _ => "Diplicate name",
-                    };
-                    self.push_command_log(message);
-                }
-            }
-        }
-    }
-
     fn make_dir_with_path(&mut self, path: &Path) {
         match fs::create_dir_all(path) {
-            Ok(_) => self.inseart_new_file_item_instance(path.to_owned()),
+            Ok(_) => {
+                self.push_command_log(&format!("Completed make file: {path:?}"));
+                self.inseart_new_file_item_instance_to_crr_dir(path.to_owned());
+            }
             Err(error) => {
                 let message = match error.kind() {
                     io::ErrorKind::PermissionDenied => "Permission denied",
@@ -457,6 +449,7 @@ impl App {
         if let Ok(()) = res {
             let name = name.trim().to_owned();
             if name.is_empty() {
+                self.push_command_log("Stopped to input");
                 return None;
             }
             return Some(name);
@@ -590,7 +583,7 @@ impl App {
             if path.is_dir() {
                 self.delete_directory_including_its_contents(&path);
             } else {
-                self.stacker_delete_selecting_item();
+                self.delete_file_item_with_path(&path);
             }
             self.remove_path_in_stacker(&path);
         }
@@ -607,9 +600,9 @@ impl App {
             .create_popup(warning);
         if let Some(ans) = self.run_user_input("Input 'y'/'Y' or else") {
             if ans == "y" || ans == "Y" {
-        let stacker = self.stacker.stack_ref().to_owned();
-        for path in stacker.iter() {
-            self.delete_file_item_with_path(path);
+                let stacker = self.stacker.stack_ref().to_owned();
+                for path in stacker.iter() {
+                    self.delete_file_item_with_path(path);
                 }
 
                 self.push_command_log("Fished to delete all");
@@ -622,11 +615,7 @@ impl App {
     /// I think it would be better to separate the function between full deletion and move to trashbox.
     ///
     fn delete_file_item_with_path(&mut self, path: &Path) {
-        let result = if path.is_dir() {
-            fs::remove_dir(path)
-        } else {
-            fs::remove_file(path)
-        };
+        let result = fs::remove_file(path);
 
         match result {
             Ok(_) => {
@@ -680,7 +669,7 @@ impl App {
                 return;
             }
 
-            // TODO:if name is duplecated, y/n is displayed  y is pass,and other charactors are return. w
+            // TODO:if name is duplecated, y/n is displayed y is pass,and other charactors are return. w
             if self.selecting_dir_contain_name(name) {
                 self.stacker.stacker_push(from_path);
                 continue;
@@ -692,11 +681,11 @@ impl App {
             match res {
                 Ok(_n) => {
                     if let Some(item) = make_a_file_item_from_dirpath(&to_path) {
-                    if self.selecting_dir_contain_name(item.name_ref()) {
-                        break;
-                    }
-                    self.selecting_statefuldir_mut()
-                        .push_file_item_and_sort(item);
+                        if self.selecting_dir_contain_name(item.name_ref()) {
+                            break;
+                        }
+                        self.selecting_statefuldir_mut()
+                            .push_file_item_and_sort(item);
                     }
                 }
                 Err(e) => {
@@ -715,8 +704,9 @@ impl App {
     ///
     /// ## stacker move methods
     ///
-    /// 現在いるディレクトリにスタッカーにスタックされている
-    /// ファイルやディテクトリを移動させる
+    /// スタッカーにスタックされているファイルや
+    /// ディテクトリを現在いるディレクトリに移動させる
+    ///  ディレクトリに中身があるときはこれがバグになる
     ///
     fn stcker_move_file_item_to_crr_dir(&mut self) {
         if self.stacker.stacker_is_empty() {
@@ -738,10 +728,10 @@ impl App {
             match res {
                 Ok(_n) => {
                     if let Some(item) = make_a_file_item_from_dirpath(&to_path) {
-                    self.selecting_statefuldir_mut()
-                        .push_file_item_and_sort(item);
-                    self.delete_file_item_with_path(&from_path);
-                    self.remove_file_item_instance(&from_path);
+                        self.selecting_statefuldir_mut()
+                            .push_file_item_and_sort(item);
+                        self.delete_file_item_with_path(&from_path);
+                        self.remove_file_item_instance(&from_path);
                     } else {
                         self.push_command_log("Failed to move");
                     }
@@ -786,6 +776,10 @@ impl App {
         self.mode = Mode::Searcher;
     }
 
+    ///
+    /// 名前が検索されたら普通のノーマルモードではなく、
+    /// 検索後のフィルターされた状態のノーマルモードへ移行
+    ///
     fn shift_to_normal_mode_from_searcher(&mut self) {
         self.searcher_init();
         self.mode = Mode::Normal;
@@ -847,7 +841,7 @@ impl App {
     }
 
     ///
-    /// 現在、中身のあるディテクトリはバグになるのでおすすめしない
+    /// TODO: FIX bug about
     ///
     fn searcher_stack_all_items(&mut self) {
         // TODO: I don't want to use clone()
@@ -884,7 +878,7 @@ const QUIT: &str = "quit";
 // it is possible to receive different commands each modes
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult<()> {
     // TODO: only directory settings exit, but default settings be going to be added.
-    app.user_settings();
+    app.set_user_config();
     let mut normal = app.normal_user_keybinds();
     let mut input = app.input_user_keybinds();
     let mut stacker = app.stacker_user_keybinds();
@@ -908,7 +902,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
             if cmd == SEARCHING_FIXED {
                 app.searcher_make_found_items();
                 if app.searcher_is_empty() {
-                    handle_modal_seacher(&mut app);
+                    handle_modal_searcher(&mut app);
                 }
             }
             if cmd == SEARCHING {
@@ -931,7 +925,7 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> ioResult
 /// searched directory diffrent from normal mode's directory
 /// so searche mode to shi
 ///
-fn handle_modal_seacher(app: &mut App) {
+fn handle_modal_searcher(app: &mut App) {
     if app.mode() == &Mode::Searcher {
         app.shift_to_normal_mode_from_searcher();
     } else {
@@ -941,8 +935,8 @@ fn handle_modal_seacher(app: &mut App) {
 
 ///
 /// stop: pressed esc and then clear searching string and shift to normal mode
-/// fix: pressed enter and then shift to normal mode
-/// searching: searching state
+/// fix: pressed enter and then shift to searched normal mode
+/// searching: searching state, read any input from user
 ///
 fn searching_handling(
     app: &mut App,
@@ -1050,7 +1044,7 @@ fn run_commands(app: &mut App, cmd: &str) {
     match cmd {
         // mode
         // "normal" => app.shift_to_normal_mode(),
-        "normal" => handle_modal_seacher(app),
+        "normal" => handle_modal_searcher(app),
         "input" => app.shift_to_input_mode(),
         "stacker" => app.shift_to_stacker_mode(),
 

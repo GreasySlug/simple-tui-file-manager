@@ -31,7 +31,8 @@ impl<'a> Infobox<'a> {
     pub fn create_popup(self, popup: Style) {
         let mut terminal = init_area_terminal().expect("Failed to create popup window");
         let r = terminal.size().expect("Failed to get terminal size");
-        let area = centered_rect(40, 20, r);
+        // TODO: handle magic number
+        let area = centered_rect(30, 5, r);
         terminal
             .draw(|f| self.render_popup(f, area, popup))
             .expect("Failed to render popup window");
@@ -46,7 +47,7 @@ impl<'a> Infobox<'a> {
                 Block::default()
                     .style(popup)
                     .borders(Borders::ALL)
-                    .title(&*self.title),
+                    .title(self.title),
             );
         f.render_widget(para, area);
     }
@@ -66,7 +67,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .constraints(
             [
                 Constraint::Percentage((100 - percent_y) / 2),
-                Constraint::Percentage(percent_y),
+                Constraint::Length(percent_y),
                 Constraint::Percentage((100 - percent_y) / 2),
             ]
             .as_ref(),
@@ -78,7 +79,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .constraints(
             [
                 Constraint::Percentage((100 - percent_x) / 2),
-                Constraint::Percentage(percent_x),
+                Constraint::Length(percent_x),
                 Constraint::Percentage((100 - percent_x) / 2),
             ]
             .as_ref(),
