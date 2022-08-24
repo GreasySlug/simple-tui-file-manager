@@ -691,12 +691,13 @@ impl App {
             let res = fs::copy(&from_path, &to_path);
             match res {
                 Ok(_n) => {
-                    let item = make_a_file_item_from_dirpath(&to_path);
+                    if let Some(item) = make_a_file_item_from_dirpath(&to_path) {
                     if self.selecting_dir_contain_name(item.name_ref()) {
                         break;
                     }
                     self.selecting_statefuldir_mut()
                         .push_file_item_and_sort(item);
+                    }
                 }
                 Err(e) => {
                     let mss = match e.kind() {
@@ -736,11 +737,14 @@ impl App {
             let res = fs::copy(&from_path, &to_path);
             match res {
                 Ok(_n) => {
-                    let item = make_a_file_item_from_dirpath(&to_path);
+                    if let Some(item) = make_a_file_item_from_dirpath(&to_path) {
                     self.selecting_statefuldir_mut()
                         .push_file_item_and_sort(item);
                     self.delete_file_item_with_path(&from_path);
                     self.remove_file_item_instance(&from_path);
+                    } else {
+                        self.push_command_log("Failed to move");
+                    }
                 }
                 Err(e) => {
                     let mss = match e.kind() {

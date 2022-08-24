@@ -23,9 +23,13 @@ pub fn make_file_items_from_dirpath(path: &Path) -> Vec<FileItem> {
             let entry = entry.unwrap();
             let file_path = entry.path();
             let file_name = pathbuf_to_string_name(&file_path);
-            let meta = entry.metadata().unwrap();
+            let meta = entry.metadata();
+            if meta.is_err() {
+                continue;
+            }
+            let meta = meta.unwrap();
             let kinds = Kinds::classifiy_kinds(path, &meta);
-            let hidden = Kinds::is_hidden(path);
+            // let hidden = Kinds::is_hidden(path);
             files_item.push(FileItem::new(file_name, file_path, meta, kinds));
         }
     }
@@ -33,12 +37,21 @@ pub fn make_file_items_from_dirpath(path: &Path) -> Vec<FileItem> {
     files_item
 }
 
-pub fn make_a_file_item_from_dirpath(file_path: &Path) -> FileItem {
+pub fn make_a_file_item_from_dirpath(file_path: &Path) -> Option<FileItem> {
     let file_name = pathbuf_to_string_name(file_path);
-    let meta = file_path.metadata().expect("Failed to get metadata");
+    let meta = file_path.metadata();
+    if meta.is_err() {
+        return None;
+    }
+    let meta = meta.unwrap();
     let kinds = Kinds::classifiy_kinds(file_path, &meta);
-    let hidden = Kinds::is_hidden(file_path);
-    FileItem::new(file_name, file_path.to_path_buf(), meta, kinds)
+    // let hidden = Kinds::is_hidden(file_path);
+    Some(FileItem::new(
+        file_name,
+        file_path.to_path_buf(),
+        meta,
+        kinds,
+    ))
 }
 
 pub fn working_dir_path() -> PathBuf {
