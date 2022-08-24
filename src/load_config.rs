@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
 use serde::Deserialize;
-use std::{collections::HashMap, fs::File, u8};
+use std::{collections::HashMap, fs::File, path::PathBuf, u8};
 use tui::style::{Color, Style};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -36,8 +36,8 @@ pub fn default_vim_movements() -> ModeKeybinds {
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
         ("right", "move_to_child_dir"),
-        ("Tab", "next_dirtab"),
-        ("Backtab", "prev_dirtab"),
+        ("tab", "next_dirtab"),
+        ("S-tab", "prev_dirtab"),
         ("q", "quit"),
         ("i", "input"),
         ("v", "stacker"),
@@ -143,41 +143,6 @@ pub fn multi_string_map_to_user_keyboad(
     keybind
 }
 
-fn char_keyevent_with_modifier(c: char, modi: KeyModifiers) -> KeyEvent {
-    match modi {
-        KeyModifiers::NONE => KeyEvent {
-            code: KeyCode::Char(c),
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-        KeyModifiers::SHIFT => KeyEvent {
-            code: KeyCode::Char(c),
-            modifiers: KeyModifiers::SHIFT,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-        KeyModifiers::CONTROL => KeyEvent {
-            code: KeyCode::Char(c),
-            modifiers: KeyModifiers::CONTROL,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-        KeyModifiers::ALT => KeyEvent {
-            code: KeyCode::Char(c),
-            modifiers: KeyModifiers::ALT,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-        _ => KeyEvent {
-            code: KeyCode::Null,
-            modifiers: KeyModifiers::NONE,
-            kind: KeyEventKind::Press,
-            state: KeyEventState::NONE,
-        },
-    }
-}
-
 fn keyevent_classify_modifier(m: char) -> KeyModifiers {
     match m {
         'S' => KeyModifiers::SHIFT,
@@ -203,8 +168,9 @@ fn keyevent_classify_code(is_f: bool, s: &str) -> KeyCode {
         "left" => KeyCode::Left,
         "up" => KeyCode::Up,
         "down" => KeyCode::Down,
+        "space" => KeyCode::Char(' '),
         _ => {
-            let c: Vec<char> = s.chars().collect();
+            let c: Vec<char> = s.chars().collect(); // 'a', 'b'など
             if c.len() > 1 {
                 panic!("Not implement yet: {:?}", c);
             } else {
@@ -449,7 +415,7 @@ impl SettingTheme {
         }
     }
 
-    fn light_theme() -> SettingTheme {
+    fn _light_theme() -> SettingTheme {
         SettingTheme {
             background: Colors::White,
             header: Colors::Green,
@@ -572,7 +538,7 @@ impl SettingTheme {
         style_formatter(user_color, false, true)
     }
 
-    pub fn error_style(&self) -> Style {
+    pub fn _error_style(&self) -> Style {
         let user_color = &self.error_background;
         let bg = style_formatter(user_color, false, true);
         let user_color = &self.error_foreground;
@@ -597,13 +563,14 @@ fn hex_to_colorcode(code: &str) -> (u8, u8, u8) {
         code
     };
     let str_to_16 = |x| -> u8 { u8::from_str_radix(x, 16).unwrap_or_default() };
-    let (r, gb) = code.split_at(1);
-    let (g, b) = gb.split_at(1);
+    let (r, gb) = code.split_at(2);
+    let (g, b) = gb.split_at(2);
     let mut rgb = [0; 3];
     for (i, j) in [r, g, b].iter().enumerate() {
         let splited_str = j.split_at(1);
-        let x = str_to_16(splited_str.0) * str_to_16(splited_str.1);
-        rgb[i] = x;
+        let x: u16 = (str_to_16(splited_str.0) + 1) as u16;
+        let y: u16 = (str_to_16(splited_str.1) + 1) as u16;
+        rgb[i] = (x * y - 1) as u8;
     }
     (rgb[0], rgb[1], rgb[2])
 }
@@ -631,7 +598,6 @@ fn color_translator(color: &Colors) -> Option<Color> {
             let (r, g, b) = hex_to_colorcode(code);
             Color::Rgb(r, g, b)
         }
-        _ => Color::Reset,
     };
     Some(c)
 }
@@ -734,9 +700,9 @@ impl UserConfig {
         }
     }
 
-    pub fn default_light() -> UserConfig {
+    pub fn _default_light() -> UserConfig {
         UserConfig {
-            theme: SettingTheme::light_theme(),
+            theme: SettingTheme::_light_theme(),
             symbols: example_symbols(),
             user_settings: Settings::default_vim(),
             user_keybinds: default_vim_movements(),
@@ -793,30 +759,42 @@ fn style_formatter(color: &Colors, is_fg: bool, is_bg: bool) -> Style {
 pub fn load_user_config_file() -> UserConfig {
     // Each Windows, Mac(Linux)
     // Consider specifying PATH in each OS
-    let path = "config.ron";
-    match File::open(path) {
-        Ok(f) => {
-            let config: Result<UserConfig, ron::de::SpannedError> = ron::de::from_reader(f);
-            if let Ok(config) = config {
-                config
-            } else {
-                UserConfig::default_dark_blue()
+    let dir_path = std::env::var("APPDATA");
+    #[cfg(not(target_os = "windows"))]
+    let dir_path = { std::env::var("config") };
+
+    if let Ok(env_path) = dir_path {
+        let mut path = PathBuf::from(env_path);
+        path.push("simple_file_manager");
+        path.push("config.ron");
+        match File::open(path) {
+            Ok(f) => {
+                let config: Result<UserConfig, ron::de::SpannedError> = ron::de::from_reader(f);
+                if let Ok(config) = config {
+                    config
+                } else {
+                    UserConfig::default_dark_blue()
+                }
             }
+            // TODO: logging this e
+            Err(_e) => UserConfig::default_dark(),
         }
-        // TODO: logging this e
-        Err(e) => UserConfig::default_dark(),
+    } else {
+        panic!("Failed to get env value");
     }
 }
 
 #[cfg(test)]
 mod test {
 
+    use std::path::PathBuf;
+
     use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers};
     use ron::de;
 
     use crate::load_config::UserConfig;
 
-    use super::string_to_keyevent;
+    use super::{hex_to_colorcode, string_to_keyevent};
 
     #[test]
     fn can_read_ron_file() {
@@ -874,5 +852,26 @@ mod test {
             let key = string_to_keyevent(binds);
             assert_eq!(&key, keyevent);
         }
+    }
+
+    #[test]
+    fn check_config_file_in_env_dir() {
+        let env_name = std::env::var("APPDATA").unwrap();
+        let mut path = PathBuf::from(env_name);
+        path.push("simple_file_manager");
+        path.push("config.ron");
+        println!("{:#?}", path);
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn check_hashcode_to_rgb() {
+        let color_code = "#ffffff";
+        let rgb = (255, 255, 255);
+        assert_eq!(hex_to_colorcode(color_code), rgb);
+
+        let color_code = "#000000";
+        let rgb = (0, 0, 0);
+        assert_eq!(hex_to_colorcode(color_code), rgb);
     }
 }
