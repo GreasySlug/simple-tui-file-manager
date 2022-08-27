@@ -29,10 +29,11 @@ impl<'a> Infobox<'a> {
     }
 
     pub fn create_popup(self, popup: Style) {
+        const WIDTH: u16 = 30;
+        const HEIGHT: u16 = 5;
         let mut terminal = init_area_terminal().expect("Failed to create popup window");
         let r = terminal.size().expect("Failed to get terminal size");
-        // TODO: handle magic number
-        let area = centered_rect(30, 5, r);
+        let area = centered_rect(WIDTH, HEIGHT, r);
         terminal
             .draw(|f| self.render_popup(f, area, popup))
             .expect("Failed to render popup window");
