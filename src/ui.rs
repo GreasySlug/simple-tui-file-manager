@@ -25,7 +25,7 @@ const INFO_LENGTH: u16 = 10;
 const FILE_LENGTH: u16 = 40;
 const ICON_LENGTH: u16 = 4;
 const MARGIN_LENGTH: u16 = 2;
-const PERMISION_LENGTH: u16 = 4;
+const PERMISSION_LENGTH: u16 = 4;
 const HEADER_TITLES: [&str; 6] = ["perm", "size", "date", "", "", "name"];
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App, themes: &SettingTheme) {

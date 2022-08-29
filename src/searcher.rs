@@ -5,7 +5,6 @@ use tui::widgets::TableState;
 use crate::file_item_list::file_item::FileItem;
 
 pub struct Searcher {
-    // traial
     state: TableState,
     re: Option<Regex>,
     name: String,

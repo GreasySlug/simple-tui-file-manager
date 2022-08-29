@@ -28,7 +28,7 @@ pub fn make_file_items_from_dirpath(path: &Path) -> Vec<FileItem> {
                 continue;
             }
             let meta = meta.unwrap();
-            let kinds = Kinds::classifiy_kinds(path, &meta);
+            let kinds = Kinds::classify_kinds(path, &meta);
             // let hidden = Kinds::is_hidden(path);
             files_item.push(FileItem::new(file_name, file_path, meta, kinds));
         }
@@ -44,7 +44,7 @@ pub fn make_a_file_item_from_dirpath(file_path: &Path) -> Option<FileItem> {
         return None;
     }
     let meta = meta.unwrap();
-    let kinds = Kinds::classifiy_kinds(file_path, &meta);
+    let kinds = Kinds::classify_kinds(file_path, &meta);
     // let hidden = Kinds::is_hidden(file_path);
     Some(FileItem::new(
         file_name,
@@ -57,7 +57,7 @@ pub fn make_a_file_item_from_dirpath(file_path: &Path) -> Option<FileItem> {
 pub fn working_dir_path() -> PathBuf {
     match current_dir() {
         Ok(path) => path,
-        Err(e) => panic!("Permission denide: {}", e),
+        Err(e) => panic!("Permission denied: {}", e),
     }
 }
 

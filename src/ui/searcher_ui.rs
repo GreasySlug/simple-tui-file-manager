@@ -10,7 +10,7 @@ use crate::{application::App, file_item_list::Kinds, load_config::FileItems};
 
 use super::{
     directory_ui, FILE_LENGTH, HEADER_TITLES, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH,
-    PERMISION_LENGTH,
+    PERMISSION_LENGTH,
 };
 
 pub fn ui<B: Backend>(
@@ -25,12 +25,12 @@ pub fn ui<B: Backend>(
         .map(|h| Cell::from(*h).style(header_style));
 
     let header_constraints = [
-        Constraint::Length(PERMISION_LENGTH), // permission
-        Constraint::Length(INFO_LENGTH),      // size
-        Constraint::Length(INFO_LENGTH),      // date
-        Constraint::Length(MARGIN_LENGTH),    //  margin
-        Constraint::Length(ICON_LENGTH),      // file item's icon
-        Constraint::Length(FILE_LENGTH),      // file name
+        Constraint::Length(PERMISSION_LENGTH), // permission
+        Constraint::Length(INFO_LENGTH),       // size
+        Constraint::Length(INFO_LENGTH),       // date
+        Constraint::Length(MARGIN_LENGTH),     //  margin
+        Constraint::Length(ICON_LENGTH),       // file item's icon
+        Constraint::Length(FILE_LENGTH),       // file name
     ];
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
@@ -51,7 +51,7 @@ pub fn ui<B: Backend>(
     // TODO: I don't want to use clone()
     let file_item_list = app.selecting_dir_file_items().clone();
     if let Some(re) = app.regex_ref() {
-        let dir_block_style = themes.boader_style();
+        let dir_block_style = themes.boarder_style();
         let selecting_style = themes
             .select_style()
             .patch(Style::default().add_modifier(Modifier::BOLD));

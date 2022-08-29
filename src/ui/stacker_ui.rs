@@ -15,7 +15,7 @@ use crate::{
 };
 
 use super::{
-    FILE_LENGTH, HEADER_TITLES, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, PERMISION_LENGTH,
+    FILE_LENGTH, HEADER_TITLES, ICON_LENGTH, INFO_LENGTH, MARGIN_LENGTH, PERMISSION_LENGTH,
 };
 
 pub fn stacker_ui<B: Backend>(
@@ -30,12 +30,12 @@ pub fn stacker_ui<B: Backend>(
         .map(|h| Cell::from(*h).style(header_style));
 
     let header_constraints = [
-        Constraint::Length(PERMISION_LENGTH), // permission
-        Constraint::Length(INFO_LENGTH),      // size
-        Constraint::Length(INFO_LENGTH),      // date
-        Constraint::Length(MARGIN_LENGTH),    //  margin
-        Constraint::Length(ICON_LENGTH),      // file item's icon
-        Constraint::Length(FILE_LENGTH),      // file name
+        Constraint::Length(PERMISSION_LENGTH), // permission
+        Constraint::Length(INFO_LENGTH),       // size
+        Constraint::Length(INFO_LENGTH),       // date
+        Constraint::Length(MARGIN_LENGTH),     //  margin
+        Constraint::Length(ICON_LENGTH),       // file item's icon
+        Constraint::Length(FILE_LENGTH),       // file name
     ];
     let header_cells = Row::new(header_titles).style(header_style).bottom_margin(1);
 
@@ -91,7 +91,7 @@ pub fn stacker_ui<B: Backend>(
         .constraints([Constraint::Percentage(100)])
         .split(directory_window);
 
-    let dir_block_style = themes.boader_style();
+    let dir_block_style = themes.boarder_style();
     let selecting_style = themes.select_style().add_modifier(Modifier::BOLD);
     let items = Table::new(file_items_list)
         .header(header_cells)
@@ -134,7 +134,7 @@ pub fn stacking_item_ui<B: Backend>(
     let select_symbol = app.symbols(&FileItems::Select);
     let select_file_style = themes.file_style();
     let select_style = themes.select_style();
-    let dir_block_style = themes.boader_style();
+    let dir_block_style = themes.boarder_style();
     let items = app.stacker_mut();
     let state_items: Vec<ListItem> = items
         .stack_ref()

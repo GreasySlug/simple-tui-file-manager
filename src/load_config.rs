@@ -25,7 +25,7 @@ enum Colors {
     HexCode(String),
 }
 
-pub fn default_vim_movements() -> ModeKeybinds {
+pub fn default_vim_movements() -> ModeKeybindings {
     let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
         ("h", "move_to_parent_dir"),
@@ -119,7 +119,7 @@ pub fn default_vim_movements() -> ModeKeybinds {
         searcher.insert(name.to_string(), cmd.to_string());
     }
 
-    ModeKeybinds {
+    ModeKeybindings {
         normal,
         input,
         stacker,
@@ -127,17 +127,17 @@ pub fn default_vim_movements() -> ModeKeybinds {
     }
 }
 
-pub fn multi_string_map_to_user_keyboad(
-    keybinds: &HashMap<String, String>,
+pub fn multi_string_map_to_user_keyboard(
+    keybindings: &HashMap<String, String>,
 ) -> HashMap<Vec<KeyEvent>, String> {
     let mut keybind: HashMap<Vec<KeyEvent>, String> = HashMap::new();
-    for (key, cmd) in keybinds.iter() {
+    for (key, cmd) in keybindings.iter() {
         if key.split_whitespace().count() > 1 {
             let keys: Vec<KeyEvent> = key.split_whitespace().map(string_to_keyevent).collect();
             keybind.insert(keys, cmd.to_owned());
         } else {
-            let user_keyboad = string_to_keyevent(key);
-            keybind.insert(vec![user_keyboad], cmd.to_owned());
+            let user_keyboard = string_to_keyevent(key);
+            keybind.insert(vec![user_keyboard], cmd.to_owned());
         }
     }
     keybind
@@ -274,14 +274,14 @@ impl UserKeyCode {
 
 type Keybind = HashMap<UserKeyCode, String>;
 #[derive(Debug, PartialEq, Eq)]
-pub struct UserKeybinds {
+pub struct UserKeybindings {
     single: Keybind,
     multi: Keybind,
     filtered_multi: Option<Keybind>,
     key: KeyEvent,
 }
 
-impl UserKeybinds {
+impl UserKeybindings {
     pub fn new() -> Self {
         Self {
             single: HashMap::new(),
@@ -315,17 +315,17 @@ impl UserKeybinds {
     }
 
     pub fn filtering_multi_first_keys(&mut self) {
-        let filtered_keybinds: HashMap<UserKeyCode, String> = self
+        let filtered_keybindings: HashMap<UserKeyCode, String> = self
             .multi
             .iter()
             .filter(|(keycode, _cmd)| keycode.first == self.key && keycode.second.is_some())
             .map(|(key, cmd)| (key.to_owned(), cmd.to_owned()))
             .collect();
-        if filtered_keybinds.is_empty() {
+        if filtered_keybindings.is_empty() {
             return;
         }
 
-        self.filtered_multi = Some(filtered_keybinds);
+        self.filtered_multi = Some(filtered_keybindings);
     }
 
     pub fn matching_multi_second_keys(&self) -> Option<String> {
@@ -348,7 +348,7 @@ impl UserKeybinds {
         self.filtered_multi.is_some()
     }
 
-    pub fn make_single_keybinds(
+    pub fn make_single_keybindings(
         mut self,
         config_user_keybind: HashMap<Vec<KeyEvent>, String>,
     ) -> Self {
@@ -362,7 +362,7 @@ impl UserKeybinds {
         self
     }
 
-    pub fn make_multiple_keybinds(
+    pub fn make_multiple_keybindings(
         mut self,
         config_user_keybind: HashMap<Vec<KeyEvent>, String>,
     ) -> Self {
@@ -380,7 +380,7 @@ impl UserKeybinds {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SettingTheme {
     background: Colors,
-    boader: Colors,
+    boarder: Colors,
     directory: Colors,
     file_item: Colors,
     select: Colors,
@@ -398,7 +398,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::Black,
             header: Colors::Cyan,
-            boader: Colors::White,
+            boarder: Colors::White,
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::LightMagenta,
@@ -419,7 +419,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::White,
             header: Colors::Green,
-            boader: Colors::Black,
+            boarder: Colors::Black,
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
@@ -440,7 +440,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::Rgb(39, 67, 100),
             header: Colors::Green,
-            boader: Colors::Rgb(97, 169, 252),
+            boarder: Colors::Rgb(97, 169, 252),
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::Green,
@@ -477,8 +477,8 @@ impl SettingTheme {
         style_formatter(user_color, true, false)
     }
 
-    pub fn boader_style(&self) -> Style {
-        let user_color = &self.boader;
+    pub fn boarder_style(&self) -> Style {
+        let user_color = &self.boarder;
         style_formatter(user_color, true, false)
     }
 
@@ -567,9 +567,9 @@ fn hex_to_colorcode(code: &str) -> (u8, u8, u8) {
     let (g, b) = gb.split_at(2);
     let mut rgb = [0; 3];
     for (i, j) in [r, g, b].iter().enumerate() {
-        let splited_str = j.split_at(1);
-        let x: u16 = (str_to_16(splited_str.0) + 1) as u16;
-        let y: u16 = (str_to_16(splited_str.1) + 1) as u16;
+        let splitted_str = j.split_at(1);
+        let x: u16 = (str_to_16(splitted_str.0) + 1) as u16;
+        let y: u16 = (str_to_16(splitted_str.1) + 1) as u16;
         rgb[i] = (x * y - 1) as u8;
     }
     (rgb[0], rgb[1], rgb[2])
@@ -628,7 +628,7 @@ fn simple_symbols() -> HashMap<FileItems, String> {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct ModeKeybinds {
+pub struct ModeKeybindings {
     pub normal: HashMap<String, String>,
     pub input: HashMap<String, String>,
     pub stacker: HashMap<String, String>,
@@ -675,7 +675,7 @@ pub struct UserConfig {
     theme: SettingTheme,
     user_settings: Settings,
     symbols: HashMap<FileItems, String>,
-    user_keybinds: ModeKeybinds,
+    user_keybindings: ModeKeybindings,
     additional_directories: Vec<String>,
 }
 
@@ -685,7 +685,7 @@ impl UserConfig {
             theme: SettingTheme::dark_theme(),
             symbols: simple_symbols(),
             user_settings: Settings::default(),
-            user_keybinds: default_vim_movements(),
+            user_keybindings: default_vim_movements(),
             additional_directories: vec![],
         }
     }
@@ -695,7 +695,7 @@ impl UserConfig {
             theme: SettingTheme::dark_blue_theme(),
             symbols: example_symbols(),
             user_settings: Settings::default_vim(),
-            user_keybinds: default_vim_movements(),
+            user_keybindings: default_vim_movements(),
             additional_directories: vec![],
         }
     }
@@ -705,7 +705,7 @@ impl UserConfig {
             theme: SettingTheme::_light_theme(),
             symbols: example_symbols(),
             user_settings: Settings::default_vim(),
-            user_keybinds: default_vim_movements(),
+            user_keybindings: default_vim_movements(),
             additional_directories: vec![],
         }
     }
@@ -718,19 +718,19 @@ impl UserConfig {
     }
 
     pub fn normal_keybindings_map(&self) -> HashMap<String, String> {
-        self.user_keybinds.normal.clone()
+        self.user_keybindings.normal.clone()
     }
 
     pub fn input_keybindings_map(&self) -> HashMap<String, String> {
-        self.user_keybinds.input.clone()
+        self.user_keybindings.input.clone()
     }
 
     pub fn stacker_keybindings_map(&self) -> HashMap<String, String> {
-        self.user_keybinds.stacker.clone()
+        self.user_keybindings.stacker.clone()
     }
 
     pub fn searcher_keybindings_map(&self) -> HashMap<String, String> {
-        self.user_keybinds.searcher.clone()
+        self.user_keybindings.searcher.clone()
     }
 
     pub fn additional_directory(&self) -> Vec<String> {
@@ -808,13 +808,13 @@ mod test {
         }
         assert!(config.is_ok());
         let config = config.unwrap();
-        let keybinds = config.stacker_keybindings_map();
-        println!("{:#?}", keybinds);
+        let keybindings = config.stacker_keybindings_map();
+        println!("{:#?}", keybindings);
     }
 
     #[test]
     fn can_parse_user_single_keybind() {
-        let keybinds = ["a", "S-a", "A-a", "C-a", "C-S-A-a"];
+        let keybindings = ["a", "S-a", "A-a", "C-a", "C-S-A-a"];
         let keyevents = [
             KeyEvent {
                 code: KeyCode::Char('a'),
@@ -848,7 +848,7 @@ mod test {
             },
         ];
 
-        for (binds, keyevent) in keybinds.into_iter().zip(&keyevents) {
+        for (binds, keyevent) in keybindings.into_iter().zip(&keyevents) {
             let key = string_to_keyevent(binds);
             assert_eq!(&key, keyevent);
         }
