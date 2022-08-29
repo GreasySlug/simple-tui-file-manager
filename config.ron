@@ -13,7 +13,7 @@
         error_background: Rgb(233, 40, 30), // Red
         error_foreground: White,
                 error: LightRed,
-        command: [
+        command: [ // top and bottom blocks color
             // bg, font
             (White, Black), // normal
             (White, Green), // imput

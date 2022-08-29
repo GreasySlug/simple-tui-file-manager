@@ -17,15 +17,15 @@ cargo build
 
 ## Getting Start
 
-when you started this app, this app load a `config.ron`.
+you can run this app by typing `sfm(simple file manager)`.
 
-No `config.ron` is set up, so the default keymaps are loaded.
+When you started this app, this app loads a `config.ron`.
 
-you can run this app by type `sfm(simple file manager)`.
+No `config.ron` is set up, so the default keymap are loaded.
 
 ### 1. move to config directory
 
-These keymaps are can used in any mode.
+The following keymaps can be used in any mode.
 
 | Key      | description     |
 | -------  | --------------- |
@@ -37,12 +37,12 @@ These keymaps are can used in any mode.
 | S-g | move to bottom of dir |
 | tab      | next dir tab    |
 | S+tab    | prev dir tab    |
-| q        | quick puit(from normal mode)
+| q        | quick quit(from normal mode)
 | S-i | input mode|
 | S-v | stacker mode|
 | esc | normal mode |
 
-see this table and move to this path
+See this table and move to this path
 
 ```sh
 # windows
@@ -56,25 +56,25 @@ C:\Users\user_name\AppData
 
 Press `Shift`+`i` at the same time, then shift from normal mode to input mode.
 
-Press `Shift`+`m` at the same time, make a directory.
+Press `Shift`+`m` at the same time, and  make a directory.
 
 If you mistype something, press `Esc` to return to normal mode.
 
-The text to be your input is displayed at the top. Type simple_file_manager and press Enter.
+The text to be your input is displayed at the top. Type "simple_file_manager" and press Enter.
 
-Move to simple_file_manager directory
+Let't move to simple_file_manager directory
 
 ### 3. make config.ron file
 
 If you are still in Input mode, `Shift`+`i` will create the file.
 
-The text to be entered is displayed at the top. 
+The text to be entered is displayed at the top.
 
 Type `config.ron` and press Enter.
 
 ### 4. copy config.ron file
 
-The default settings are in the README.md, so copy them
+The default settings are in the README.md, so copy them.
 
 Press `Enter`, then terminal editor(vim/ vi) is lunched.
 
@@ -95,10 +95,10 @@ Then type sfm again to see if the theme, etc. has changed!
     theme: SettingTheme (
         background: White, // main background
         header: Magenta, // file name, permission, size, date
-        boader: Black, // boader lines
+        boarder: Black, // boarder lines
         directory: Blue, // dir font
         file_item: Black, // file font
-        select: Green, // selecting hightlight
+        select: Green, // selecting highlight
         warning_background: Rgb(233, 163, 38), // orange
         warning_foreground: White,
         error_background: Rgb(233, 40, 30), // Red
@@ -107,7 +107,7 @@ Then type sfm again to see if the theme, etc. has changed!
         command: [
             // bg, font
             (White, Black), // normal
-            (White, Green), // imput
+            (White, Green), // input
             (White,  Blue), // stacker
             (White,  Red), // searcher
             ],
@@ -118,7 +118,7 @@ Then type sfm again to see if the theme, etc. has changed!
         Select: ">>",
     },
     user_settings: Settings (
-        editor: "nvim",
+        editor: "vim", // check your terminal editor
         show_hidden_files: true,
     ),
     additional_directories: [
@@ -126,10 +126,10 @@ Then type sfm again to see if the theme, etc. has changed!
         "Downloads",
         "Desktop"
     ],
-    user_keybinds: ModeKeybinds (
+    user_keybindings: ModeKeybindings (
         normal : {
             "q" : "quit",
-            "S-i": "input", // experement
+            "S-i": "input",
             "S-v": "stacker",
 
             "h": "move_to_parent_dir",
@@ -144,7 +144,7 @@ Then type sfm again to see if the theme, etc. has changed!
         },
         input: {
             "q q" : "quit",
-            "esc": "normal", // experiment
+            "esc": "normal",
             "S-v": "stacker",
 
             "h": "move_to_parent_dir",
@@ -181,7 +181,7 @@ Then type sfm again to see if the theme, etc. has changed!
             "S-p": "stacker_stacking_paste",
             "m":   "stacker_move",
             "d d":   "stacker_delete", // use carefully, delete completely
-            "S-d S-d": "stacker_delete_all", // use carefully, delete completetly
+            "S-d S-d": "stacker_delete_all", // use carefully, delete completely
         },
         searcher: {
             "j": "searcher_next_file_item",

@@ -86,7 +86,7 @@ config.ronと入力しエンターを押しましょう
 
 ### 5. Exit and confirm settings
 
-ファイルマネージャの画面に戻ってきたら，`q`でこのアプリを終了することができます
+ファイルマネージャの画面に戻ってきたら，`Esc`でノーマルモードに戻り，`q`でこのアプリを終了することができます
 
 再度sfmと入力してテーマなどが変わるのを確認しましょう
 
@@ -108,21 +108,21 @@ config.ronと入力しエンターを押しましょう
 
 Fキーと他のキーなどを同時押しは現在のところできません
 
-日本語キーボード配列で!?_などのShiftキーを押さないと入力できないキーはデフォルトでShiftの同時入力として判別されます
+日本語キーボード配列で`#_!?`などのShiftキーを押さないと入力できないキーはデフォルトでShiftの同時入力として判別されます
 
 "#"のみで"S-3"などのように設定する必要はありません
 
 ```ron
 (
-    // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
+    // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yellow, Gray, DarkGray
     // LightRed, LightGreen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
     theme: SettingTheme (
         background: White, // main background
         header: Magenta, // file name, permission, size, date
-        boader: Black, // boader lines
+        boarder: Black, // boarder lines
         directory: Blue, // dir font
         file_item: Black, // file font
-        select: Green, // selecting hightlight
+        select: Green, // selecting highlight
         warning_background: Rgb(233, 163, 38), // orange
         warning_foreground: White,
         error_background: Rgb(233, 40, 30), // Red
@@ -131,7 +131,7 @@ Fキーと他のキーなどを同時押しは現在のところできません
         command: [
             // bg, font
             (White, Black), // normal
-            (White, Green), // imput
+            (White, Green), // input
             (White,  Blue), // stacker
             (White,  Red), // searcher
             ],
@@ -150,7 +150,7 @@ Fキーと他のキーなどを同時押しは現在のところできません
         "Downloads",
         "Desktop"
     ],
-    user_keybinds: ModeKeybinds (
+    user_keybindings: ModeKeybindings (
         normal : {
             "q" : "quit",
             "S-i": "input",
@@ -168,7 +168,7 @@ Fキーと他のキーなどを同時押しは現在のところできません
         },
         input: {
             "q q" : "quit",
-            "esc": "normal", // experiment
+            "esc": "normal",
             "S-v": "stacker",
 
             "h": "move_to_parent_dir",
@@ -205,7 +205,7 @@ Fキーと他のキーなどを同時押しは現在のところできません
             "S-p": "stacker_stacking_paste",
             "m":   "stacker_move",
             "d d":   "stacker_delete", // use carefully, delete completely
-            "S-d S-d": "stacker_delete_all", // use carefully, delete completetly
+            "S-d S-d": "stacker_delete_all", // use carefully, delete completely
         },
         searcher: {
             "j": "searcher_next_file_item",
