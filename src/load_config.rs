@@ -39,8 +39,8 @@ pub fn default_vim_movements() -> ModeKeybindings {
         ("tab", "next_dirtab"),
         ("S-tab", "prev_dirtab"),
         ("q", "quit"),
-        ("i", "input"),
-        ("v", "stacker"),
+        ("S-i", "input"),
+        ("S-v", "stacker"),
     ]
     .into_iter();
     for (name, cmd) in iter {
@@ -555,7 +555,7 @@ impl SettingTheme {
     }
 }
 
-fn hex_to_colorcode(code: &str) -> (u8, u8, u8) {
+fn hex_to_color_code(code: &str) -> (u8, u8, u8) {
     let code = if code.starts_with('#') {
         let (_shape, code) = code.split_at(1);
         code
@@ -595,7 +595,7 @@ fn color_translator(color: &Colors) -> Option<Color> {
         Colors::LightCyan => Color::LightCyan,
         Colors::Rgb(r, g, b) => Color::Rgb(*r, *g, *b),
         Colors::HexCode(code) => {
-            let (r, g, b) = hex_to_colorcode(code);
+            let (r, g, b) = hex_to_color_code(code);
             Color::Rgb(r, g, b)
         }
     };
@@ -675,8 +675,8 @@ pub struct UserConfig {
     theme: SettingTheme,
     user_settings: Settings,
     symbols: HashMap<FileItems, String>,
-    user_keybindings: ModeKeybindings,
     additional_directories: Vec<String>,
+    user_keybindings: ModeKeybindings,
 }
 
 impl UserConfig {
@@ -794,7 +794,7 @@ mod test {
 
     use crate::load_config::UserConfig;
 
-    use super::{hex_to_colorcode, string_to_keyevent};
+    use super::{hex_to_color_code, string_to_keyevent};
 
     #[test]
     fn can_read_ron_file() {
@@ -865,13 +865,13 @@ mod test {
     }
 
     #[test]
-    fn check_hashcode_to_rgb() {
+    fn check_hash_code_to_rgb() {
         let color_code = "#ffffff";
         let rgb = (255, 255, 255);
-        assert_eq!(hex_to_colorcode(color_code), rgb);
+        assert_eq!(hex_to_color_code(color_code), rgb);
 
         let color_code = "#000000";
         let rgb = (0, 0, 0);
-        assert_eq!(hex_to_colorcode(color_code), rgb);
+        assert_eq!(hex_to_color_code(color_code), rgb);
     }
 }

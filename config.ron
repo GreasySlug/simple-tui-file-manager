@@ -4,7 +4,7 @@
     theme: SettingTheme (
         background: White,
         header: Magenta, // file name, permission, size, date
-        boader: Black, // frame line
+        boarder: Black, // frame line
         directory: Blue, // dir font
         file_item: Black, // file font
         select: Green, // selecting hightlight
@@ -21,24 +21,24 @@
             (White,  Red), // searcher
             ],
     ),
+    user_settings: Settings (
+        editor: "nvim",
+        show_hidden_files: true,
+    ),
     symbols: {
         File: " ",
         Directory: "▶",
         Select: ">>"
     },
-    user_settings: Settings (
-        editor: "nvim",
-        show_hidden_files: true,
-    ),
     additional_directories: [
         "Documents",
         "Downloads",
         "Desktop"
     ],
-    user_keybinds: ModeKeybinds (
+    user_keybindings: ModeKeybindings (
         normal : {
             "q" : "quit",
-            "S-i": "input", // experement
+            "S-i": "input",
             "S-v": "stacker",
 
             "h": "move_to_parent_dir",
@@ -53,7 +53,7 @@
         },
         input: {
             "q q" : "quit",
-            "esc": "normal", // experiment
+            "esc": "normal",
             "S-v": "stacker",
 
             "h": "move_to_parent_dir",
