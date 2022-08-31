@@ -141,6 +141,7 @@ impl StatefulDirectory {
     pub fn remove_file_item_with_path(&mut self, path: &Path) {
         if let Some(i) = self.file_items().iter().position(|x| x.path() == path) {
             self.file_items.remove(i);
+            self.length -= 1;
         }
     }
 
