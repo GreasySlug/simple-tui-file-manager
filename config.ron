@@ -26,6 +26,10 @@
             "j": "move_to_next_file_item",
             "k": "move_to_prev_file_item",
             "l": "move_to_child_dir",
+            "down": "move_to_next_file_item",
+            "up": "move_to_prev_file_item",
+            "left": "move_to_parent_dir",
+            "right": "move_to_child_dir",
             "g g": "move_to_top_of_file_item",
             "S-g": "move_to_bottom_of_file_item",
             "tab":"next_dirtab",
@@ -41,13 +45,21 @@
             "m": "make_directory", // TODO: add mode annotation
             "q": "quit",
             "escape": "normal",// experiment
+            "down": "move_to_next_file_item",
+            "up": "move_to_prev_file_item",
+            "left": "move_to_parent_dir",
+            "right": "move_to_child_dir",
         },
         stacker: {
             "tab":"next_dirtab",
             "Backtab":"prev_dirtab",
             "q" :"quit",
             "s-i": "input",
-            "escape": "normal"
+            "escape": "normal",
+            "down": "move_to_next_file_item",
+            "up": "move_to_prev_file_item",
+            "left": "move_to_parent_dir",
+            "right": "move_to_child_dir",
         },
     )
 )
