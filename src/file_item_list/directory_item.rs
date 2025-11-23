@@ -24,7 +24,7 @@ impl Directory {
 
             #[cfg(not(target_os = "windows"))]
             {
-                paernt = PathBuf::from(r"/")
+                parent = PathBuf::from(r"/")
             }
         }
         Self { name, path, parent }
