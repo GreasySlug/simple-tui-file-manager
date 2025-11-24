@@ -69,8 +69,8 @@ pub fn get_home_directory_path() -> Option<PathBuf> {
     }
 }
 
-//  /home/userName
-#[cfg(target_os = "linux")]
+//  /home/userName or /Users/userName (macOS)
+#[cfg(not(target_os = "windows"))]
 pub fn get_home_directory_path() -> Option<PathBuf> {
     let home_dir = "HOME";
     match std::env::var(home_dir) {
