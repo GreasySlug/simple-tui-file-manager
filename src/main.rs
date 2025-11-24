@@ -6,8 +6,8 @@ use crossterm::terminal::{
 };
 
 use path_process::{current_dir_path, get_home_directory_path, pathbuf_to_string_name};
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{error::Error, io};
-use tui::{backend::CrosstermBackend, Terminal};
 
 mod application;
 mod file_item_list;

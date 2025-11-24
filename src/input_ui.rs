@@ -1,29 +1,23 @@
-use std::io::{self, Stdout};
+use std::io;
 
-use crossterm::{
-    event::{read, Event, KeyCode, KeyEvent},
-    execute,
-};
-use tui::{
-    backend::{Backend, CrosstermBackend},
+use crossterm::{event::{read, Event, KeyCode, KeyEvent}, execute};
+use ratatui::{
+    backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     widgets::{Block, Borders, Paragraph},
-    Frame, Terminal,
+    DefaultTerminal, Frame,
 };
 
-pub fn init_input_area_terminal() -> io::Result<Terminal<CrosstermBackend<Stdout>>> {
+pub fn init_input_area_terminal() -> io::Result<DefaultTerminal> {
     let mut stdout = io::stdout();
     execute!(stdout)?;
     let backend = CrosstermBackend::new(stdout);
-    let terminal = Terminal::new(backend)?;
+    let terminal = ratatui::Terminal::new(backend)?;
     Ok(terminal)
 }
 
-pub fn start_user_input<B: Backend>(
-    terminal: &mut Terminal<B>,
-    line: &mut String,
-) -> io::Result<()> {
+pub fn start_user_input(terminal: &mut DefaultTerminal, line: &mut String) -> io::Result<()> {
     terminal.draw(|f| input_area_ui(f, line))?;
     while let Event::Key(KeyEvent { code, .. }) = read().expect("Failed to get user input") {
         match code {
@@ -43,11 +37,11 @@ pub fn start_user_input<B: Backend>(
     Ok(())
 }
 
-pub fn input_area_ui<B: Backend>(f: &mut Frame<B>, line: &str) {
+pub fn input_area_ui(f: &mut Frame, line: &str) {
     let input_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(3), Constraint::Percentage(90)])
-        .split(f.size())[0];
+        .split(f.area())[0];
 
     let input_style = Style::default().bg(Color::LightYellow).bg(Color::White);
     let block = Block::default()

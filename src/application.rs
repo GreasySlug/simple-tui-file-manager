@@ -3,16 +3,15 @@ use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
-use tui::backend::Backend;
-use tui::Terminal;
+use crossterm::event::{self, Event, KeyEvent};
+use ratatui::backend::Backend;
+use ratatui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 use crate::input_ui::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
-    load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeyCode,
-    UserKeybinds,
+    load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;

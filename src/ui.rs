@@ -1,8 +1,7 @@
-use tui::{
-    backend::Backend,
+use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Tabs},
     Frame,
 };
@@ -14,7 +13,7 @@ use crate::{
     path_process::pathbuf_to_string_name,
 };
 
-pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn ui(f: &mut Frame, app: &mut App) {
     let file_style = app.theme().file_style();
     let dir_style = app.theme().dir_style();
     let selecting_style = app.theme().select_style().add_modifier(Modifier::BOLD);
@@ -31,7 +30,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         Constraint::Length(3), // command
     ]
     .as_ref();
-    let size = f.size();
+    let size = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(main_windows_constrains)
@@ -77,9 +76,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     match mode {
         Mode::Normal => {
-            let tab_titles: Vec<Spans> = tabs
+            let tab_titles: Vec<Line> = tabs
                 .iter()
-                .map(|t| Spans::from(vec![Span::raw(t)]))
+                .map(|t| Line::from(vec![Span::raw(t)]))
                 .collect();
 
             let tabs = Tabs::new(tab_titles)
@@ -145,25 +144,24 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .constraints([Constraint::Percentage(100)])
         .split(chunks[1]);
 
-    let items = Table::new(file_items_list)
+    let items = Table::new(file_items_list, header_constraints)
         .header(header_cells)
-        .widths(&header_constraints)
         .block(
             Block::default()
                 .borders(Borders::ALL)
                 .style(dir_block_style)
                 .title(current_dir_path),
         )
-        .highlight_style(selecting_style)
-        .highlight_symbol(&select_symbol);
+        .row_highlight_style(selecting_style)
+        .highlight_symbol(select_symbol.as_str());
 
     let dir = app.peek_selected_statefuldir();
     f.render_stateful_widget(items, directory_window[0], &mut dir.state_table());
 }
 
 const BLOCK_ELEMENTS: [&str; 7] = [" ", "▁", "▂", "▃", "▄", "▅", "▆"];
-fn command_display_ui<B: Backend>(
-    f: &mut Frame<B>,
+fn command_display_ui(
+    f: &mut Frame,
     cmd_hist: &[String],
     cmd_window: Rect,
     cmd_styles: [Style; 3],

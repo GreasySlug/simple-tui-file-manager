@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::file_item_list::directory_item::Directory;
 use crate::file_item_list::file_item::FileItem;
 use crate::path_process::{make_info_files_from_dirpath, pathbuf_to_string_name};
-use tui::widgets::TableState;
+use ratatui::widgets::TableState;
 
 #[derive(Debug, Clone)]
 pub struct StatefulDirectory {
