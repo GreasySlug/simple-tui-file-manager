@@ -19,8 +19,8 @@ pub fn ui(f: &mut Frame, app: &mut App) {
     let selecting_style = app.theme().select_style().add_modifier(Modifier::BOLD);
     let header_style = app.theme().header_style();
     let background_style = app.theme().background_style();
-    let tab_style = app.theme().boader_style();
-    let dir_block_style = app.theme().boader_style();
+    let tab_style = app.theme().border_style();
+    let dir_block_style = app.theme().border_style();
     let tab_highlight_style = app.theme().select_style().add_modifier(Modifier::BOLD);
 
     // possible to toggle tab and command window

@@ -69,10 +69,10 @@ pub fn default_vim_movements() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("h", "move_to_parent_dir"),
+        ("h", "move_to_parent_directory"),
         ("j", "move_to_next_file_item"),
         ("k", "move_to_prev_file_item"),
-        ("l", "move_to_child_dir"),
+        ("l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
         ("left", "move_to_parent_dir"),
@@ -95,13 +95,13 @@ pub fn default_vim_movements() -> ModeKeybinds {
     }
 }
 
-pub fn default_arrow_key() -> ModeKeybinds {
+pub fn default_arrow_key_keybindings() -> ModeKeybinds {
     let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("Left", "move_to_parent_dir"),
+        ("Left", "move_to_parent_directory"),
         ("Down", "move_to_next_file_item"),
         ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
+        ("Right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -115,10 +115,10 @@ pub fn default_arrow_key() -> ModeKeybinds {
 
     let mut input: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("Left", "move_to_parent_dir"),
+        ("Left", "move_to_parent_directory"),
         ("Down", "move_to_next_file_item"),
         ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
+        ("Right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("escape", "normal"),
@@ -131,10 +131,10 @@ pub fn default_arrow_key() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("Left", "move_to_parent_dir"),
+        ("Left", "move_to_parent_directory"),
         ("Down", "move_to_next_file_item"),
         ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
+        ("Right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -153,17 +153,17 @@ pub fn default_arrow_key() -> ModeKeybinds {
     }
 }
 
-pub fn default_vim_ctrl_movements() -> ModeKeybinds {
+pub fn default_vim_control_key_movements() -> ModeKeybinds {
     let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
+        ("C-h", "move_to_parent_directory"),
         ("C-j", "move_to_next_file_item"),
         ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
+        ("C-l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
-        ("left", "move_to_parent_dir"),
-        ("right", "move_to_child_dir"),
+        ("left", "move_to_parent_directory"),
+        ("right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -177,14 +177,14 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
 
     let mut input: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
+        ("C-h", "move_to_parent_directory"),
         ("C-j", "move_to_next_file_item"),
         ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
+        ("C-l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
-        ("left", "move_to_parent_dir"),
-        ("right", "move_to_child_dir"),
+        ("left", "move_to_parent_directory"),
+        ("right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("escape", "normal"),
@@ -197,14 +197,14 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
+        ("C-h", "move_to_parent_directory"),
         ("C-j", "move_to_next_file_item"),
         ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
+        ("C-l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
-        ("left", "move_to_parent_dir"),
-        ("right", "move_to_child_dir"),
+        ("left", "move_to_parent_directory"),
+        ("right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -223,13 +223,15 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
     }
 }
 
-pub fn string_map_to_user_keyboad(keybinds: &HashMap<String, String>) -> HashMap<KeyEvent, String> {
-    let mut keybind: HashMap<KeyEvent, String> = HashMap::new();
+pub fn string_map_to_user_keybindings(
+    keybinds: &HashMap<String, String>,
+) -> HashMap<KeyEvent, String> {
+    let mut keybindings: HashMap<KeyEvent, String> = HashMap::new();
     for (key, cmd) in keybinds.iter() {
         let user_keyboad = string_to_keyevent(key);
-        keybind.insert(user_keyboad, cmd.to_string());
+        keybindings.insert(user_keyboad, cmd.to_string());
     }
-    keybind
+    keybindings
 }
 
 pub fn multi_string_map_to_user_keyboad(
@@ -533,7 +535,7 @@ impl UserKeybinds {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SettingTheme {
     background: Colors,
-    boader: Colors,
+    border: Colors,
     directory: Colors,
     file_item: Colors,
     select: Colors,
@@ -547,7 +549,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::Black,
             header: Colors::Cyan,
-            boader: Colors::White,
+            border: Colors::White,
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::LightMagenta,
@@ -563,7 +565,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::White,
             header: Colors::Green,
-            boader: Colors::Black,
+            border: Colors::Black,
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
@@ -579,7 +581,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::Rgb(39, 67, 100),
             header: Colors::Green,
-            boader: Colors::Rgb(97, 169, 252),
+            border: Colors::Rgb(97, 169, 252),
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::Green,
@@ -611,8 +613,8 @@ impl SettingTheme {
         style_formatter(user_color, true, false)
     }
 
-    pub fn boader_style(&self) -> Style {
-        let user_color = self.boader.clone();
+    pub fn border_style(&self) -> Style {
+        let user_color = self.border.clone();
         style_formatter(user_color, true, false)
     }
 
@@ -732,7 +734,7 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::dark_blue_theme(),
             symbols: example_symbols(),
-            user_keybinds: default_vim_ctrl_movements(),
+            user_keybinds: default_vim_control_key_movements(),
         }
     }
 
@@ -740,7 +742,7 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::light_theme(),
             symbols: example_symbols(),
-            user_keybinds: default_arrow_key(),
+            user_keybinds: default_arrow_key_keybindings(),
         }
     }
     pub fn symbols(&self) -> &HashMap<FileItems, String> {
