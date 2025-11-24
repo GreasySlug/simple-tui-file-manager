@@ -16,7 +16,7 @@ pub fn pathbuf_to_string_name(path: &Path) -> String {
     "root".to_string()
 }
 
-pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
+pub fn make_info_files_from_directory_path(path: &Path) -> Vec<FileItem> {
     let mut files_item: Vec<FileItem> = Vec::new();
 
     if let Ok(dir) = path.read_dir() {
@@ -25,7 +25,7 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
             let file_path = entry.path();
             let file_name = pathbuf_to_string_name(&file_path);
             let meta = entry.metadata().unwrap();
-            let kinds = Kinds::classifiy_kinds(path, &meta);
+            let kinds = Kinds::classify_kinds(path, &meta);
             let hidden = Kinds::is_hidden(path);
             let extension = if kinds == Kinds::Directory(true) || hidden {
                 None
@@ -42,7 +42,7 @@ pub fn make_info_files_from_dirpath(path: &Path) -> Vec<FileItem> {
 pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
     let file_name = pathbuf_to_string_name(file_path);
     let meta = file_path.metadata().expect("Failed to get metadata");
-    let kinds = Kinds::classifiy_kinds(file_path, &meta);
+    let kinds = Kinds::classify_kinds(file_path, &meta);
     let hidden = Kinds::is_hidden(file_path);
     let extension = if kinds == Kinds::Directory(true) || hidden {
         None
@@ -52,7 +52,7 @@ pub fn make_a_info_files_from_dirpath(file_path: &Path) -> FileItem {
     FileItem::new(file_name, file_path.to_path_buf(), meta, kinds, extension)
 }
 
-pub fn current_dir_path() -> PathBuf {
+pub fn current_directory_path_from_environment() -> PathBuf {
     match current_dir() {
         Ok(path) => path,
         Err(e) => panic!("Permission denide: {}", e),
@@ -61,7 +61,7 @@ pub fn current_dir_path() -> PathBuf {
 
 //  C:\Users\UserNmae
 #[cfg(target_os = "windows")]
-pub fn get_home_directory_path() -> Option<PathBuf> {
+pub fn get_home_directory_path_from_environment() -> Option<PathBuf> {
     let home_dir_name = "USERPROFILE";
     match std::env::var(home_dir_name) {
         Ok(path) => Some(PathBuf::from(path)),
@@ -69,9 +69,9 @@ pub fn get_home_directory_path() -> Option<PathBuf> {
     }
 }
 
-//  /home/userName
-#[cfg(target_os = "linux")]
-pub fn get_home_directory_path() -> Option<PathBuf> {
+//  /home/userName or /Users/userName (macOS)
+#[cfg(not(target_os = "windows"))]
+pub fn get_home_directory_path_from_environment() -> Option<PathBuf> {
     let home_dir = "HOME";
     match std::env::var(home_dir) {
         Ok(path) => Some(PathBuf::from(path)),
@@ -79,11 +79,14 @@ pub fn get_home_directory_path() -> Option<PathBuf> {
     }
 }
 
-pub fn create_dir_by_relpath(app: &mut App, relpath: impl AsRef<Path>) -> io::Result<()> {
+pub fn create_directory_by_relative_path(
+    app: &mut App,
+    relative_path: impl AsRef<Path>,
+) -> io::Result<()> {
     let fullpath = app
         .peek_selected_statefuldir()
         .directory()
         .pathbuf()
-        .join(relpath);
+        .join(relative_path);
     std::fs::create_dir_all(fullpath)
 }

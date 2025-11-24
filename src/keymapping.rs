@@ -29,8 +29,8 @@ pub fn main_keybindings(key: KeyEvent, mode: Mode, app: &mut App) -> bool {
             let selected_dir = app.peek_selected_statefuldir();
             selected_dir.select_previous();
         }
-        (Mode::Normal, KeyCode::Char('h') | KeyCode::Left) => app.move_to_parent_dir(),
-        (Mode::Normal, KeyCode::Char('l') | KeyCode::Right) => app.move_to_child_dir(),
+        (Mode::Normal, KeyCode::Char('h') | KeyCode::Left) => app.move_to_parent_directory(),
+        (Mode::Normal, KeyCode::Char('l') | KeyCode::Right) => app.move_to_child_directory(),
         (Mode::Normal, KeyCode::Tab) => app.next_dirtab(),
         (Mode::Normal, KeyCode::BackTab) => app.prev_dirtab(),
         (_, _) => {}

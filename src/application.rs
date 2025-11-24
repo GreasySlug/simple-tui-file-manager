@@ -3,16 +3,15 @@ use std::fmt::Debug;
 use std::io;
 use std::path::PathBuf;
 
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
-use tui::backend::Backend;
-use tui::Terminal;
+use crossterm::event::{self, Event, KeyEvent};
+use ratatui::backend::Backend;
+use ratatui::Terminal;
 
 use crate::file_item_list::file_item::FileItem;
 use crate::file_item_list::Kinds;
 use crate::input_ui::{init_input_area_terminal, start_user_input};
 use crate::load_config::{
-    load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeyCode,
-    UserKeybinds,
+    load_user_config_file, multi_string_map_to_user_keyboad, SettingTheme, UserConfig, UserKeybinds,
 };
 use crate::path_process::pathbuf_to_string_name;
 use crate::state::StatefulDirectory;
@@ -86,7 +85,7 @@ impl App {
         &self.directory_tabs
     }
 
-    pub fn insert_new_statefuldir(&mut self, dir_path: PathBuf) {
+    pub fn insert_new_state_full_directory(&mut self, dir_path: PathBuf) {
         let dir_name = pathbuf_to_string_name(&dir_path);
         if let Entry::Vacant(item) = self.dir_map.entry(dir_name) {
             let mut new_stateful_dir = StatefulDirectory::new(dir_path);
@@ -164,14 +163,14 @@ impl App {
         config.symbols().get(item).unwrap().to_owned()
     }
 
-    pub fn move_to_child_dir(&mut self) {
+    pub fn move_to_child_directory(&mut self) {
         let select_dir = self.peek_selected_statefuldir();
         if let Some(file_item) = select_dir.selecting_file_item() {
-            match Kinds::classifiy_kinds(file_item.path(), file_item.meta()) {
+            match Kinds::classify_kinds(file_item.path(), file_item.meta()) {
                 Kinds::Directory(_) => {
                     let dir_name = pathbuf_to_string_name(file_item.path());
                     let new_dir_path = file_item.path().to_path_buf();
-                    self.insert_new_statefuldir(new_dir_path);
+                    self.insert_new_state_full_directory(new_dir_path);
                     let i = self.tab_index;
                     let name = self.directory_tabs.get_mut(i);
                     *name.unwrap() = dir_name;
@@ -181,12 +180,12 @@ impl App {
         }
     }
 
-    pub fn move_to_parent_dir(&mut self) {
+    pub fn move_to_parent_directory(&mut self) {
         let selected_dir = self.peek_selected_statefuldir();
         let dir_name = selected_dir.crr_dir_name();
         let parent_path = selected_dir.crr_dir_parent_path().clone();
         let parent_dir_name = pathbuf_to_string_name(&parent_path);
-        self.insert_new_statefuldir(parent_path);
+        self.insert_new_state_full_directory(parent_path);
         let i = self.tab_index;
         let name = self.directory_tabs.get_mut(i).unwrap();
         *name = parent_dir_name;
@@ -256,10 +255,10 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Resu
             if app.mode() == &Mode::Normal {
                 if let Ok(cmd) = key_matchings(key, &mut multi_normal) {
                     match cmd.as_str() {
-                        "move_to_parent_dir" => app.move_to_parent_dir(),
+                        "move_to_parent_directory" => app.move_to_parent_directory(),
                         "move_to_next_file_item" => app.move_to_next_file_item(),
                         "move_to_prev_file_item" => app.move_to_prev_file_item(),
-                        "move_to_child_dir" => app.move_to_child_dir(),
+                        "move_to_child_directory" => app.move_to_child_directory(),
                         "move_to_top_of_file_item" => app.move_to_top_of_file_item(),
                         "move_to_bottom_of_file_item" => app.move_to_bottom_of_file_item(),
                         "next_dirtab" => app.next_dirtab(),

@@ -12,7 +12,7 @@ pub enum Kinds {
 }
 
 impl Kinds {
-    pub fn classifiy_kinds(path: &Path, meta: &Metadata) -> Self {
+    pub fn classify_kinds(path: &Path, meta: &Metadata) -> Self {
         if path.is_file() || meta.is_file() {
             Self::File(Self::is_hidden(path))
         } else {

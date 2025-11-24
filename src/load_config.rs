@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use ratatui::style::{Color, Style};
 use serde::Deserialize;
-use tui::style::{Color, Style};
 
 #[derive(Debug, Clone, Deserialize)]
 enum Colors {
@@ -69,10 +69,10 @@ pub fn default_vim_movements() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("h", "move_to_parent_dir"),
+        ("h", "move_to_parent_directory"),
         ("j", "move_to_next_file_item"),
         ("k", "move_to_prev_file_item"),
-        ("l", "move_to_child_dir"),
+        ("l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
         ("left", "move_to_parent_dir"),
@@ -95,13 +95,13 @@ pub fn default_vim_movements() -> ModeKeybinds {
     }
 }
 
-pub fn default_arrow_key() -> ModeKeybinds {
+pub fn default_arrow_key_keybindings() -> ModeKeybinds {
     let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("Left", "move_to_parent_dir"),
+        ("Left", "move_to_parent_directory"),
         ("Down", "move_to_next_file_item"),
         ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
+        ("Right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -115,10 +115,10 @@ pub fn default_arrow_key() -> ModeKeybinds {
 
     let mut input: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("Left", "move_to_parent_dir"),
+        ("Left", "move_to_parent_directory"),
         ("Down", "move_to_next_file_item"),
         ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
+        ("Right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("escape", "normal"),
@@ -131,10 +131,10 @@ pub fn default_arrow_key() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("Left", "move_to_parent_dir"),
+        ("Left", "move_to_parent_directory"),
         ("Down", "move_to_next_file_item"),
         ("Up", "move_to_prev_file_item"),
-        ("Right", "move_to_child_dir"),
+        ("Right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -153,17 +153,17 @@ pub fn default_arrow_key() -> ModeKeybinds {
     }
 }
 
-pub fn default_vim_ctrl_movements() -> ModeKeybinds {
+pub fn default_vim_control_key_movements() -> ModeKeybinds {
     let mut normal: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
+        ("C-h", "move_to_parent_directory"),
         ("C-j", "move_to_next_file_item"),
         ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
+        ("C-l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
-        ("left", "move_to_parent_dir"),
-        ("right", "move_to_child_dir"),
+        ("left", "move_to_parent_directory"),
+        ("right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -177,14 +177,14 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
 
     let mut input: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
+        ("C-h", "move_to_parent_directory"),
         ("C-j", "move_to_next_file_item"),
         ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
+        ("C-l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
-        ("left", "move_to_parent_dir"),
-        ("right", "move_to_child_dir"),
+        ("left", "move_to_parent_directory"),
+        ("right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("escape", "normal"),
@@ -197,14 +197,14 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
 
     let mut stacker: HashMap<String, String> = HashMap::new();
     let iter = [
-        ("C-h", "move_to_parent_dir"),
+        ("C-h", "move_to_parent_directory"),
         ("C-j", "move_to_next_file_item"),
         ("C-k", "move_to_prev_file_item"),
-        ("C-l", "move_to_child_dir"),
+        ("C-l", "move_to_child_directory"),
         ("down", "move_to_next_file_item"),
         ("up", "move_to_prev_file_item"),
-        ("left", "move_to_parent_dir"),
-        ("right", "move_to_child_dir"),
+        ("left", "move_to_parent_directory"),
+        ("right", "move_to_child_directory"),
         ("Tab", "next_dirtab"),
         ("Backtab", "prev_dirtab"),
         ("q", "quit"),
@@ -223,13 +223,15 @@ pub fn default_vim_ctrl_movements() -> ModeKeybinds {
     }
 }
 
-pub fn string_map_to_user_keyboad(keybinds: &HashMap<String, String>) -> HashMap<KeyEvent, String> {
-    let mut keybind: HashMap<KeyEvent, String> = HashMap::new();
+pub fn string_map_to_user_keybindings(
+    keybinds: &HashMap<String, String>,
+) -> HashMap<KeyEvent, String> {
+    let mut keybindings: HashMap<KeyEvent, String> = HashMap::new();
     for (key, cmd) in keybinds.iter() {
         let user_keyboad = string_to_keyevent(key);
-        keybind.insert(user_keyboad, cmd.to_string());
+        keybindings.insert(user_keyboad, cmd.to_string());
     }
-    keybind
+    keybindings
 }
 
 pub fn multi_string_map_to_user_keyboad(
@@ -250,570 +252,155 @@ pub fn multi_string_map_to_user_keyboad(
 
 fn string_to_keyevent(s: &str) -> KeyEvent {
     match s {
-        "a" => KeyEvent {
-            code: KeyCode::Char('a'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "b" => KeyEvent {
-            code: KeyCode::Char('b'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "c" => KeyEvent {
-            code: KeyCode::Char('c'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "d" => KeyEvent {
-            code: KeyCode::Char('d'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "e" => KeyEvent {
-            code: KeyCode::Char('e'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "f" => KeyEvent {
-            code: KeyCode::Char('f'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "g" => KeyEvent {
-            code: KeyCode::Char('g'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "h" => KeyEvent {
-            code: KeyCode::Char('h'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "i" => KeyEvent {
-            code: KeyCode::Char('i'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "j" => KeyEvent {
-            code: KeyCode::Char('j'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "k" => KeyEvent {
-            code: KeyCode::Char('k'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "l" => KeyEvent {
-            code: KeyCode::Char('l'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "m" => KeyEvent {
-            code: KeyCode::Char('m'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "n" => KeyEvent {
-            code: KeyCode::Char('n'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "o" => KeyEvent {
-            code: KeyCode::Char('o'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "p" => KeyEvent {
-            code: KeyCode::Char('p'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "q" => KeyEvent {
-            code: KeyCode::Char('q'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "r" => KeyEvent {
-            code: KeyCode::Char('r'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "s" => KeyEvent {
-            code: KeyCode::Char('s'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "t" => KeyEvent {
-            code: KeyCode::Char('t'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "u" => KeyEvent {
-            code: KeyCode::Char('u'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "v" => KeyEvent {
-            code: KeyCode::Char('v'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "w" => KeyEvent {
-            code: KeyCode::Char('w'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "x" => KeyEvent {
-            code: KeyCode::Char('x'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "y" => KeyEvent {
-            code: KeyCode::Char('y'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "z" => KeyEvent {
-            code: KeyCode::Char('z'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "#" => KeyEvent {
-            code: KeyCode::Char('#'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "!" => KeyEvent {
-            code: KeyCode::Char('!'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "$" => KeyEvent {
-            code: KeyCode::Char('$'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "%" => KeyEvent {
-            code: KeyCode::Char('%'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "&" => KeyEvent {
-            code: KeyCode::Char('&'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "'" => KeyEvent {
-            code: KeyCode::Char('\''),
-            modifiers: KeyModifiers::NONE,
-        },
-        "(" => KeyEvent {
-            code: KeyCode::Char('('),
-            modifiers: KeyModifiers::NONE,
-        },
-        ")" => KeyEvent {
-            code: KeyCode::Char(')'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "-" => KeyEvent {
-            code: KeyCode::Char('-'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "=" => KeyEvent {
-            code: KeyCode::Char('='),
-            modifiers: KeyModifiers::NONE,
-        },
-        "^" => KeyEvent {
-            code: KeyCode::Char('^'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "~" => KeyEvent {
-            code: KeyCode::Char('~'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "\\" => KeyEvent {
-            code: KeyCode::Char('\\'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "|" => KeyEvent {
-            code: KeyCode::Char('|'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "@" => KeyEvent {
-            code: KeyCode::Char('@'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "[" => KeyEvent {
-            code: KeyCode::Char('['),
-            modifiers: KeyModifiers::NONE,
-        },
-        "]" => KeyEvent {
-            code: KeyCode::Char(']'),
-            modifiers: KeyModifiers::NONE,
-        },
-        ";" => KeyEvent {
-            code: KeyCode::Char(';'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "+" => KeyEvent {
-            code: KeyCode::Char('+'),
-            modifiers: KeyModifiers::NONE,
-        },
-        ":" => KeyEvent {
-            code: KeyCode::Char(':'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "*" => KeyEvent {
-            code: KeyCode::Char('*'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "?" => KeyEvent {
-            code: KeyCode::Char('?'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "/" => KeyEvent {
-            code: KeyCode::Char('/'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "," => KeyEvent {
-            code: KeyCode::Char(','),
-            modifiers: KeyModifiers::NONE,
-        },
-        "." => KeyEvent {
-            code: KeyCode::Char('.'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "<" => KeyEvent {
-            code: KeyCode::Char('<'),
-            modifiers: KeyModifiers::NONE,
-        },
-        ">" => KeyEvent {
-            code: KeyCode::Char('>'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "_" => KeyEvent {
-            code: KeyCode::Char('_'),
-            modifiers: KeyModifiers::NONE,
-        },
-        "S-a" => KeyEvent {
-            code: KeyCode::Char('A'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-b" => KeyEvent {
-            code: KeyCode::Char('B'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-c" => KeyEvent {
-            code: KeyCode::Char('C'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-d" => KeyEvent {
-            code: KeyCode::Char('D'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-e" => KeyEvent {
-            code: KeyCode::Char('E'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-f" => KeyEvent {
-            code: KeyCode::Char('F'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-g" => KeyEvent {
-            code: KeyCode::Char('G'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-h" => KeyEvent {
-            code: KeyCode::Char('H'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-i" => KeyEvent {
-            code: KeyCode::Char('I'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-j" => KeyEvent {
-            code: KeyCode::Char('J'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-k" => KeyEvent {
-            code: KeyCode::Char('K'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-l" => KeyEvent {
-            code: KeyCode::Char('L'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-m" => KeyEvent {
-            code: KeyCode::Char('M'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-n" => KeyEvent {
-            code: KeyCode::Char('N'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-o" => KeyEvent {
-            code: KeyCode::Char('O'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-p" => KeyEvent {
-            code: KeyCode::Char('P'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-q" => KeyEvent {
-            code: KeyCode::Char('Q'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-r" => KeyEvent {
-            code: KeyCode::Char('R'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-s" => KeyEvent {
-            code: KeyCode::Char('S'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-t" => KeyEvent {
-            code: KeyCode::Char('T'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-u" => KeyEvent {
-            code: KeyCode::Char('U'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-v" => KeyEvent {
-            code: KeyCode::Char('V'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-w" => KeyEvent {
-            code: KeyCode::Char('W'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-x" => KeyEvent {
-            code: KeyCode::Char('X'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-y" => KeyEvent {
-            code: KeyCode::Char('Y'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "S-z" => KeyEvent {
-            code: KeyCode::Char('Z'),
-            modifiers: KeyModifiers::SHIFT,
-        },
-        "C-a" => KeyEvent {
-            code: KeyCode::Char('A'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-b" => KeyEvent {
-            code: KeyCode::Char('B'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-c" => KeyEvent {
-            code: KeyCode::Char('C'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-d" => KeyEvent {
-            code: KeyCode::Char('D'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-e" => KeyEvent {
-            code: KeyCode::Char('E'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-f" => KeyEvent {
-            code: KeyCode::Char('F'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-g" => KeyEvent {
-            code: KeyCode::Char('G'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-h" => KeyEvent {
-            code: KeyCode::Char('H'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-i" => KeyEvent {
-            code: KeyCode::Char('I'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-j" => KeyEvent {
-            code: KeyCode::Char('J'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-k" => KeyEvent {
-            code: KeyCode::Char('K'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-l" => KeyEvent {
-            code: KeyCode::Char('L'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-m" => KeyEvent {
-            code: KeyCode::Char('M'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-n" => KeyEvent {
-            code: KeyCode::Char('N'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-o" => KeyEvent {
-            code: KeyCode::Char('O'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-p" => KeyEvent {
-            code: KeyCode::Char('P'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-q" => KeyEvent {
-            code: KeyCode::Char('Q'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-r" => KeyEvent {
-            code: KeyCode::Char('R'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-s" => KeyEvent {
-            code: KeyCode::Char('S'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-t" => KeyEvent {
-            code: KeyCode::Char('T'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-u" => KeyEvent {
-            code: KeyCode::Char('U'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-v" => KeyEvent {
-            code: KeyCode::Char('V'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-w" => KeyEvent {
-            code: KeyCode::Char('W'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-x" => KeyEvent {
-            code: KeyCode::Char('X'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-y" => KeyEvent {
-            code: KeyCode::Char('Y'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "C-z" => KeyEvent {
-            code: KeyCode::Char('Z'),
-            modifiers: KeyModifiers::CONTROL,
-        },
-        "A-a" => KeyEvent {
-            code: KeyCode::Char('A'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-b" => KeyEvent {
-            code: KeyCode::Char('B'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-c" => KeyEvent {
-            code: KeyCode::Char('C'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-d" => KeyEvent {
-            code: KeyCode::Char('D'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-e" => KeyEvent {
-            code: KeyCode::Char('E'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-f" => KeyEvent {
-            code: KeyCode::Char('F'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-g" => KeyEvent {
-            code: KeyCode::Char('G'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-h" => KeyEvent {
-            code: KeyCode::Char('H'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-i" => KeyEvent {
-            code: KeyCode::Char('I'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-j" => KeyEvent {
-            code: KeyCode::Char('J'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-k" => KeyEvent {
-            code: KeyCode::Char('K'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-l" => KeyEvent {
-            code: KeyCode::Char('L'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-m" => KeyEvent {
-            code: KeyCode::Char('M'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-n" => KeyEvent {
-            code: KeyCode::Char('N'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-o" => KeyEvent {
-            code: KeyCode::Char('O'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-p" => KeyEvent {
-            code: KeyCode::Char('P'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-q" => KeyEvent {
-            code: KeyCode::Char('Q'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-r" => KeyEvent {
-            code: KeyCode::Char('R'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-s" => KeyEvent {
-            code: KeyCode::Char('S'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-t" => KeyEvent {
-            code: KeyCode::Char('T'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-u" => KeyEvent {
-            code: KeyCode::Char('U'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-v" => KeyEvent {
-            code: KeyCode::Char('V'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-w" => KeyEvent {
-            code: KeyCode::Char('W'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-x" => KeyEvent {
-            code: KeyCode::Char('X'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-y" => KeyEvent {
-            code: KeyCode::Char('Y'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "A-z" => KeyEvent {
-            code: KeyCode::Char('Z'),
-            modifiers: KeyModifiers::ALT,
-        },
-        "Up" => KeyEvent {
-            code: KeyCode::Up,
-            modifiers: KeyModifiers::NONE,
-        },
-        "Down" => KeyEvent {
-            code: KeyCode::Down,
-            modifiers: KeyModifiers::NONE,
-        },
-        "Left" => KeyEvent {
-            code: KeyCode::Left,
-            modifiers: KeyModifiers::NONE,
-        },
-        "Right" => KeyEvent {
-            code: KeyCode::Right,
-            modifiers: KeyModifiers::NONE,
-        },
-        "up" => KeyEvent {
-            code: KeyCode::Up,
-            modifiers: KeyModifiers::NONE,
-        },
-        "down" => KeyEvent {
-            code: KeyCode::Down,
-            modifiers: KeyModifiers::NONE,
-        },
-        "left" => KeyEvent {
-            code: KeyCode::Left,
-            modifiers: KeyModifiers::NONE,
-        },
-        "right" => KeyEvent {
-            code: KeyCode::Right,
-            modifiers: KeyModifiers::NONE,
-        },
-        _ => KeyEvent {
-            code: KeyCode::Null,
-            modifiers: KeyModifiers::NONE,
-        },
+        // Special keys
+        "Tab" => KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE),
+        "Backtab" => KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT),
+        "escape" | "Escape" | "Esc" => KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
+        "Enter" => KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE),
+        "Backspace" => KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE),
+        "Delete" => KeyEvent::new(KeyCode::Delete, KeyModifiers::NONE),
+        "Left" => KeyEvent::new(KeyCode::Left, KeyModifiers::NONE),
+        "Right" => KeyEvent::new(KeyCode::Right, KeyModifiers::NONE),
+        "Up" => KeyEvent::new(KeyCode::Up, KeyModifiers::NONE),
+        "Down" => KeyEvent::new(KeyCode::Down, KeyModifiers::NONE),
+        "Home" => KeyEvent::new(KeyCode::Home, KeyModifiers::NONE),
+        "End" => KeyEvent::new(KeyCode::End, KeyModifiers::NONE),
+        "PageUp" => KeyEvent::new(KeyCode::PageUp, KeyModifiers::NONE),
+        "PageDown" => KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE),
+        // Lowercase letters
+        "a" => KeyEvent::new(KeyCode::Char('a'), KeyModifiers::NONE),
+        "b" => KeyEvent::new(KeyCode::Char('b'), KeyModifiers::NONE),
+        "c" => KeyEvent::new(KeyCode::Char('c'), KeyModifiers::NONE),
+        "d" => KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE),
+        "e" => KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE),
+        "f" => KeyEvent::new(KeyCode::Char('f'), KeyModifiers::NONE),
+        "g" => KeyEvent::new(KeyCode::Char('g'), KeyModifiers::NONE),
+        "h" => KeyEvent::new(KeyCode::Char('h'), KeyModifiers::NONE),
+        "i" => KeyEvent::new(KeyCode::Char('i'), KeyModifiers::NONE),
+        "j" => KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE),
+        "k" => KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE),
+        "l" => KeyEvent::new(KeyCode::Char('l'), KeyModifiers::NONE),
+        "m" => KeyEvent::new(KeyCode::Char('m'), KeyModifiers::NONE),
+        "n" => KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE),
+        "o" => KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE),
+        "p" => KeyEvent::new(KeyCode::Char('p'), KeyModifiers::NONE),
+        "q" => KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE),
+        "r" => KeyEvent::new(KeyCode::Char('r'), KeyModifiers::NONE),
+        "s" => KeyEvent::new(KeyCode::Char('s'), KeyModifiers::NONE),
+        "t" => KeyEvent::new(KeyCode::Char('t'), KeyModifiers::NONE),
+        "u" => KeyEvent::new(KeyCode::Char('u'), KeyModifiers::NONE),
+        "v" => KeyEvent::new(KeyCode::Char('v'), KeyModifiers::NONE),
+        "w" => KeyEvent::new(KeyCode::Char('w'), KeyModifiers::NONE),
+        "x" => KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE),
+        "y" => KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE),
+        "z" => KeyEvent::new(KeyCode::Char('z'), KeyModifiers::NONE),
+        "#" => KeyEvent::new(KeyCode::Char('#'), KeyModifiers::NONE),
+        "!" => KeyEvent::new(KeyCode::Char('!'), KeyModifiers::NONE),
+        "$" => KeyEvent::new(KeyCode::Char('$'), KeyModifiers::NONE),
+        "%" => KeyEvent::new(KeyCode::Char('%'), KeyModifiers::NONE),
+        "&" => KeyEvent::new(KeyCode::Char('&'), KeyModifiers::NONE),
+        "'" => KeyEvent::new(KeyCode::Char('\''), KeyModifiers::NONE),
+        "(" => KeyEvent::new(KeyCode::Char('('), KeyModifiers::NONE),
+        ")" => KeyEvent::new(KeyCode::Char(')'), KeyModifiers::NONE),
+        "-" => KeyEvent::new(KeyCode::Char('-'), KeyModifiers::NONE),
+        "=" => KeyEvent::new(KeyCode::Char('='), KeyModifiers::NONE),
+        "^" => KeyEvent::new(KeyCode::Char('^'), KeyModifiers::NONE),
+        "~" => KeyEvent::new(KeyCode::Char('~'), KeyModifiers::NONE),
+        "\\" => KeyEvent::new(KeyCode::Char('\\'), KeyModifiers::NONE),
+        "|" => KeyEvent::new(KeyCode::Char('|'), KeyModifiers::NONE),
+        "@" => KeyEvent::new(KeyCode::Char('@'), KeyModifiers::NONE),
+        "[" => KeyEvent::new(KeyCode::Char('['), KeyModifiers::NONE),
+        "]" => KeyEvent::new(KeyCode::Char(']'), KeyModifiers::NONE),
+        ";" => KeyEvent::new(KeyCode::Char(';'), KeyModifiers::NONE),
+        "+" => KeyEvent::new(KeyCode::Char('+'), KeyModifiers::NONE),
+        ":" => KeyEvent::new(KeyCode::Char(':'), KeyModifiers::NONE),
+        "*" => KeyEvent::new(KeyCode::Char('*'), KeyModifiers::NONE),
+        "?" => KeyEvent::new(KeyCode::Char('?'), KeyModifiers::NONE),
+        "/" => KeyEvent::new(KeyCode::Char('/'), KeyModifiers::NONE),
+        "," => KeyEvent::new(KeyCode::Char(','), KeyModifiers::NONE),
+        "." => KeyEvent::new(KeyCode::Char('.'), KeyModifiers::NONE),
+        "<" => KeyEvent::new(KeyCode::Char('<'), KeyModifiers::NONE),
+        ">" => KeyEvent::new(KeyCode::Char('>'), KeyModifiers::NONE),
+        "_" => KeyEvent::new(KeyCode::Char('_'), KeyModifiers::NONE),
+        "S-a" => KeyEvent::new(KeyCode::Char('A'), KeyModifiers::SHIFT),
+        "S-b" => KeyEvent::new(KeyCode::Char('B'), KeyModifiers::SHIFT),
+        "S-c" => KeyEvent::new(KeyCode::Char('C'), KeyModifiers::SHIFT),
+        "S-d" => KeyEvent::new(KeyCode::Char('D'), KeyModifiers::SHIFT),
+        "S-e" => KeyEvent::new(KeyCode::Char('E'), KeyModifiers::SHIFT),
+        "S-f" => KeyEvent::new(KeyCode::Char('F'), KeyModifiers::SHIFT),
+        "S-g" => KeyEvent::new(KeyCode::Char('G'), KeyModifiers::SHIFT),
+        "S-h" => KeyEvent::new(KeyCode::Char('H'), KeyModifiers::SHIFT),
+        "S-i" => KeyEvent::new(KeyCode::Char('I'), KeyModifiers::SHIFT),
+        "S-j" => KeyEvent::new(KeyCode::Char('J'), KeyModifiers::SHIFT),
+        "S-k" => KeyEvent::new(KeyCode::Char('K'), KeyModifiers::SHIFT),
+        "S-l" => KeyEvent::new(KeyCode::Char('L'), KeyModifiers::SHIFT),
+        "S-m" => KeyEvent::new(KeyCode::Char('M'), KeyModifiers::SHIFT),
+        "S-n" => KeyEvent::new(KeyCode::Char('N'), KeyModifiers::SHIFT),
+        "S-o" => KeyEvent::new(KeyCode::Char('O'), KeyModifiers::SHIFT),
+        "S-p" => KeyEvent::new(KeyCode::Char('P'), KeyModifiers::SHIFT),
+        "S-q" => KeyEvent::new(KeyCode::Char('Q'), KeyModifiers::SHIFT),
+        "S-r" => KeyEvent::new(KeyCode::Char('R'), KeyModifiers::SHIFT),
+        "S-s" => KeyEvent::new(KeyCode::Char('S'), KeyModifiers::SHIFT),
+        "S-t" => KeyEvent::new(KeyCode::Char('T'), KeyModifiers::SHIFT),
+        "S-u" => KeyEvent::new(KeyCode::Char('U'), KeyModifiers::SHIFT),
+        "S-v" => KeyEvent::new(KeyCode::Char('V'), KeyModifiers::SHIFT),
+        "S-w" => KeyEvent::new(KeyCode::Char('W'), KeyModifiers::SHIFT),
+        "S-x" => KeyEvent::new(KeyCode::Char('X'), KeyModifiers::SHIFT),
+        "S-y" => KeyEvent::new(KeyCode::Char('Y'), KeyModifiers::SHIFT),
+        "S-z" => KeyEvent::new(KeyCode::Char('Z'), KeyModifiers::SHIFT),
+        "C-a" => KeyEvent::new(KeyCode::Char('A'), KeyModifiers::CONTROL),
+        "C-b" => KeyEvent::new(KeyCode::Char('B'), KeyModifiers::CONTROL),
+        "C-c" => KeyEvent::new(KeyCode::Char('C'), KeyModifiers::CONTROL),
+        "C-d" => KeyEvent::new(KeyCode::Char('D'), KeyModifiers::CONTROL),
+        "C-e" => KeyEvent::new(KeyCode::Char('E'), KeyModifiers::CONTROL),
+        "C-f" => KeyEvent::new(KeyCode::Char('F'), KeyModifiers::CONTROL),
+        "C-g" => KeyEvent::new(KeyCode::Char('G'), KeyModifiers::CONTROL),
+        "C-h" => KeyEvent::new(KeyCode::Char('H'), KeyModifiers::CONTROL),
+        "C-i" => KeyEvent::new(KeyCode::Char('I'), KeyModifiers::CONTROL),
+        "C-j" => KeyEvent::new(KeyCode::Char('J'), KeyModifiers::CONTROL),
+        "C-k" => KeyEvent::new(KeyCode::Char('K'), KeyModifiers::CONTROL),
+        "C-l" => KeyEvent::new(KeyCode::Char('L'), KeyModifiers::CONTROL),
+        "C-m" => KeyEvent::new(KeyCode::Char('M'), KeyModifiers::CONTROL),
+        "C-n" => KeyEvent::new(KeyCode::Char('N'), KeyModifiers::CONTROL),
+        "C-o" => KeyEvent::new(KeyCode::Char('O'), KeyModifiers::CONTROL),
+        "C-p" => KeyEvent::new(KeyCode::Char('P'), KeyModifiers::CONTROL),
+        "C-q" => KeyEvent::new(KeyCode::Char('Q'), KeyModifiers::CONTROL),
+        "C-r" => KeyEvent::new(KeyCode::Char('R'), KeyModifiers::CONTROL),
+        "C-s" => KeyEvent::new(KeyCode::Char('S'), KeyModifiers::CONTROL),
+        "C-t" => KeyEvent::new(KeyCode::Char('T'), KeyModifiers::CONTROL),
+        "C-u" => KeyEvent::new(KeyCode::Char('U'), KeyModifiers::CONTROL),
+        "C-v" => KeyEvent::new(KeyCode::Char('V'), KeyModifiers::CONTROL),
+        "C-w" => KeyEvent::new(KeyCode::Char('W'), KeyModifiers::CONTROL),
+        "C-x" => KeyEvent::new(KeyCode::Char('X'), KeyModifiers::CONTROL),
+        "C-y" => KeyEvent::new(KeyCode::Char('Y'), KeyModifiers::CONTROL),
+        "C-z" => KeyEvent::new(KeyCode::Char('Z'), KeyModifiers::CONTROL),
+        "A-a" => KeyEvent::new(KeyCode::Char('A'), KeyModifiers::ALT),
+        "A-b" => KeyEvent::new(KeyCode::Char('B'), KeyModifiers::ALT),
+        "A-c" => KeyEvent::new(KeyCode::Char('C'), KeyModifiers::ALT),
+        "A-d" => KeyEvent::new(KeyCode::Char('D'), KeyModifiers::ALT),
+        "A-e" => KeyEvent::new(KeyCode::Char('E'), KeyModifiers::ALT),
+        "A-f" => KeyEvent::new(KeyCode::Char('F'), KeyModifiers::ALT),
+        "A-g" => KeyEvent::new(KeyCode::Char('G'), KeyModifiers::ALT),
+        "A-h" => KeyEvent::new(KeyCode::Char('H'), KeyModifiers::ALT),
+        "A-i" => KeyEvent::new(KeyCode::Char('I'), KeyModifiers::ALT),
+        "A-j" => KeyEvent::new(KeyCode::Char('J'), KeyModifiers::ALT),
+        "A-k" => KeyEvent::new(KeyCode::Char('K'), KeyModifiers::ALT),
+        "A-l" => KeyEvent::new(KeyCode::Char('L'), KeyModifiers::ALT),
+        "A-m" => KeyEvent::new(KeyCode::Char('M'), KeyModifiers::ALT),
+        "A-n" => KeyEvent::new(KeyCode::Char('N'), KeyModifiers::ALT),
+        "A-o" => KeyEvent::new(KeyCode::Char('O'), KeyModifiers::ALT),
+        "A-p" => KeyEvent::new(KeyCode::Char('P'), KeyModifiers::ALT),
+        "A-q" => KeyEvent::new(KeyCode::Char('Q'), KeyModifiers::ALT),
+        "A-r" => KeyEvent::new(KeyCode::Char('R'), KeyModifiers::ALT),
+        "A-s" => KeyEvent::new(KeyCode::Char('S'), KeyModifiers::ALT),
+        "A-t" => KeyEvent::new(KeyCode::Char('T'), KeyModifiers::ALT),
+        "A-u" => KeyEvent::new(KeyCode::Char('U'), KeyModifiers::ALT),
+        "A-v" => KeyEvent::new(KeyCode::Char('V'), KeyModifiers::ALT),
+        "A-w" => KeyEvent::new(KeyCode::Char('W'), KeyModifiers::ALT),
+        "A-x" => KeyEvent::new(KeyCode::Char('X'), KeyModifiers::ALT),
+        "A-y" => KeyEvent::new(KeyCode::Char('Y'), KeyModifiers::ALT),
+        "A-z" => KeyEvent::new(KeyCode::Char('Z'), KeyModifiers::ALT),
+        _ => KeyEvent::new(KeyCode::Null, KeyModifiers::NONE),
     }
 }
 
@@ -860,10 +447,7 @@ impl UserKeybinds {
             single: HashMap::new(),
             multi: HashMap::new(),
             filtered_multi: None,
-            key: KeyEvent {
-                code: KeyCode::Null,
-                modifiers: KeyModifiers::NONE,
-            },
+            key: KeyEvent::new(KeyCode::Null, KeyModifiers::NONE),
         }
     }
 
@@ -951,7 +535,7 @@ impl UserKeybinds {
 #[derive(Debug, Clone, Deserialize)]
 pub struct SettingTheme {
     background: Colors,
-    boader: Colors,
+    border: Colors,
     directory: Colors,
     file_item: Colors,
     select: Colors,
@@ -965,7 +549,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::Black,
             header: Colors::Cyan,
-            boader: Colors::White,
+            border: Colors::White,
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::LightMagenta,
@@ -981,7 +565,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::White,
             header: Colors::Green,
-            boader: Colors::Black,
+            border: Colors::Black,
             directory: Colors::Blue,
             file_item: Colors::Black,
             select: Colors::LightRed,
@@ -997,7 +581,7 @@ impl SettingTheme {
         SettingTheme {
             background: Colors::Rgb(39, 67, 100),
             header: Colors::Green,
-            boader: Colors::Rgb(97, 169, 252),
+            border: Colors::Rgb(97, 169, 252),
             directory: Colors::Blue,
             file_item: Colors::Gray,
             select: Colors::Green,
@@ -1029,8 +613,8 @@ impl SettingTheme {
         style_formatter(user_color, true, false)
     }
 
-    pub fn boader_style(&self) -> Style {
-        let user_color = self.boader.clone();
+    pub fn border_style(&self) -> Style {
+        let user_color = self.border.clone();
         style_formatter(user_color, true, false)
     }
 
@@ -1070,7 +654,6 @@ fn color_translator(color: Colors) -> Option<Color> {
         Colors::LightYellow => Color::LightYellow,
         Colors::LightCyan => Color::LightCyan,
         Colors::Rgb(r, g, b) => Color::Rgb(r, g, b),
-        _ => Color::Reset,
     };
     Some(c)
 }
@@ -1151,7 +734,7 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::dark_blue_theme(),
             symbols: example_symbols(),
-            user_keybinds: default_vim_ctrl_movements(),
+            user_keybinds: default_vim_control_key_movements(),
         }
     }
 
@@ -1159,7 +742,7 @@ impl UserConfig {
         UserConfig {
             theme: SettingTheme::light_theme(),
             symbols: example_symbols(),
-            user_keybinds: default_arrow_key(),
+            user_keybinds: default_arrow_key_keybindings(),
         }
     }
     pub fn symbols(&self) -> &HashMap<FileItems, String> {
@@ -1203,7 +786,7 @@ pub fn load_user_config_file() -> UserConfig {
     let path = "config.ron";
     match std::fs::File::open(path) {
         Ok(f) => {
-            let config: Result<UserConfig, ron::de::Error> = ron::de::from_reader(f);
+            let config: Result<UserConfig, ron::error::SpannedError> = ron::de::from_reader(f);
             if let Ok(config) = config {
                 config
             } else {
@@ -1217,7 +800,7 @@ pub fn load_user_config_file() -> UserConfig {
 
 #[cfg(test)]
 mod test {
-    use ron::de;
+    use ron::error::SpannedError;
 
     use crate::load_config::UserConfig;
 
@@ -1226,7 +809,7 @@ mod test {
         let path = "config.ron";
         let f = std::fs::File::open(path);
         assert!(f.is_ok());
-        let config: Result<UserConfig, de::Error> = ron::de::from_reader(f.unwrap());
+        let config: Result<UserConfig, SpannedError> = ron::de::from_reader(f.unwrap());
         match &config {
             Ok(_) => {}
             Err(e) => println!("{e:#?}"),
