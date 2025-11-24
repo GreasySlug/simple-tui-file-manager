@@ -5,7 +5,10 @@ use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 
-use path_process::{current_dir_path, get_home_directory_path, pathbuf_to_string_name};
+use path_process::{
+    current_directory_path_from_environment, get_home_directory_path_from_environment,
+    pathbuf_to_string_name,
+};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{error::Error, io};
 
@@ -26,16 +29,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let crr_dir_path = current_dir_path();
+    let crr_dir_path = current_directory_path_from_environment();
     let dir_name = pathbuf_to_string_name(&crr_dir_path);
     let mut app = App::new();
-    app.insert_new_statefuldir(crr_dir_path);
+    app.insert_new_state_full_directory(crr_dir_path);
     app.push_new_dirname_to_dirtab(dir_name);
 
-    let home_dir_path = get_home_directory_path();
+    let home_dir_path = get_home_directory_path_from_environment();
     if let Some(path) = home_dir_path {
         let dir_name = pathbuf_to_string_name(&path);
-        app.insert_new_statefuldir(path);
+        app.insert_new_state_full_directory(path);
         app.push_new_dirname_to_dirtab(dir_name);
     }
 

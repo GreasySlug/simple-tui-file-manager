@@ -1,17 +1,17 @@
 (
-    // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yello, Gray, DarkGray
+    // colors: White, Black, Red, Green, Blue, Magenta, Cyan, Yellow, Gray, DarkGray
     // LightRed, LightGreen, LightBlue, LightMagenta, LightCyan, LightYellow, Rgb(r,g,b)
     theme: SettingTheme (
         background: Black,
         header: Magenta, // file name, permission, size, date
-        boader: White, // frame line
+        border: White, // frame line
         directory: Blue, // dir font
         file_item: White, // file font
-        select: Green, // selecting hightlight
+        select: Green, // selecting highlight
         command: [
             // bg, font
             (White, Black), // normal
-            (LightGreen, White), // imput
+            (LightGreen, White), // input
             (LightBlue,  White), // stacker
             ],
     ),
@@ -22,20 +22,20 @@
     },
     user_keybinds: ModeKeybinds (
         normal : {
-            "h": "move_to_parent_dir",
+            "h": "move_to_parent_directory",
             "j": "move_to_next_file_item",
             "k": "move_to_prev_file_item",
-            "l": "move_to_child_dir",
+            "l": "move_to_child_directory",
             "down": "move_to_next_file_item",
             "up": "move_to_prev_file_item",
-            "left": "move_to_parent_dir",
-            "right": "move_to_child_dir",
+            "left": "move_to_parent_directory",
+            "right": "move_to_child_directory",
             "g g": "move_to_top_of_file_item",
             "S-g": "move_to_bottom_of_file_item",
             "tab":"next_dirtab",
             "Backtab":"prev_dirtab",
             "q" :"quit",
-            "S-i": "input", // experement
+            "S-i": "input", // experiment
             "S-v": "stacker",
         },
         input: {
@@ -47,8 +47,8 @@
             "escape": "normal",// experiment
             "down": "move_to_next_file_item",
             "up": "move_to_prev_file_item",
-            "left": "move_to_parent_dir",
-            "right": "move_to_child_dir",
+            "left": "move_to_parent_directory",
+            "right": "move_to_child_directory",
         },
         stacker: {
             "tab":"next_dirtab",
@@ -58,8 +58,8 @@
             "escape": "normal",
             "down": "move_to_next_file_item",
             "up": "move_to_prev_file_item",
-            "left": "move_to_parent_dir",
-            "right": "move_to_child_dir",
+            "left": "move_to_parent_directory",
+            "right": "move_to_child_directory",
         },
     )
 )
